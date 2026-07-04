@@ -1,0 +1,52 @@
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: matcha_database
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-matcha}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/migrations/0001_create_users.sql:/docker-entrypoint-initdb.d/0001_create_users.sql
+      - ./backend/database/migrations/0002_create_email_outbox.sql:/docker-entrypoint-initdb.d/0002_create_email_outbox.sql
+      - ./backend/database/migrations/0003_add_password_reset.sql:/docker-entrypoint-initdb.d/0003_add_password_reset.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-matcha}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: matcha_api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:password@database:5432/matcha
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+    depends_on:
+      database:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: matcha_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0
+volumes:
+  postgres_data:
