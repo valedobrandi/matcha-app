@@ -3,7 +3,7 @@ from integrations.mailtrap_client import MailtrapClient
 from modules.notifications.outbox_repository import OutboxMessage
 from workers.exceptions import OutboxPayloadError
 
-OutboxHandler = Callable([OutboxMessage, MailtrapClient], Awaitable[None])
+OutboxHandler = Callable[[OutboxMessage, MailtrapClient], Awaitable[None]]
 
 async def handle_verification(message: OutboxMessage, mail_client: MailtrapClient) -> None:
     token = message.payload.get("verification_token")

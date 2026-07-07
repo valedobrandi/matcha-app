@@ -32,3 +32,11 @@ export function resetPassword(
 ): Promise<ResetPasswordResponse> {
     return apiPost<ResetPasswordResponse>('/auth/reset-password', payload)
 }
+
+export function resendVerification(email: string): Promise<MessageResponse> {
+    return apiPost<MessageResponse>('/auth/resend-verification', { email })
+}
+
+export function fortytwoCallback(code: string): Promise<TokenResponse> {
+    return apiPost<TokenResponse>(`/auth/callback/42?code=${encodeURIComponent(code)}`, {})
+}

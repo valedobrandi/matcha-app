@@ -34,24 +34,24 @@ class MailtrapClient:
         if not response:
             raise MailtrapException(f"Failed to send {category} email")  
 
-    async def _send_password_reset_email_sync(
+    def _send_password_reset_email_sync(
         self, to_email: str, token: str,
     ) -> None:
-            reset_url = f"{self._password_reset_url}?token={token}"
-            self._send_email_sync(
-                to_email,
-                "Reset you Match account",
-                (
-                    f"Reset your account by opening this link:\n{reset_url}\n\n"
-                    "If you did not request a password reset, ignore this email."
-                ),
-                "Password Reset"
-            )
+        reset_url = f"{self._password_reset_url}?token={token}"
+        self._send_email_sync(
+            to_email,
+            "Reset your Matcha account",
+            (
+                f"Reset your account by opening this link:\n{reset_url}\n\n"
+                "If you did not request a password reset, ignore this email."
+            ),
+            "Password Reset",
+        )
 
     async def send_password_reset_email(self, to_email: str, token: str) -> None:
         try:
             await asyncio.to_thread(
-                self._send_email_sync,
+                self._send_password_reset_email_sync,
                 to_email,
                 token,
             )
@@ -65,7 +65,7 @@ class MailtrapClient:
 
         self._send_email_sync(
             to_email,
-            "Verify your Match account",
+            "Verify your Matcha account",
             (
                 "Welcome to Matcha!\n\n"
                 f"Verify your account by opening this link:\n{verify_url}\n\n"

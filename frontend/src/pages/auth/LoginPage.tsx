@@ -6,6 +6,7 @@ import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/useAuth'
 import { loginSchema, type LoginValues } from '../../schemas/auth'
 import { resolveErrorMessage } from '../../i18n/errors'
+import { buildFortyTwoAuthorizeUrl } from '../../auth/oauthState'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -18,15 +19,20 @@ export function LoginPage() {
     resolver: zodResolver(loginSchema),
   })
   const [serverError, setServerError] = useState<string | null>(null)
+  const [showResendLink, setShowResendLink] = useState(false)
 
   const onSubmit = async (values: LoginValues) => {
     setServerError(null)
+    setShowResendLink(false)
     try {
       await login(values)
       navigate('/')
     } catch (err) {
       if (err instanceof ApiError) {
-      setServerError(resolveErrorMessage(err.code, err.message))
+        setServerError(resolveErrorMessage(err.code, err.message))
+        if (err.code === 'ACCOUNT_NOT_VERIFIED') {
+          setShowResendLink(true)
+        }
       } else {
         setServerError('Login failed')
       }
@@ -52,11 +58,24 @@ export function LoginPage() {
         </button>
       </form>
       {serverError && <p>{serverError}</p>}
+      {showResendLink && (
+        <p><Link to="/auth/resend-verification">Resend verification email</Link></p>
+      )}
       <p>
         <Link to="/auth/forgot-password">Forgot password?</Link>
       </p>
       <p>
         No account? <Link to="/auth/register">Register</Link>
+      </p>
+      <p>
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = buildFortyTwoAuthorizeUrl()
+          }}
+        >
+          Login with 42
+        </button>
       </p>
     </div>
   )

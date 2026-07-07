@@ -8,6 +8,8 @@ import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { RegisterPage } from '../pages/auth/RegisterPage'
 import { ResetPasswordPage } from '../pages/auth/ResetPasswordPage'
+import { FortyTwoCallbackPage } from '../pages/auth/FortyTwoCallbackPage'
+import { ResendVerificationPage } from '../pages/auth/ResendVerificationPage'
 import { VerifyEmailPage } from '../pages/auth/VerifyEmailPage'
 
 export function AppRoutes() {
@@ -20,12 +22,14 @@ export function AppRoutes() {
       </Route>
 
       <Route path="/auth/verify" element={<VerifyEmailPage />} />
+      <Route path="/auth/callback/42" element={<FortyTwoCallbackPage />} />
 
       <Route element={<PublicOnlyRoute />}>
         <Route element={<AuthLayout />}>
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/register" element={<RegisterPage />} />
           <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/auth/resend-verification" element={<ResendVerificationPage />} />
         </Route>
       </Route>
 

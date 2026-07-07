@@ -1,4 +1,3 @@
-from curses import COLS
 import datetime
 from typing import Any, Optional
 import asyncpg
@@ -18,22 +17,16 @@ class AuthRepository:
         return UserRecord.model_validate(dict(row)) if row else None
 
     async def find_by_username(self, username: str) -> Optional[UserRecord]:
-        query = f"""
-            SELECT {COLS} FROM users WHERE username = $1
-        """
-        return await self._fetch_one(query.format(COLS=USER_COLUMNS), username)
+        query = f"SELECT {USER_COLUMNS} FROM users WHERE username = $1"
+        return await self._fetch_one(query, username)
 
     async def find_by_email(self, email: str) -> Optional[UserRecord]:
-        query = f"""
-            SELECT {COLS} FROM users WHERE email = $1
-        """
-        return await self._fetch_one(query.format(COLS=USER_COLUMNS), email)
+        query = f"SELECT {USER_COLUMNS} FROM users WHERE email = $1"
+        return await self._fetch_one(query, email)
 
     async def find_by_fortytwo_id(self, fortytwo_id: int) -> Optional[UserRecord]:
-        query = f"""
-            SELECT {COLS} FROM users WHERE fortytwo_id = $1
-        """
-        return await self._fetch_one(query.format(COLS=USER_COLUMNS), fortytwo_id)
+        query = f"SELECT {USER_COLUMNS} FROM users WHERE fortytwo_id = $1"
+        return await self._fetch_one(query, fortytwo_id)
 
     async def register_user(
         self,
@@ -86,7 +79,7 @@ class AuthRepository:
         query = f"""
             INSERT INTO users (email, username, first_name, last_name, password_hash, verification_token)
             VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING {COLS};
+            RETURNING {USER_COLUMNS};
         """
         try:
             return await self._fetch_one(
@@ -100,9 +93,9 @@ class AuthRepository:
             )
 
         except asyncpg.UniqueViolationError as exc:
-            if exec.constrain_name == "user_email_key":
+            if exc.constraint_name == "users_email_key":
                 raise DuplicateEmailException(data.email) from None
-            if exec.constrain_name == "user_username_key":
+            if exc.constraint_name == "users_username_key":
                 raise DuplicateUsernameException(data.username) from None
             raise
 
@@ -117,23 +110,23 @@ class AuthRepository:
         query = f"""
             INSERT INTO users (email, username, first_name, last_name, fortytwo_id, is_verified)
             VALUES ($1, $2, $3, $4, $5, TRUE)
-            RETURNING {COLS};
+            RETURNING {USER_COLUMNS};
         """
         try:
             return await self._fetch_one(
-                query.format(COLS=USER_COLUMNS), 
+                query,
                 email, username, first_name, last_name, fortytwo_id
             )
         except asyncpg.UniqueViolationError:
             raise OAuthAccountConflictException() from None
 
     async def verify_user_email(self, email_token: str) -> Optional[UserRecord]:
-        query = """
+        query = f"""
             UPDATE users SET is_verified = TRUE, verification_token = NULL 
             WHERE verification_token = $1
-            RETURNING {COLS};
+            RETURNING {USER_COLUMNS};
         """
-        return await self._fetch_one( query.format(COLS=USER_COLUMNS), email_token)
+        return await self._fetch_one(query, email_token)
 
     async def set_password_reset_token_and_enqueue(
         self,
@@ -166,7 +159,7 @@ class AuthRepository:
     async def reset_password_with_token(
         self, token: str, hash_password: str
     ) -> None | UserRecord:
-        query = """
+        query = f"""
             UPDATE users 
                 SET password_hash = $2,
                 password_reset_token = NULL,
@@ -174,6 +167,6 @@ class AuthRepository:
             WHERE password_reset_token = $1
                 AND password_reset_expires_at > NOW()
                 AND password_hash IS NOT NULL
-            RETURNING {COLS};
+            RETURNING {USER_COLUMNS};
         """
-        return await self._fetch_one(query.format(COLS=USER_COLUMNS), token, hash_password)
+        return await self._fetch_one(query, token, hash_password)

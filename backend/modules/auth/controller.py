@@ -90,7 +90,7 @@ async def forgot_password(
     service: AuthService = Depends(get_auth_service),
 ) -> ForgotPasswordResponse:
     await service.request_password_reset(payload.email)
-    return {"message": "Reset password link sent to email."}
+    return {"message": "If an account exists for this email, a password reset link will be sent."}
 
 
 @auth_router.post("/reset-password", response_model=ResetPasswordResponse)
