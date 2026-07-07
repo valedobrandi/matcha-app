@@ -67,7 +67,12 @@ async function request<T>(
 
   if (!response.ok) {
     const parsedError = await parseError(response)
-    throw new ApiError(response.status, parsedError.detail, parsedError.code, parsedError.field)
+    throw new ApiError(
+      response.status,
+      parsedError.detail ?? 'Request failed',
+      parsedError.code,
+      parsedError.field,
+    )
   }
 
   return response.json() as Promise<T>

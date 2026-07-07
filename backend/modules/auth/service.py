@@ -29,7 +29,7 @@ class AuthService:
         )
 
     def _hash_password(self, plain:str) -> str:
-        hashed_bytes = bcrypt.hashpw(plain.code.encode("utf-8"), bcrypt.gensalt())
+        hashed_bytes = bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt())
         return hashed_bytes.decode("utf-8")
 
     def generate_jwt_token(self, user_id: int) -> str:

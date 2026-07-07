@@ -26,7 +26,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://postgres:password@database:5432/matcha
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@database:5432/${POSTGRES_DB:-matcha}
     ports:
       - "8000:8000"
     volumes:
@@ -42,6 +42,10 @@ services:
     container_name: matcha_frontend
     ports:
       - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+      VITE_FT_CLIENT_ID: ${FT_CLIENT_ID:-ft_client_id}
+      VITE_FT_REDIRECT_URI: http://localhost:5173/auth/callback/42
     volumes:
       - ./frontend:/app
       - /app/node_modules
