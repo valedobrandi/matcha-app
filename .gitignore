@@ -84,8 +84,7 @@ postgres_data/
 *.sln
 
 # Cursor user-level caches (project rules under .cursor/ stay tracked)
-.cursor/cache/
-.cursor/logs/
+.cursor
 
 # ─────────────────────────────────────────────────────────────
 # OS
