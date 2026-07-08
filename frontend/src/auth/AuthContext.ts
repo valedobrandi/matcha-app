@@ -1,13 +1,14 @@
 import { createContext } from 'react'
 import type { CurrentUser, LoginInput } from '../types/auth'
 
-export type AuthContextValue = {
+
+type AuthContextValue = {
   accessToken: string | null
   user: CurrentUser | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (payload: LoginInput) => Promise<void>
-  loginWithToken: (token: string) => void
+  loginWithToken: (token: string) => Promise<void>
   logout: () => void
   refreshUser: () => Promise<void>
 }

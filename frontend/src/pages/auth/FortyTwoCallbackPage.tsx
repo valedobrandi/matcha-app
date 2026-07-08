@@ -38,10 +38,10 @@ export function FortyTwoCallbackPage() {
 
     authApi
       .fortytwoCallback(code)
-      .then((response) => {
+      .then(async (response) => {
         if (cancelled) return
         clearOAuthState()
-        loginWithToken(response.access_token)
+        await loginWithToken(response.access_token)
         navigate('/')
       })
       .catch((err) => {

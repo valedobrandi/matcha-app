@@ -26,7 +26,7 @@ export function ResetPasswordPage() {
     setServerError(null)
     try {
       const response = await authApi.resetPassword({ token, ...values })
-      loginWithToken(response.access_token)
+      await loginWithToken(response.access_token)
       navigate('/')
     } catch (err) {
       if (err instanceof ApiError) {
