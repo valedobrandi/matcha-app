@@ -9,15 +9,17 @@ export function VerifyEmailPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { loginWithToken } = useAuth()
-  const [error, setError] = useState<string | null>(null)
+  const token = searchParams.get('token')
+  const validationError = token ? null : 'Missing verification token'
+  const [requestError, setRequestError] = useState<string | null>(null)
+  const error = validationError ?? requestError
 
   useEffect(() => {
-    let cancelled = false
-    const token = searchParams.get('token')
     if (!token) {
-      setError('Missing verification token')
       return
     }
+
+    let cancelled = false
 
     authApi
       .verifyEmail(token)
@@ -29,16 +31,16 @@ export function VerifyEmailPage() {
       .catch((err) => {
         if (cancelled) return
         if (err instanceof ApiError) {
-          setError(resolveErrorMessage(err.code, err.message))
+          setRequestError(resolveErrorMessage(err.code, err.message))
         } else {
-          setError('Failed to verify email')
+          setRequestError('Failed to verify email')
         }
       })
 
     return () => {
       cancelled = true
     }
-  }, [loginWithToken, navigate, searchParams])
+  }, [loginWithToken, navigate, token])
 
   if (error) {
     return (
