@@ -85,6 +85,9 @@ postgres_data/
 
 # Cursor user-level caches (project rules under .cursor/ stay tracked)
 .cursor
+fr.subject.pdf
+fr.subject.md
+plan.md
 
 # ─────────────────────────────────────────────────────────────
 # OS
@@ -101,4 +104,4 @@ $RECYCLE.BIN/
 *.bak
 *.tmp
 *.orig
-fr.subject.pdf
+
