@@ -6,24 +6,35 @@ import { useAuth } from '../../auth/useAuth'
 import { validateOAuthState, clearOAuthState } from '../../auth/oauthState'
 import { resolveErrorMessage } from '../../i18n/errors'
 
+function getOAuthValidationError(
+  code: string | null,
+  state: string | null,
+): string | null {
+  if (!code) {
+    return 'Missing OAuth code'
+  }
+  if (!validateOAuthState(state)) {
+    return 'Invalid OAuth state'
+  }
+  return null
+}
+
 export function FortyTwoCallbackPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { loginWithToken } = useAuth()
-  const [error, setError] = useState<string | null>(null)
+  const code = searchParams.get('code')
+  const state = searchParams.get('state')
+  const validationError = getOAuthValidationError(code, state)
+  const [requestError, setRequestError] = useState<string | null>(null)
+  const error = validationError ?? requestError
 
   useEffect(() => {
+    if (validationError || !code) {
+      return
+    }
+
     let cancelled = false
-    const code = searchParams.get('code')
-    const state = searchParams.get('state')
-    if (!code) {
-      setError('Missing OAuth code')
-      return
-    }
-    if (!validateOAuthState(state)) {
-      setError('Invalid OAuth state')
-      return
-    }
 
     authApi
       .fortytwoCallback(code)
@@ -37,16 +48,16 @@ export function FortyTwoCallbackPage() {
         if (cancelled) return
         clearOAuthState()
         if (err instanceof ApiError) {
-          setError(resolveErrorMessage(err.code, err.message))
+          setRequestError(resolveErrorMessage(err.code, err.message))
         } else {
-          setError('OAuth login failed')
+          setRequestError('OAuth login failed')
         }
       })
 
     return () => {
       cancelled = true
     }
-  }, [loginWithToken, navigate, searchParams])
+  }, [code, loginWithToken, navigate, validationError])
 
   if (error) {
     return (
