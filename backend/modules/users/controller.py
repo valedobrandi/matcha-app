@@ -6,6 +6,8 @@ from modules.users.service import UsersService
 from modules.users.schemas import (
     UserProfile
 )
+from backend.modules.users.dependencies import get_current_user_id
+
 
 users_router = APIRouter(prefix="/users", tags=["users"])
 
@@ -18,4 +20,8 @@ def get_users_service(
 @users_router.get(
     "/me", response_model=UserProfile
 )
-async def getMe(token: str, service: UsersService) -> UserProfile:
+async def get_me(
+    current_user_id: int = Depends(get_current_user_id),
+    service: UsersService = Depends(get_users_service)
+    ) -> UserProfile:
+    return await service.get_profile(current_user_id)
