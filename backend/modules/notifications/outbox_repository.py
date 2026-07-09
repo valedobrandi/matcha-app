@@ -97,7 +97,7 @@ class OutboxRepository:
                 id=row['id'],
                 event_type=row['event_type'],
                 recipient_email=row['recipient_email'],
-                payload=dict(row["payload"]),
+                payload=json.loads(row["payload"]) if isinstance(row["payload"], str) else dict(row["payload"]),
                 attempts=row['attempts'],
                 max_attempts=row['max_attempts'],
             )
