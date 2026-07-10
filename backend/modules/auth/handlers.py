@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
 from modules.auth.exceptions import (
@@ -6,17 +6,23 @@ from modules.auth.exceptions import (
     AuthException,
     DuplicateEmailException,
     DuplicateUsernameException,
+    ExpiredTokenException,
     InvalidCredentialsException,
-    OAuthExchangeException,
-    OAuthAccountConflictException,
-    InvalidVerificationTokenException,
     InvalidResetTokenException,
+    InvalidTokenException,
+    InvalidVerificationTokenException,
+    MissingTokenException,
+    OAuthAccountConflictException,
+    OAuthExchangeException,
 )
 
 _EXCEPTION_STATUS = {
     DuplicateEmailException: status.HTTP_409_CONFLICT,
     DuplicateUsernameException: status.HTTP_409_CONFLICT,
     InvalidCredentialsException: status.HTTP_401_UNAUTHORIZED,
+    MissingTokenException: status.HTTP_401_UNAUTHORIZED,
+    InvalidTokenException: status.HTTP_401_UNAUTHORIZED,
+    ExpiredTokenException: status.HTTP_401_UNAUTHORIZED,
     AccountNotVerifiedException: status.HTTP_403_FORBIDDEN,
     OAuthExchangeException: status.HTTP_400_BAD_REQUEST,
     InvalidVerificationTokenException: status.HTTP_400_BAD_REQUEST,

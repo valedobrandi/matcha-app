@@ -1,12 +1,5 @@
-import { Navigate, Outlet } from 'react-router-dom'
-import { useAuth } from './useAuth'
+import { AuthRoute } from './AuthRoute'
 
 export function PublicOnlyRoute() {
-  const { isAuthenticated } = useAuth()
-
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />
-  }
-
-  return <Outlet />
+  return <AuthRoute requireAuth={false} redirectTo="/" />
 }

@@ -28,6 +28,10 @@ class AuthRepository:
         query = f"SELECT {USER_COLUMNS} FROM users WHERE fortytwo_id = $1"
         return await self._fetch_one(query, fortytwo_id)
 
+    async def find_by_id(self, user_id: int) -> Optional[UserRecord]:
+        query = f"SELECT {USER_COLUMNS} FROM users WHERE id = $1"
+        return await self._fetch_one(query, user_id)
+
     async def register_user(
         self,
         data: UserRegisterInput,
