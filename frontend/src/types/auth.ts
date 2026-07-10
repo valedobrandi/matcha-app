@@ -34,3 +34,14 @@ export type ResetPasswordResponse = {
   access_token: string
   token_type: string
 }
+
+export type CurrentUser = {
+  id: number
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  email_verified: boolean
+  profile_completed: boolean
+  has_password: boolean
+}

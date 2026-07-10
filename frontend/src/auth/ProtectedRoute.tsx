@@ -1,12 +1,5 @@
-import { Navigate, Outlet } from 'react-router-dom'
-import { useAuth } from './useAuth'
+import { AuthRoute } from './AuthRoute'
 
 export function ProtectedRoute() {
-  const { isAuthenticated } = useAuth()
-
-  if (!isAuthenticated) {
-    return <Navigate to="/auth/login" replace />
-  }
-
-  return <Outlet />
+  return <AuthRoute requireAuth={true} redirectTo="/auth/login" />
 }

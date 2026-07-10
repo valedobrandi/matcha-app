@@ -1,5 +1,11 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
+let onUnauthorized: (() => void) | null = null
+
+export function setOnUnauthorized(handler: (() => void) | null): void {
+  onUnauthorized = handler
+}
+
 export class ApiError extends Error {
   status: number
   code?: string
@@ -67,6 +73,9 @@ async function request<T>(
 
   if (!response.ok) {
     const parsedError = await parseError(response)
+    if (response.status === 401 && options?.token && onUnauthorized) {
+      onUnauthorized()
+    }
     throw new ApiError(
       response.status,
       parsedError.detail ?? 'Request failed',

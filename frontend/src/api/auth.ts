@@ -6,7 +6,8 @@ import type {
     RegisterInput,
     ResetPasswordInput,
     ResetPasswordResponse,
-    TokenResponse
+    TokenResponse,
+    CurrentUser,
 } from '../types/auth'
 
 export function register(payload: RegisterInput): Promise<MessageResponse> {
@@ -39,4 +40,8 @@ export function resendVerification(email: string): Promise<MessageResponse> {
 
 export function fortytwoCallback(code: string): Promise<TokenResponse> {
     return apiPost<TokenResponse>(`/auth/callback/42?code=${encodeURIComponent(code)}`, {})
+}
+
+export function getMe(token: string): Promise<CurrentUser> {
+    return apiGet<CurrentUser>('/auth/me', { token })
 }

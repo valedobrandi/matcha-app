@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status, Depends
 import asyncpg
 from modules.auth.schemas import (
+    CurrentUserResponse,
     ForgotPasswordInput,
     ForgotPasswordResponse,
     ResetPasswordInput,
@@ -15,6 +16,7 @@ from modules.auth.schemas import (
 from modules.auth.service import AuthService
 from modules.auth.repository import AuthRepository
 from core.database import get_db_connection
+from core.auth import get_current_user_id
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -104,3 +106,11 @@ async def reset_password(
         "access_token": access_token,
         "token_type": "bearer",
     }
+
+
+@auth_router.get("/me", response_model=CurrentUserResponse)
+async def get_me(
+    user_id: int = Depends(get_current_user_id),
+    service: AuthService = Depends(get_auth_service),
+) -> CurrentUserResponse:
+    return await service.get_current_user(user_id)

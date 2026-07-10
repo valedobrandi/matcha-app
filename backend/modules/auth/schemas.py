@@ -79,3 +79,13 @@ class ResendVerificationInput(BaseModel):
 
 class ResendVerificationResponse(BaseModel):
     message: str
+
+class CurrentUserResponse(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+    first_name: str
+    last_name: str
+    email_verified: bool
+    profile_completed: bool
+    has_password: bool
