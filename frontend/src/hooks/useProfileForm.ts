@@ -15,9 +15,9 @@ function useProfileForm() {
         handleSubmit,
         control,
         formState: {errors, isSubmitting},
-    } = useForm<ProfileValues>(
-        {resolver: zodResolver(profileSchema)}
-    )
+    } = useForm<ProfileValues>({
+        resolver: zodResolver(profileSchema),
+    })
 
     const onSubmit = async (data: ProfileValues) => {
         try {

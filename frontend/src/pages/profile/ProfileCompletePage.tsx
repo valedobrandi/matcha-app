@@ -18,7 +18,7 @@ export function ProfileCompletePage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Welcome, {profile?.username}!</CardTitle>
+        <CardTitle>Welcome, {profile?.username}</CardTitle>
         <CardDescription>Please complete your profile!</CardDescription>
       </CardHeader>
       <CardContent>

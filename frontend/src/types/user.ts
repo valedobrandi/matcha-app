@@ -6,10 +6,9 @@ export type UserProfile = {
     last_name: string
     is_verified: boolean
     created_at: string
-    avatar: string | null
     gender: string | null
-    age: number | null
     sexual_preference: string | null
+    age: number | null
     bio: string | null
     fame_rating: number
     latitude: number | null

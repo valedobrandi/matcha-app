@@ -6,7 +6,7 @@ from modules.users.service import UsersService
 from modules.users.schemas import (
     UserProfile
 )
-from backend.modules.users.dependencies import get_current_user_id
+from modules.users.dependencies import get_current_user_id
 
 
 users_router = APIRouter(prefix="/users", tags=["users"])

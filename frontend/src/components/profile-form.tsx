@@ -1,7 +1,6 @@
 import type { ProfileValues } from "@/schemas/users"
 import type { FieldErrors, UseFormRegister, Control } from "react-hook-form"
 import { Controller } from "react-hook-form"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./ui/card"
 import { Field, FieldGroup, FieldLabel, FieldError } from "./ui/field"
 import { Button } from "./ui/button"
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group"
@@ -36,7 +35,7 @@ function ProfileForm({
                     render={({ field, fieldState })=>(
                         <>
                             <RadioGroup
-                                defaultValue="male" value={field.value} onValueChange={field.onChange}>
+                                value={field.value?? ""} onValueChange={field.onChange}>
                                 <p>Please select your gender: </p>
                                 <div>
                                     <RadioGroupItem value="male" id="male" />
@@ -61,7 +60,7 @@ function ProfileForm({
                     render={({field, fieldState})=>(
                         <>
                             <RadioGroup
-                                defaultValue="man" value={field.value} onValueChange={field.onChange}>
+                                value={field.value?? ""} onValueChange={field.onChange}>
                                     <p>Please select your sexual preference: </p>
                                     <div>
                                         <RadioGroupItem value="man" id="man" />
