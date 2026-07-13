@@ -9,6 +9,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   OAUTH_ACCOUNT_CONFLICT:
     'An account exists with this email or username. Please login with your credentials.',
   INVALID_RESET_TOKEN: 'Invalid or expired password reset token.',
+  USER_NOT_FOUND: 'We could not find your account, please log in again.',
 }
 
 const REGISTER_FIELDS = ['email', 'username', 'first_name', 'last_name', 'password'] as const

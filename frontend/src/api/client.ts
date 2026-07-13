@@ -98,3 +98,11 @@ export function apiPost<T>(
 ): Promise<T> {
   return request<T>('POST', path, body, options)
 }
+
+export function apiPatch<T>(
+  path: string,
+  body: unknown,
+  options?: RequestOptions,
+): Promise<T> {
+  return request<T>('PATCH', path, body, options)
+}
