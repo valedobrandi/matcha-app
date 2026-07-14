@@ -15,6 +15,7 @@ type ProfileFormProps = {
     control: Control<ProfileValues>
     serverError: string | null,
     onSubmit: React.SubmitEventHandler<HTMLFormElement>
+    onSuccess: () => void
 }
 
 function ProfileForm({
@@ -24,6 +25,7 @@ function ProfileForm({
     control,
     serverError,
     onSubmit,
+    onSuccess,
     ...props
 }: ProfileFormProps) {
     return (
@@ -100,7 +102,7 @@ function ProfileForm({
                     </Field>
                     {serverError && <FieldError>{serverError}</FieldError>}
                     <Field>
-                        <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Saved"}</Button>
+                        <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save"}</Button>
                     </Field>
                 </FieldGroup>
             </form>

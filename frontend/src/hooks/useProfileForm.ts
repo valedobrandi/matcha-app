@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
 
-function useProfileForm() {
+function useProfileForm(onSuccess?: ()=>void) {
     const { accessToken } = useAuth()
     const [ serverError, setServerError ] = useState<string | null>(null)
     const {
@@ -22,6 +22,7 @@ function useProfileForm() {
     const onSubmit = async (data: ProfileValues) => {
         try {
             await usersApi.updateUserProfile(accessToken!, data)
+            onSuccess?.()
         } catch(err) {
             if (err instanceof ApiError)
                 setServerError(err.message)

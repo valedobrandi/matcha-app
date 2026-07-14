@@ -4,7 +4,9 @@ from core.database import get_db_connection
 from modules.users.repository import UsersRepository
 from modules.users.service import UsersService
 from modules.users.schemas import (
-    UserProfile
+    UserProfile,
+    UserProfileInput,
+    UserProfileComplete,
 )
 from modules.users.dependencies import get_current_user_id
 
@@ -25,3 +27,13 @@ async def get_me(
     service: UsersService = Depends(get_users_service)
     ) -> UserProfile:
     return await service.get_profile(current_user_id)
+
+@users_router.patch(
+    "/me", response_model=UserProfileComplete
+)
+async def patch_me(
+    payload: UserProfileInput,
+    current_user_id: int = Depends(get_current_user_id),
+    service: UsersService = Depends(get_users_service)
+    ) -> UserProfileComplete:
+    return await service.patch_profile(current_user_id, payload)
