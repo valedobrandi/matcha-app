@@ -28,3 +28,9 @@ class UserNotFoundException(UsersException):
     field = "None"
     def __init__(self):
         super().__init__("User not found")
+
+class FileTooLargeException(UsersException):
+    code = "FILE_TOO_LARGE"
+    field = "None"
+    def __init__(self):
+        super().__init__("File too large")

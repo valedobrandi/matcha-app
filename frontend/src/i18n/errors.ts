@@ -10,6 +10,7 @@ const ERROR_MESSAGES: Record<string, string> = {
     'An account exists with this email or username. Please login with your credentials.',
   INVALID_RESET_TOKEN: 'Invalid or expired password reset token.',
   USER_NOT_FOUND: 'We could not find your account, please log in again.',
+  TAG_CONTENT_PROFANITY: 'Your tag contains profanity content.'
 }
 
 const REGISTER_FIELDS = ['email', 'username', 'first_name', 'last_name', 'password'] as const

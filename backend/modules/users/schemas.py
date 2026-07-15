@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Literal
+from fastapi import UploadFile
 
 class UserProfile(BaseModel):
     id: int
@@ -19,3 +20,7 @@ class UserProfileInput(BaseModel):
 
 class UserProfileComplete(UserProfile, UserProfileInput):
     pass
+
+class PhotoOut(BaseModel):
+    id: int
+    path: str

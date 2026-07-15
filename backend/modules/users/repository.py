@@ -1,14 +1,19 @@
 import asyncpg
 from modules.users.schemas import (
     UserProfile,
-    UserProfileComplete
+    UserProfileComplete,
+    PhotoOut
 )
 from typing import Any, Optional, Type, TypeVar
 from pydantic import BaseModel
 from modules.tags.schemas import TagInput, TagOut
 from typing import List
+from fastapi import UploadFile
+from modules.users.exceptions import FileTooLargeException
+import os, uuid
 
-
+UPLOAD_DIR = "/uploads"
+MAX_SIZE = 5 * 1024 * 1024
 T = TypeVar("T", bound=BaseModel)
 
 USER_COLUMNS = "id, email, username, first_name, last_name, is_verified, created_at"
@@ -101,3 +106,30 @@ class UsersRepository:
                 WHERE user_id = $1 AND tag_id = $2
                 """
         return await self.connection.execute(query, current_user_id, tag_id)
+
+    async def upload_photo(
+            self, 
+            current_user_id: int, 
+            file: UploadFile
+    ) -> Optional[PhotoOut]:
+        content = await file.read()
+        if len(content) > MAX_SIZE:
+            raise FileTooLargeException()
+        
+        extension = os.path.splitext(file)
+        file_name = f"{uuid.uuid4()}{extension}"
+        file_path = os.path.join(UPLOAD_DIR, file_name)
+
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+        with open(file_path, "wb") as f:
+            f.write(content)
+
+        url = f"/{UPLOAD_DIR}/{file_name}"
+
+        query = """
+                INSERT INTO user_photos (user_id, url)
+                VALUES ($1, $2)
+                RETURNING id, url
+                """
+        return await self._fetch_one(PhotoOut, query, current_user_id, file_path)

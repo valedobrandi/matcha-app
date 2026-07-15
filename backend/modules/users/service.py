@@ -1,11 +1,13 @@
 from modules.users.repository import UsersRepository
 from modules.users.schemas import (
     UserProfile,
-    UserProfileComplete
+    UserProfileComplete,
+    PhotoOut
 )
 from modules.users.exceptions import UserNotFoundException
 from modules.tags.schemas import TagInput, TagOut
 from typing import List
+from fastapi import UploadFile
 
 
 class UsersService:
@@ -55,3 +57,10 @@ class UsersService:
             current_user_id: int,
     ) -> None:
         return await self.repository.delete_one_tag(tag_id, current_user_id)
+    
+    async def upload_photo(
+            self, 
+            current_user_id: int, 
+            file: UploadFile
+    ) -> PhotoOut:
+        return await self.repository.upload_photo(current_user_id, file)

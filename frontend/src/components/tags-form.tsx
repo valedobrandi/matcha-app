@@ -32,9 +32,9 @@ function TagsForm({
         <>
             <FieldGroup>
                 <Field>
-                    <FieldLabel htmlFor="tags">Choose your personal tags:</FieldLabel>
+                    <FieldLabel htmlFor="user_tags">Choose your personal tags:</FieldLabel>
                     <Input 
-                        id="tags"
+                        id="user_tags"
                         type="text"
                         value={inputValue?? ""}
                         onChange={(e)=>handleInput(e.target.value)}

@@ -5,14 +5,16 @@ from modules.users.exceptions import (
     MissingAuthorizationHeaderException,
     InvalidAuthorizationHeaderException,
     InvalidAccessTokenException,
-    UserNotFoundException
+    UserNotFoundException,
+    FileTooLargeException
 )
 
 _EXCEPTION_STATUS = {
     MissingAuthorizationHeaderException: status.HTTP_401_UNAUTHORIZED,
     InvalidAuthorizationHeaderException: status.HTTP_401_UNAUTHORIZED,
     InvalidAccessTokenException: status.HTTP_401_UNAUTHORIZED,
-    UserNotFoundException: status.HTTP_404_NOT_FOUND
+    UserNotFoundException: status.HTTP_404_NOT_FOUND,
+    FileTooLargeException: status.HTTP_413_CONTENT_TOO_LARGE
 }
 
 

@@ -34,6 +34,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app/backend
+      - user_uploads_data:/app/backend/uploads
     depends_on:
       database:
         condition: service_healthy
@@ -57,3 +58,4 @@ services:
     command: npm run dev -- --host 0.0.0.0
 volumes:
   postgres_data:
+  user_uploads_data:

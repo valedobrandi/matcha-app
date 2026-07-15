@@ -2,6 +2,7 @@ import { ApiError } from "@/api/client"
 import { getTags } from "@/api/tags"
 import { deleteProfileTags, postProfileTags, getMyTags } from "@/api/users"
 import { useAuth } from "@/auth/useAuth"
+import { resolveErrorMessage } from "@/i18n/errors"
 import type { Tag } from "@/types/user"
 import { useCallback, useEffect, useState } from "react"
 
@@ -18,7 +19,7 @@ function useProfileTags() {
             setTagsList(myTags)
         } catch (err) {
             if (err instanceof ApiError)
-                setServerError(err.message)           
+                setServerError(resolveErrorMessage(err.code, err.message))           
         }
 
     }, [accessToken])
@@ -33,8 +34,11 @@ function useProfileTags() {
            const searchRes = await getTags(accessToken!, value)
            setTagsSearchList(searchRes)
         } catch (err) {
-            if (err instanceof ApiError)
-                setServerError(err.message)
+            if (err instanceof ApiError) {
+                setServerError(resolveErrorMessage(err.code, err.message))
+                if (err.code == "TAG_CONTENT_PROFANITY")
+                    setInputValue("")
+            }
         }
     }
 
@@ -48,7 +52,7 @@ function useProfileTags() {
             setTagsSearchList([])
         } catch (err) {
             if (err instanceof ApiError)
-                setServerError(err.message)
+                setServerError(resolveErrorMessage(err.code, err.message))
         } finally {
             setInputValue("")
         }
@@ -60,7 +64,7 @@ function useProfileTags() {
             setTagsList(prev=>prev.filter((t)=>t.id !== tag_id))
         }catch (err) {
             if (err instanceof ApiError)
-                setServerError(err.message)
+                setServerError(resolveErrorMessage(err.code, err.message))
         }
     }
 

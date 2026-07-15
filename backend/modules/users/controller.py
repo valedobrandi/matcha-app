@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File
 import asyncpg
 from core.database import get_db_connection
 from modules.users.repository import UsersRepository
@@ -7,10 +7,12 @@ from modules.users.schemas import (
     UserProfile,
     UserProfileInput,
     UserProfileComplete,
+    PhotoOut,
 )
 from modules.users.dependencies import get_current_user_id
 from modules.tags.schemas import TagOut, TagInput
 from typing import List
+
 
 users_router = APIRouter(prefix="/users", tags=["users"])
 
@@ -66,3 +68,14 @@ async def delete_one_tag(
     service: UsersService = Depends(get_users_service)
 ) -> None:
     return await service.delete_one_tag(tag_id, current_user_id)
+
+@users_router.post(
+    "/me/photos",
+    response_model=PhotoOut
+)
+async def upload_photo(
+    file: UploadFile = File(...),
+    current_user_id: int = Depends(get_current_user_id),
+    service: UsersService = Depends(get_users_service)
+) -> PhotoOut:
+    return await service.upload_photo(current_user_id, file)

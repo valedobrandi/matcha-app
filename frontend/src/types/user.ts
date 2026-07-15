@@ -24,3 +24,13 @@ export type Tag = {
 export type TagInput = {
     name: string
 }
+
+export type Photo = {
+    id: number
+    path: string
+}
+
+
+export type PhotoInput = {
+    path: string
+}
