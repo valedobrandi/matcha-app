@@ -3,6 +3,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../..
 import ProfileForm from "@/components/profile-form"
 import useProfileForm from "@/hooks/useProfileForm"
 import { useState } from "react"
+import useProfileTags from "@/hooks/useProfileTags"
+import TagsForm from "@/components/tags-form"
 
 type  CompleteProfileStep = "basic" | "tags" | "photos"
 
@@ -14,9 +16,20 @@ export function ProfileCompletePage() {
         errors,
         isSubmitting,
         control,
-        serverError,
+        serverError: profileError,
         onSubmit,
-    } = useProfileForm(()=>{setCompleteProfileStep("tags")})
+  } = useProfileForm(()=>{setCompleteProfileStep("tags")})
+
+  const {
+        inputValue,
+        tagsSearchList,
+        tagsList,
+        serverError: tagsError,
+        handleMyTags,
+        handleInput,
+        handleAddTag,
+        handleDeleteTag, 
+  } = useProfileTags()
   
   const goTags = ()=>{
     setCompleteProfileStep("tags")
@@ -39,22 +52,25 @@ export function ProfileCompletePage() {
           errors={errors}
           isSubmitting={isSubmitting}
           control={control}
-          serverError={serverError}
+          serverError={profileError}
           onSubmit={onSubmit}
           onSuccess={goTags}
           />
         )}
         {completeProfileStep == "tags" && (
           <TagsForm 
-          register={register}
-          errors={errors}
-          isSubmitting={isSubmitting}
-          control={control}
-          serverError={serverError}
-          onSubmit={onSubmit}
+            inputValue = {inputValue}
+            tagsSearchList = {tagsSearchList}
+            tagsList = {tagsList}
+            serverError = {tagsError}
+            handleMyTags = {handleMyTags}
+            handleInput = {handleInput}
+            handleAddTag = {handleAddTag}
+            handleDeleteTag = {handleDeleteTag}
+            nextStep = {goPhotos}
           />
         )}
-        {completeProfileStep == "photos" && (
+        {/* {completeProfileStep == "photos" && (
           <PhotosForm 
           register={register}
           errors={errors}
@@ -63,7 +79,7 @@ export function ProfileCompletePage() {
           serverError={serverError}
           onSubmit={onSubmit}
           />
-        )}
+        )} */}
       </CardContent>
     </Card>
   )

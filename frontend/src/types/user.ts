@@ -15,3 +15,12 @@ export type UserProfile = {
     longitude: number | null
     last_connection: string | null
 }
+
+export type Tag = {
+    id: number
+    name: string
+}
+
+export type TagInput = {
+    name: string
+}

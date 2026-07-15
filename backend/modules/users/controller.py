@@ -9,7 +9,8 @@ from modules.users.schemas import (
     UserProfileComplete,
 )
 from modules.users.dependencies import get_current_user_id
-
+from modules.tags.schemas import TagOut, TagInput
+from typing import List
 
 users_router = APIRouter(prefix="/users", tags=["users"])
 
@@ -37,3 +38,31 @@ async def patch_me(
     service: UsersService = Depends(get_users_service)
     ) -> UserProfileComplete:
     return await service.patch_profile(current_user_id, payload)
+
+@users_router.post(
+    "/me/tags", response_model=TagOut
+)
+async def add_one_profile_tag(
+    tag_input: TagInput,
+    current_user_id: int = Depends(get_current_user_id),
+    service: UsersService = Depends(get_users_service)
+) -> TagOut:
+    return await service.add_one_profile_tag(current_user_id, tag_input)
+
+@users_router.get(
+    "/me/tags",
+    response_model=List[TagOut]
+)
+async def get_my_tags(
+    current_user_id: int = Depends(get_current_user_id),
+    service: UsersService = Depends(get_users_service)
+) -> List[TagOut]:
+    return await service.get_my_tags(current_user_id)
+
+@users_router.delete("/me/tags/{tag_id}")
+async def delete_one_tag(
+    tag_id: int,
+    current_user_id: int = Depends(get_current_user_id),
+    service: UsersService = Depends(get_users_service)
+) -> None:
+    return await service.delete_one_tag(tag_id, current_user_id)

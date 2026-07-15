@@ -106,3 +106,10 @@ export function apiPatch<T>(
 ): Promise<T> {
   return request<T>('PATCH', path, body, options)
 }
+
+export function apiDelete<T>(
+  path: string,
+  options?: RequestOptions,
+): Promise<T> {
+  return request<T>('DELETE', path, undefined, options)
+}
