@@ -1,7 +1,6 @@
 from modules.users.repository import UsersRepository
 from modules.users.schemas import (
     UserProfile,
-    UserProfileComplete,
     PhotoOut
 )
 from modules.users.exceptions import UserNotFoundException
@@ -22,17 +21,28 @@ class UsersService:
             current_user_id: int
             ) -> UserProfile:
         current_user = await self.repository.get_user_by_id(current_user_id)
-
         if not current_user:
             raise UserNotFoundException()
         
-        return current_user
+        tags = await self.repository.get_my_tags(current_user_id)
+        photos = await self.repository.get_my_photos(current_user_id)
+
+        is_completed = (
+            current_user.bio is not None
+            and current_user.age is not None
+            and current_user.gender is not None
+            and current_user.sexual_preference is not None
+            and len(tags) > 0
+            and len(photos) > 0
+        )
+        
+        return current_user.model_copy(update={"is_profile_completed": is_completed})
     
     async def patch_profile(
             self,
             current_user_id,
             payload
-            ) -> UserProfileComplete:
+            ) -> UserProfile:
         user_profile = await self.repository.patch_user_profile(current_user_id, payload)
         if not user_profile:
             raise UserNotFoundException()

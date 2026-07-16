@@ -7,10 +7,12 @@ import useProfileTags from "@/hooks/useProfileTags"
 import TagsForm from "@/components/tags-form"
 import PhotosForm from "@/components/photos-form"
 import useProfilePhotos from "@/hooks/useProfilePhotos"
+import { useNavigate } from "react-router-dom"
 
 type  CompleteProfileStep = "basic" | "tags" | "photos"
 
 export function ProfileCompletePage() {
+  const navigate = useNavigate()
   const { profile, isLoading, error, fetchProfile } = useUserProfile()
   const [completeProfileStep, setCompleteProfileStep] = useState<CompleteProfileStep>("basic")
   const {
@@ -50,6 +52,14 @@ export function ProfileCompletePage() {
   
   const goPhotos = ()=>{
     setCompleteProfileStep("photos")
+  }
+
+  const handleFinished = async () => {
+    const user = await fetchProfile()
+
+    if (user?.is_profile_completed)
+      navigate("/profile")
+
   }
 
   return (
@@ -92,6 +102,7 @@ export function ProfileCompletePage() {
             handleAsAvatar = {handleAsAvatar}
             handlePatchPhoto = {handlePatchPhoto}
             handleDeletePhoto = {handleDeletePhoto}
+            onFinish = {handleFinished}
           />
         )}
       </CardContent>

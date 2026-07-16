@@ -14,6 +14,7 @@ type PhotosFormProps = {
     handleAsAvatar: (photo_id: number)=>Promise<void>,
     handlePatchPhoto: (photo_id: number, photo_input: File)=>Promise<void>,
     handleDeletePhoto: (photo_id: number)=>Promise<void>
+    onFinish: ()=>void
 }
 
 function PhotosForm({
@@ -24,6 +25,7 @@ function PhotosForm({
     handleAsAvatar,
     handlePatchPhoto,
     handleDeletePhoto,
+    onFinish,
     ...props
 } : PhotosFormProps) {
     const [ modify, setModify ] = useState(false)
@@ -119,6 +121,9 @@ function PhotosForm({
                         </div>
                     ))
                 )}
+                <Field>
+                    <Button onClick={()=>onFinish()}>Finish</Button>
+                </Field>
             </FieldGroup>
         </>
     )

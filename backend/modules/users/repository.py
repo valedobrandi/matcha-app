@@ -1,7 +1,6 @@
 import asyncpg
 from modules.users.schemas import (
     UserProfile,
-    UserProfileComplete,
     PhotoOut
 )
 from typing import Any, Optional, Type, TypeVar
@@ -19,7 +18,10 @@ UPLOAD_DIR = "uploads"
 MAX_SIZE = 5 * 1024 * 1024
 T = TypeVar("T", bound=BaseModel)
 
-USER_COLUMNS = "id, email, username, first_name, last_name, is_verified, created_at"
+USER_COLUMNS = """
+    id, email, username, first_name, last_name, is_verified, created_at,
+    gender, sexual_preference, age, bio
+"""
 
 class UsersRepository:
     def __init__(self, connection: asyncpg.Connection):
@@ -44,7 +46,7 @@ class UsersRepository:
             self,
             current_user_id,
             payload
-            ) -> Optional[UserProfileComplete]:
+            ) -> Optional[UserProfile]:
         query = """
                 UPDATE users
                 set gender = $2, sexual_preference = $3, age = $4, bio = $5
@@ -53,7 +55,7 @@ class UsersRepository:
                 gender, sexual_preference, age, bio
                 """
         return await self._fetch_one(
-            UserProfileComplete,
+            UserProfile,
             query,
             current_user_id,
             payload.gender,

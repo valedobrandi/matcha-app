@@ -6,7 +6,6 @@ from modules.users.service import UsersService
 from modules.users.schemas import (
     UserProfile,
     UserProfileInput,
-    UserProfileComplete,
     PhotoOut,
 )
 from modules.users.dependencies import get_current_user_id
@@ -32,13 +31,13 @@ async def get_me(
     return await service.get_profile(current_user_id)
 
 @users_router.patch(
-    "/me", response_model=UserProfileComplete
+    "/me", response_model=UserProfile
 )
 async def patch_me(
     payload: UserProfileInput,
     current_user_id: int = Depends(get_current_user_id),
     service: UsersService = Depends(get_users_service)
-    ) -> UserProfileComplete:
+    ) -> UserProfile:
     return await service.patch_profile(current_user_id, payload)
 
 @users_router.post(

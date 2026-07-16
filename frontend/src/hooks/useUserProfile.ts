@@ -23,7 +23,7 @@ function useUserProfile() {
         try {
             const user = await usersApi.getUserProfile(accessToken)
             setProfile(user)
-            
+            return user
         } catch (err) {
             if (err instanceof ApiError) {
                 setError(resolveErrorMessage(err.code, err.message))

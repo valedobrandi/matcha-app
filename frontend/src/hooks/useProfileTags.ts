@@ -29,6 +29,7 @@ function useProfileTags() {
     }, [handleMyTags])
 
     const handleInput = async (value: string) => {
+        setServerError(null)
         setInputValue(value)
         try {
            const searchRes = await getTags(accessToken!, value)
@@ -43,6 +44,7 @@ function useProfileTags() {
     }
 
     const handleAddTag = async (tag_name: string) => {
+        setServerError(null)
         try {
             const newTag: Tag = await postProfileTags(accessToken!, {name: tag_name})
             setTagsList(prev=>([
@@ -59,6 +61,7 @@ function useProfileTags() {
     }
 
     const handleDeleteTag = async (tag_id: number) => {
+        setServerError(null)
         try {
             await deleteProfileTags(accessToken!, tag_id)
             setTagsList(prev=>prev.filter((t)=>t.id !== tag_id))

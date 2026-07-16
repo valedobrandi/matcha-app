@@ -14,6 +14,7 @@ export type UserProfile = {
     latitude: number | null
     longitude: number | null
     last_connection: string | null
+    is_profile_completed: boolean
 }
 
 export type Tag = {
