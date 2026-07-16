@@ -16,7 +16,7 @@ register_users_exception_handlers(app)
 register_tags_exception_handlers(app)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://192.168.64.4:5173"],
+    allow_origins=["http://localhost:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True

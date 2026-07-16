@@ -47,9 +47,9 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_URL: http://192.168.64.4:8000
+      VITE_API_URL: http://localhost:8000
       VITE_FT_CLIENT_ID: ${FT_CLIENT_ID:-ft_client_id}
-      VITE_FT_REDIRECT_URI: http://192.168.64.4:5173/auth/callback/42
+      VITE_FT_REDIRECT_URI: http://localhost:5173/auth/callback/42
     volumes:
       - ./frontend:/app
       - /app/node_modules
