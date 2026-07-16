@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from modules.auth.handlers import register_auth_exception_handlers
 from modules.users.handlers import register_users_exception_handlers
 from modules.tags.handlers import register_tags_exception_handlers
@@ -9,6 +10,7 @@ from modules.users.controller import users_router
 from modules.tags.controller import tags_router
 
 app = FastAPI(title="Matcha API", version="1.0", lifespan=db_lifespan)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 register_auth_exception_handlers(app)
 register_users_exception_handlers(app)
 register_tags_exception_handlers(app)

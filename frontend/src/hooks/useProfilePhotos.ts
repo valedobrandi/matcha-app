@@ -4,7 +4,9 @@ import type { Photo } from "../types/user"
 import { ApiError } from "@/api/client"
 import { resolveErrorMessage } from "@/i18n/errors"
 import {
-    postProfilePhoto
+    getMyPhotos,
+    postProfilePhoto,
+    deleteProfilePhoto
 } from "../api/users"
 
 function useProfilePhotos() {
@@ -36,24 +38,22 @@ function useProfilePhotos() {
         } catch (err) {
             if (err instanceof ApiError)
                 setServerError(resolveErrorMessage(err.code, err.message))
-        } finally {
-            setUrlValue("")
         }
     }
 
-    const handlePatchPhoto = async (photo: Photo) => {
-        try {
-            const newPhoto: Photo = await patchProfilePhoto(accessToken, photo)
-            setPhotoList(prev=>prev.map(p=>(p.id === photo.id? newPhoto : p)))
-        } catch (err) {
-            if (err instanceof ApiError)
-                setServerError(resolveErrorMessage(err.code, err.message))   
-        }
-    }
+    // const handlePatchPhoto = async (photo_id: number) => {
+    //     try {
+    //         const newPhoto: Photo = await patchProfilePhoto(accessToken, photo_id)
+    //         setPhotoList(prev=>prev.map(p=>(p.id === photo_id? newPhoto : p)))
+    //     } catch (err) {
+    //         if (err instanceof ApiError)
+    //             setServerError(resolveErrorMessage(err.code, err.message))   
+    //     }
+    // }
 
     const handleDeletePhoto = async (photo_id: number) => {
         try {
-            await deleteProfilePhoto(accessToken, photo_id)
+            await deleteProfilePhoto(accessToken!, photo_id)
             setPhotoList(prev=>prev.filter((p)=>p.id !== photo_id))
         } catch (err) {
             if (err instanceof ApiError)
@@ -66,7 +66,7 @@ function useProfilePhotos() {
         serverError,
         handleGetMyPhotos,
         handleAddPhoto,
-        handlePatchPhoto,
+        // handlePatchPhoto,
         handleDeletePhoto
     }
 }

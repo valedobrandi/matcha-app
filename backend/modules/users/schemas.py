@@ -23,4 +23,5 @@ class UserProfileComplete(UserProfile, UserProfileInput):
 
 class PhotoOut(BaseModel):
     id: int
-    path: str
+    url: str
+    is_profile_photo: bool

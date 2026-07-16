@@ -58,9 +58,22 @@ class UsersService:
     ) -> None:
         return await self.repository.delete_one_tag(tag_id, current_user_id)
     
+    async def get_my_photos(
+            self,
+            current_user_id: int,
+        ) -> List[PhotoOut]:
+        return await self.repository.get_my_photos(current_user_id)
+    
     async def upload_photo(
             self, 
             current_user_id: int, 
             file: UploadFile
     ) -> PhotoOut:
         return await self.repository.upload_photo(current_user_id, file)
+    
+    async def delete_my_photo(
+            self,
+            photo_id: int,
+            current_user_id: int
+        ) -> None:
+        return await self.repository.delete_my_photo(photo_id, current_user_id)

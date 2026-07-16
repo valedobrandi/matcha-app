@@ -69,6 +69,16 @@ async def delete_one_tag(
 ) -> None:
     return await service.delete_one_tag(tag_id, current_user_id)
 
+@users_router.get(
+    "/me/photos",
+    response_model=List[PhotoOut]
+)
+async def get_my_photos(
+    current_user_id: int = Depends(get_current_user_id),
+    service: UsersService = Depends(get_users_service)
+) -> List[PhotoOut]:
+    return await service.get_my_photos(current_user_id)
+
 @users_router.post(
     "/me/photos",
     response_model=PhotoOut
@@ -79,3 +89,11 @@ async def upload_photo(
     service: UsersService = Depends(get_users_service)
 ) -> PhotoOut:
     return await service.upload_photo(current_user_id, file)
+
+@users_router.delete("/me/photos/{photo_id}")
+async def delete_my_photo(
+    photo_id: int,
+    current_user_id: int = Depends(get_current_user_id),
+    service: UsersService = Depends(get_users_service)
+) -> None:
+    return await service.delete_my_photo(photo_id, current_user_id)

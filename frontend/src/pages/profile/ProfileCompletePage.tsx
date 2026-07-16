@@ -38,13 +38,14 @@ export function ProfileCompletePage() {
         serverError: photosError,
         handleGetMyPhotos,
         handleAddPhoto,
-        handlePatchPhoto,
+        // handlePatchPhoto,
         handleDeletePhoto
   } = useProfilePhotos()
   
   const goTags = ()=>{
     setCompleteProfileStep("tags")
   }
+
   
   const goPhotos = ()=>{
     setCompleteProfileStep("photos")
@@ -87,7 +88,7 @@ export function ProfileCompletePage() {
             serverError = {photosError}
             handleGetMyPhotos = {handleGetMyPhotos}
             handleAddPhoto = {handleAddPhoto}
-            handlePatchPhoto = {handlePatchPhoto}
+            // handlePatchPhoto = {handlePatchPhoto}
             handleDeletePhoto = {handleDeletePhoto}
           />
         )}

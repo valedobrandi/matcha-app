@@ -28,4 +28,5 @@ export type TagInput = {
 export type Photo = {
     id: number
     url: string
+    is_profile_photo: boolean
 }

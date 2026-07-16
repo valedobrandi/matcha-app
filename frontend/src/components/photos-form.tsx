@@ -10,7 +10,7 @@ type PhotosFormProps = {
     serverError: string | null,
     handleGetMyPhotos: ()=>Promise<void>,
     handleAddPhoto: (photo_input: File)=>Promise<void>,
-    handlePatchPhoto: (photo: Photo)=>Promise<void>,
+    // handlePatchPhoto: (photo_id: number)=>Promise<void>,
     handleDeletePhoto: (photo_id: number)=>Promise<void>
 }
 
@@ -19,11 +19,34 @@ function PhotosForm({
     serverError,
     handleGetMyPhotos,
     handleAddPhoto,
-    handlePatchPhoto,
+    // handlePatchPhoto,
     handleDeletePhoto,
     ...props
 } : PhotosFormProps) {
     const [ modify, setModify ] = useState(false)
+    const [ photoId, setPhotoId] = useState<number | null>(null)
+
+    const handleModify = (id: number) => {
+        setPhotoId(id)
+        setModify(true)        
+    }
+
+    // const handleAvatar = () => {
+    // }
+
+    // const handleUpload = () => {
+    //     if (!photoId)
+    //         return 
+    //     handlePatchPhoto(photoId)
+    //     setModify(false)
+    // }
+    
+    const handleDelete = () => {
+        if (!photoId)
+            return 
+        handleDeletePhoto(photoId)
+        setModify(false)
+    }
 
     return (
         <>
@@ -45,14 +68,14 @@ function PhotosForm({
                 {serverError && (<FieldError>{serverError}</FieldError>)}
                 {modify && (
                     <ul>
-                        <li>
-                            <Button>Use as profile photo</Button>
+                        {/* <li>
+                            <Button onClick={handleAvatar}>Use as profile photo</Button>
                         </li>
                         <li>
-                            <Button>Update a new photo</Button>
-                        </li>
+                            <Button onClick={handleUpload}>Update a new photo</Button>
+                        </li> */}
                         <li>
-                            <Button>Delete photo</Button>
+                            <Button onClick={handleDelete}>Delete photo</Button>
                         </li>
                         <li>
                             <Button onClick={()=>setModify(false)}>Cancel</Button>
@@ -64,7 +87,7 @@ function PhotosForm({
                         <img
                             key={p.id}
                             src={`${API_BASE_URL}${p.url}`}
-                            onClick={()=>setModify(true)}
+                            onClick={()=>handleModify(p.id)}
                         />
                     ))
                 )}

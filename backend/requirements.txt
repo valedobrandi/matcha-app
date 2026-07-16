@@ -12,3 +12,4 @@ zxcvbn>=4.4.28
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
 better-profanity>=0.7.0
+python-multipart>=0.0.32

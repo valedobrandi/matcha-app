@@ -12,7 +12,7 @@ from fastapi import UploadFile
 from modules.users.exceptions import FileTooLargeException
 import os, uuid
 
-UPLOAD_DIR = "/uploads"
+UPLOAD_DIR = "uploads"
 MAX_SIZE = 5 * 1024 * 1024
 T = TypeVar("T", bound=BaseModel)
 
@@ -116,7 +116,7 @@ class UsersRepository:
         if len(content) > MAX_SIZE:
             raise FileTooLargeException()
         
-        extension = os.path.splitext(file)
+        extension = os.path.splitext(file.filename)[1]
         file_name = f"{uuid.uuid4()}{extension}"
         file_path = os.path.join(UPLOAD_DIR, file_name)
 
@@ -130,6 +130,26 @@ class UsersRepository:
         query = """
                 INSERT INTO user_photos (user_id, url)
                 VALUES ($1, $2)
-                RETURNING id, url
+                RETURNING id, url, is_profile_photo
                 """
-        return await self._fetch_one(PhotoOut, query, current_user_id, file_path)
+        return await self._fetch_one(PhotoOut, query, current_user_id, url)
+    
+    async def get_my_photos(
+            self,
+            current_user_id: int,
+    ) -> Optional[List[PhotoOut]]:
+        query = """
+                SELECT id, url, is_profile_photo FROM user_photos WHERE user_id = $1
+                """
+        return await self._fetch(PhotoOut, query, current_user_id)
+  
+    async def delete_my_photo(
+            self,
+            photo_id: int,
+            current_user_id: int
+    ) -> None:
+        query = """
+                DELETE from user_photos
+                WHERE id = $1 AND user_id = $2 
+                """
+        return await self.connection.execute(query, photo_id, current_user_id)
