@@ -6,7 +6,9 @@ import { resolveErrorMessage } from "@/i18n/errors"
 import {
     getMyPhotos,
     postProfilePhoto,
-    deleteProfilePhoto
+    deleteProfilePhoto,
+    patchAsAvatar,
+    patchPhotoByNew
 } from "../api/users"
 
 function useProfilePhotos() {
@@ -29,6 +31,7 @@ function useProfilePhotos() {
     }, [handleGetMyPhotos])
 
     const handleAddPhoto = async (photo_input: File) => {
+        setServerError(null)
         try {
             const newPhoto: Photo = await postProfilePhoto(accessToken!, photo_input)
             setPhotoList(prev=>([
@@ -41,17 +44,30 @@ function useProfilePhotos() {
         }
     }
 
-    // const handlePatchPhoto = async (photo_id: number) => {
-    //     try {
-    //         const newPhoto: Photo = await patchProfilePhoto(accessToken, photo_id)
-    //         setPhotoList(prev=>prev.map(p=>(p.id === photo_id? newPhoto : p)))
-    //     } catch (err) {
-    //         if (err instanceof ApiError)
-    //             setServerError(resolveErrorMessage(err.code, err.message))   
-    //     }
-    // }
+    const handleAsAvatar = async (photo_id: number) => {
+        setServerError(null)
+        try {
+            await patchAsAvatar(accessToken!, photo_id)
+            await handleGetMyPhotos()
+        } catch (err) {
+            if (err instanceof ApiError)
+                setServerError(resolveErrorMessage(err.code, err.message))   
+        }   
+    }
+
+    const handlePatchPhoto = async (photo_id: number, photo_input: File) => {
+        setServerError(null)
+        try {
+            const newPhoto: Photo = await patchPhotoByNew(accessToken!, photo_id, photo_input)
+            setPhotoList(prev=>prev.map(p=>(p.id === photo_id? newPhoto : p)))
+        } catch (err) {
+            if (err instanceof ApiError)
+                setServerError(resolveErrorMessage(err.code, err.message))   
+        }
+    }
 
     const handleDeletePhoto = async (photo_id: number) => {
+        setServerError(null)
         try {
             await deleteProfilePhoto(accessToken!, photo_id)
             setPhotoList(prev=>prev.filter((p)=>p.id !== photo_id))
@@ -66,7 +82,8 @@ function useProfilePhotos() {
         serverError,
         handleGetMyPhotos,
         handleAddPhoto,
-        // handlePatchPhoto,
+        handleAsAvatar,
+        handlePatchPhoto,
         handleDeletePhoto
     }
 }

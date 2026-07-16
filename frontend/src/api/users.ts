@@ -4,6 +4,7 @@ import {
     apiPatch,
     apiDelete,
     apiPostFormData,
+    apiPutFormData,
 } from "./client"
 import type { UserProfile, Tag, TagInput, Photo } from "../types/user"
 import type { ProfileValues } from "@/schemas/users"
@@ -40,4 +41,14 @@ export async function getMyPhotos(token: string): Promise<Photo[]> {
 
 export async function deleteProfilePhoto(token: string, photo_id: number): Promise<void> {
     return apiDelete<void>(`/users/me/photos/${photo_id}`, {token})
+}
+
+export async function patchAsAvatar(token: string, photo_id: number): Promise<void> {
+    return apiPatch<void>(`/users/me/photos/${photo_id}`, undefined, {token})
+}
+
+export async function patchPhotoByNew(token: string, photo_id: number, photo_input: File): Promise<Photo> {
+    const formData = new FormData()
+    formData.append("file", photo_input)
+    return apiPutFormData<Photo>(`/users/me/photos/${photo_id}`, formData, {token})
 }

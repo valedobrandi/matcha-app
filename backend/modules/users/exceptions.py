@@ -34,3 +34,9 @@ class FileTooLargeException(UsersException):
     field = "None"
     def __init__(self):
         super().__init__("File too large")
+
+class MaxPhotosReachedException(UsersException):
+    code = "MAX_FIVE_PHOTOS"
+    field = "None"
+    def __init__(self):
+        super().__init__("Max_five_photos")

@@ -10,7 +10,9 @@ const ERROR_MESSAGES: Record<string, string> = {
     'An account exists with this email or username. Please login with your credentials.',
   INVALID_RESET_TOKEN: 'Invalid or expired password reset token.',
   USER_NOT_FOUND: 'We could not find your account, please log in again.',
-  TAG_CONTENT_PROFANITY: 'Your tag contains profanity content.'
+  TAG_CONTENT_PROFANITY: 'Your tag contains profanity content.',
+  FILE_TOO_LARGE: 'File size allows maximum 5MB.',
+  MAX_FIVE_PHOTOS: 'You can upload maximun 5 photos.'
 }
 
 const REGISTER_FIELDS = ['email', 'username', 'first_name', 'last_name', 'password'] as const

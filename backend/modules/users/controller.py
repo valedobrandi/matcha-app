@@ -97,3 +97,23 @@ async def delete_my_photo(
     service: UsersService = Depends(get_users_service)
 ) -> None:
     return await service.delete_my_photo(photo_id, current_user_id)
+
+@users_router.patch("/me/photos/{photo_id}")
+async def set_photo_as_avatar(
+    photo_id: int,
+    current_user_id: int = Depends(get_current_user_id),
+    service: UsersService = Depends(get_users_service)
+) -> None:
+    return await service.set_photo_as_avatar(photo_id, current_user_id)
+
+@users_router.put(
+        "/me/photos/{photo_id}",
+        response_model=PhotoOut
+)
+async def patch_photo_by_new(
+    photo_id: int,
+    file: UploadFile = File(...),
+    current_user_id: int = Depends(get_current_user_id),
+    service: UsersService = Depends(get_users_service)
+) -> PhotoOut:
+    return await service.patch_photo_by_new(photo_id, file, current_user_id)

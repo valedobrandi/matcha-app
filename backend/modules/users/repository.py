@@ -9,7 +9,10 @@ from pydantic import BaseModel
 from modules.tags.schemas import TagInput, TagOut
 from typing import List
 from fastapi import UploadFile
-from modules.users.exceptions import FileTooLargeException
+from modules.users.exceptions import (
+    FileTooLargeException,
+    MaxPhotosReachedException
+)
 import os, uuid
 
 UPLOAD_DIR = "uploads"
@@ -132,7 +135,11 @@ class UsersRepository:
                 VALUES ($1, $2)
                 RETURNING id, url, is_profile_photo
                 """
-        return await self._fetch_one(PhotoOut, query, current_user_id, url)
+        try:
+            return await self._fetch_one(PhotoOut, query, current_user_id, url)
+        except asyncpg.exceptions.RaiseError:
+            os.remove(file_path)
+            raise MaxPhotosReachedException()
     
     async def get_my_photos(
             self,
@@ -153,3 +160,51 @@ class UsersRepository:
                 WHERE id = $1 AND user_id = $2 
                 """
         return await self.connection.execute(query, photo_id, current_user_id)
+    
+    async def set_photo_as_avatar(
+            self,
+            photo_id: int,
+            current_user_id: int
+    ) -> None:
+        set_false_query = """
+                        UPDATE user_photos
+                        SET is_profile_photo = false
+                        WHERE user_id = $1
+                        """
+        await self.connection.execute(set_false_query, current_user_id)
+        set_true_query = """
+                UPDATE user_photos
+                SET is_profile_photo = true
+                WHERE id = $1 AND user_id = $2
+                """
+        return await self.connection.execute(set_true_query, photo_id, current_user_id)
+    
+
+    async def patch_photo_by_new(
+            self,
+            photo_id: int,
+            file: UploadFile,
+            current_user_id: int
+    ) -> PhotoOut:
+        content = await file.read()
+        if len(content) > MAX_SIZE:
+            raise FileTooLargeException()
+        
+        extension = os.path.splitext(file.filename)[1]
+        file_name = f"{uuid.uuid4()}{extension}"
+        file_path = os.path.join(UPLOAD_DIR, file_name)
+
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+        with open(file_path, "wb") as f:
+            f.write(content)
+
+        url = f"/{UPLOAD_DIR}/{file_name}"
+    
+        query = """
+                UPDATE user_photos
+                SET url = $3
+                WHERE id = $1 AND user_id = $2
+                RETURNING id, url, is_profile_photo
+                """    
+        return await self._fetch_one(PhotoOut, query, photo_id, current_user_id, url)

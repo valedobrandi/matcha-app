@@ -77,3 +77,18 @@ class UsersService:
             current_user_id: int
         ) -> None:
         return await self.repository.delete_my_photo(photo_id, current_user_id)
+    
+    async def set_photo_as_avatar(
+            self,
+            photo_id: int,
+            current_user_id: int
+        ) -> None:
+        return await self.repository.set_photo_as_avatar(photo_id, current_user_id)
+    
+    async def patch_photo_by_new(
+            self,
+            photo_id: int,
+            file: UploadFile,
+            current_user_id: int
+        ) -> PhotoOut:
+        return await self.repository.patch_photo_by_new(photo_id, file, current_user_id)

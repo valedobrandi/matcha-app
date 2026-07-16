@@ -1,5 +1,3 @@
-import { string } from "zod"
-
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 let onUnauthorized: (() => void) | null = null
@@ -154,4 +152,12 @@ export function apiPostFormData<T>(
   options?: RequestOptions
 ): Promise<T> {
   return requestUpload<T>('POST', path, body, options)
+}
+
+export function apiPutFormData<T>(
+  path: string,
+  body: FormData,
+  options?: RequestOptions
+): Promise<T> {
+  return requestUpload<T>('PUT', path, body, options)
 }

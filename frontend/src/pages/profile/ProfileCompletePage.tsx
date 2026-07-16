@@ -38,7 +38,8 @@ export function ProfileCompletePage() {
         serverError: photosError,
         handleGetMyPhotos,
         handleAddPhoto,
-        // handlePatchPhoto,
+        handleAsAvatar,
+        handlePatchPhoto,
         handleDeletePhoto
   } = useProfilePhotos()
   
@@ -88,7 +89,8 @@ export function ProfileCompletePage() {
             serverError = {photosError}
             handleGetMyPhotos = {handleGetMyPhotos}
             handleAddPhoto = {handleAddPhoto}
-            // handlePatchPhoto = {handlePatchPhoto}
+            handleAsAvatar = {handleAsAvatar}
+            handlePatchPhoto = {handlePatchPhoto}
             handleDeletePhoto = {handleDeletePhoto}
           />
         )}

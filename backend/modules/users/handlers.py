@@ -6,7 +6,8 @@ from modules.users.exceptions import (
     InvalidAuthorizationHeaderException,
     InvalidAccessTokenException,
     UserNotFoundException,
-    FileTooLargeException
+    FileTooLargeException,
+    MaxPhotosReachedException
 )
 
 _EXCEPTION_STATUS = {
@@ -14,7 +15,8 @@ _EXCEPTION_STATUS = {
     InvalidAuthorizationHeaderException: status.HTTP_401_UNAUTHORIZED,
     InvalidAccessTokenException: status.HTTP_401_UNAUTHORIZED,
     UserNotFoundException: status.HTTP_404_NOT_FOUND,
-    FileTooLargeException: status.HTTP_413_CONTENT_TOO_LARGE
+    FileTooLargeException: status.HTTP_413_CONTENT_TOO_LARGE,
+    MaxPhotosReachedException: status.HTTP_406_NOT_ACCEPTABLE
 }
 
 
