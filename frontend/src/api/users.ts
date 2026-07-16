@@ -1,5 +1,5 @@
-import { apiGet, apiPost, apiPatch, apiDelete } from "./client"
-import type { UserProfile, Tag, TagInput } from "../types/user"
+import { apiGet, apiPost, apiPatch, apiDelete, apiPostFormData } from "./client"
+import type { UserProfile, Tag, TagInput, Photo } from "../types/user"
 import type { ProfileValues } from "@/schemas/users"
 
 export async function getUserProfile(token: string): Promise<UserProfile> {
@@ -20,4 +20,10 @@ export async function postProfileTags(token: string, tag_input: TagInput): Promi
 
 export async function deleteProfileTags(token: string, tag_id: number): Promise<void> {
     return apiDelete<void>(`/users/me/tags/${tag_id}`, {token})
+}
+
+export async function postProfilePhoto(token: string, photo_input: File): Promise<Photo> {
+    const formData = new FormData()
+    formData.append("file", photo_input)
+    return apiPostFormData<Photo>("/users/me/photos", formData, {token})
 }

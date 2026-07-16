@@ -27,10 +27,5 @@ export type TagInput = {
 
 export type Photo = {
     id: number
-    path: string
-}
-
-
-export type PhotoInput = {
-    path: string
+    url: string
 }

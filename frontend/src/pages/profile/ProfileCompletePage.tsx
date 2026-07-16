@@ -5,6 +5,8 @@ import useProfileForm from "@/hooks/useProfileForm"
 import { useState } from "react"
 import useProfileTags from "@/hooks/useProfileTags"
 import TagsForm from "@/components/tags-form"
+import PhotosForm from "@/components/photos-form"
+import useProfilePhotos from "@/hooks/useProfilePhotos"
 
 type  CompleteProfileStep = "basic" | "tags" | "photos"
 
@@ -30,6 +32,15 @@ export function ProfileCompletePage() {
         handleAddTag,
         handleDeleteTag, 
   } = useProfileTags()
+
+  const {
+        photoList,
+        serverError: photosError,
+        handleGetMyPhotos,
+        handleAddPhoto,
+        handlePatchPhoto,
+        handleDeletePhoto
+  } = useProfilePhotos()
   
   const goTags = ()=>{
     setCompleteProfileStep("tags")
@@ -70,16 +81,16 @@ export function ProfileCompletePage() {
             nextStep = {goPhotos}
           />
         )}
-        {/* {completeProfileStep == "photos" && (
-          <PhotosForm 
-          register={register}
-          errors={errors}
-          isSubmitting={isSubmitting}
-          control={control}
-          serverError={serverError}
-          onSubmit={onSubmit}
+        {completeProfileStep == "photos" && (
+          <PhotosForm
+            photoList = {photoList}
+            serverError = {photosError}
+            handleGetMyPhotos = {handleGetMyPhotos}
+            handleAddPhoto = {handleAddPhoto}
+            handlePatchPhoto = {handlePatchPhoto}
+            handleDeletePhoto = {handleDeletePhoto}
           />
-        )} */}
+        )}
       </CardContent>
     </Card>
   )

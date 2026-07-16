@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+import { string } from "zod"
+
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 let onUnauthorized: (() => void) | null = null
 
@@ -112,4 +114,44 @@ export function apiDelete<T>(
   options?: RequestOptions,
 ): Promise<T> {
   return request<T>('DELETE', path, undefined, options)
+}
+
+async function requestUpload<T>(
+  method: string,
+  path: string,
+  body?: FormData,
+  options?: RequestOptions
+): Promise<T> {
+  const headers: Record<string, string> = {}
+  if (options?.token)
+    headers.Authorization = `Bearer ${options.token}`
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body,
+  })
+
+  if (!response.ok) {
+      const parsedError = await parseError(response)
+    if (response.status === 401 && options?.token && onUnauthorized) {
+      onUnauthorized()
+    }
+    throw new ApiError(
+      response.status,
+      parsedError.detail ?? 'Request failed',
+      parsedError.code,
+      parsedError.field,
+    )
+  }
+
+  return response.json() as Promise<T>
+}
+
+export function apiPostFormData<T>(
+  path: string,
+  body: FormData,
+  options?: RequestOptions
+): Promise<T> {
+  return requestUpload<T>('POST', path, body, options)
 }

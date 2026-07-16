@@ -1,12 +1,14 @@
 import { useAuth } from "@/auth/useAuth"
 import { useCallback, useEffect, useState } from "react"
-import type { Photo, PhotoInput } from "../types/user"
+import type { Photo } from "../types/user"
 import { ApiError } from "@/api/client"
 import { resolveErrorMessage } from "@/i18n/errors"
+import {
+    postProfilePhoto
+} from "../api/users"
 
 function useProfilePhotos() {
     const { accessToken } = useAuth()
-    const [ urlValue, setUrlValue] = useState<string>("")
     const [ photoList, setPhotoList] = useState<Photo[]>([])
     const [ serverError, setServerError] = useState<string | null>(null)
 
@@ -24,9 +26,9 @@ function useProfilePhotos() {
         void handleGetMyPhotos()
     }, [handleGetMyPhotos])
 
-    const handleAddPhoto = async (photo_input: PhotoInput) => {
+    const handleAddPhoto = async (photo_input: File) => {
         try {
-            const newPhoto: Photo = await postProfilePhoto(accessToken, photo_input)
+            const newPhoto: Photo = await postProfilePhoto(accessToken!, photo_input)
             setPhotoList(prev=>([
                 ...prev,
                 newPhoto
@@ -60,7 +62,6 @@ function useProfilePhotos() {
     }
 
     return {
-        urlValue,
         photoList,
         serverError,
         handleGetMyPhotos,
