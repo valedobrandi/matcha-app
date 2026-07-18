@@ -13,6 +13,9 @@ services:
       - ./backend/database/migrations/0001_create_users.sql:/docker-entrypoint-initdb.d/0001_create_users.sql
       - ./backend/database/migrations/0002_create_email_outbox.sql:/docker-entrypoint-initdb.d/0002_create_email_outbox.sql
       - ./backend/database/migrations/0003_add_password_reset.sql:/docker-entrypoint-initdb.d/0003_add_password_reset.sql
+      - ./backend/database/migrations/0004_add_users_profile_fields.sql:/docker-entrypoint-initdb.d/0004_add_users_profile_fields.sql
+      - ./backend/database/migrations/0005_add_tags_and_user_tags.sql:/docker-entrypoint-initdb.d/0005_add_tags_and_user_tags.sql
+      - ./backend/database/migrations/0006_add_user_photos.sql:/docker-entrypoint-initdb.d/0006_add_user_photos.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-matcha}"]
       interval: 5s
@@ -31,6 +34,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app/backend
+      - user_uploads_data:/app/backend/uploads
     depends_on:
       database:
         condition: service_healthy
@@ -54,3 +58,4 @@ services:
     command: npm run dev -- --host 0.0.0.0
 volumes:
   postgres_data:
+  user_uploads_data:

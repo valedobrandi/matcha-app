@@ -9,6 +9,7 @@ import {
 } from './tokenStorage'
 import { AuthContext } from './AuthContext'
 
+
 type AuthProviderProps = {
   children: ReactNode
 }
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [])
 
   const loginWithToken = useCallback(
-    (token: string) => {
+    async (token: string) => {
       setAccessToken(token)
       setToken(token)
       setIsLoading(true)
@@ -72,7 +73,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = useCallback(
     async (payload: LoginInput) => {
       const response = await authApi.login(payload)
-      loginWithToken(response.access_token)
+      await loginWithToken(response.access_token)
     },
     [loginWithToken],
   )

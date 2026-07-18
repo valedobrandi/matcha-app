@@ -23,9 +23,9 @@ export function VerifyEmailPage() {
 
     authApi
       .verifyEmail(token)
-      .then((response) => {
+      .then(async (response) => {
         if (cancelled) return
-        loginWithToken(response.access_token)
+        await loginWithToken(response.access_token)
         navigate('/')
       })
       .catch((err) => {
