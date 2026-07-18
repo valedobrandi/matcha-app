@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 import asyncpg
 from core.database import get_db_connection
+from core.auth import get_current_user_id
 from modules.tags.service import TagsService
 from modules.tags.repository import TagsRepository
 from modules.tags.schemas import TagOut
-from typing import List 
-from modules.users.dependencies import get_current_user_id
+from typing import List
 
 
 tags_router = APIRouter(prefix="/tags", tags=["tags"])

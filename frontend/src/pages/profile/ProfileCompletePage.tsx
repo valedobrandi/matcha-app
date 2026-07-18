@@ -7,13 +7,15 @@ import useProfileTags from "@/hooks/useProfileTags"
 import TagsForm from "@/components/tags-form"
 import PhotosForm from "@/components/photos-form"
 import useProfilePhotos from "@/hooks/useProfilePhotos"
+import { useAuth } from "@/auth/useAuth"
 import { useNavigate } from "react-router-dom"
 
 type  CompleteProfileStep = "basic" | "tags" | "photos"
 
 export function ProfileCompletePage() {
   const navigate = useNavigate()
-  const { profile, isLoading, error, fetchProfile } = useUserProfile()
+  const { profile } = useUserProfile()
+  const { refreshUser } = useAuth()
   const [completeProfileStep, setCompleteProfileStep] = useState<CompleteProfileStep>("basic")
   const {
         register,
@@ -55,11 +57,8 @@ export function ProfileCompletePage() {
   }
 
   const handleFinished = async () => {
-    const user = await fetchProfile()
-
-    if (user?.is_profile_completed)
-      navigate("/profile")
-
+    await refreshUser()
+    navigate("/")
   }
 
   return (

@@ -5,24 +5,6 @@ class UsersException(Exception):
     code: str = "USERS_ERROR"
     field: str | None = None
 
-class MissingAuthorizationHeaderException(UsersException):
-    code = "MISSING_AUTHORIZATION_HEADER"
-    field = "authorization"
-    def __init__(self):
-        super().__init__("Missing authorization header")
-
-class InvalidAuthorizationHeaderException(UsersException):
-    code = "INVALID_AUTHORIZATION_HEADER"
-    field = "authorization"
-    def __init__(self):
-        super().__init__("Invalid authorization scheme")
-
-class InvalidAccessTokenException(UsersException):
-    code = "INVALID_ACCESS_TOKEN"
-    field = "authorization"
-    def __init__(self):
-        super().__init__("Invalid access token")
-
 class UserNotFoundException(UsersException):
     code = "USER_NOT_FOUND"
     field = "None"
@@ -34,6 +16,12 @@ class FileTooLargeException(UsersException):
     field = "None"
     def __init__(self):
         super().__init__("File too large")
+
+class InvalidPhotoTypeException(UsersException):
+    code = "INVALID_PHOTO_TYPE"
+    field = "file"
+    def __init__(self):
+        super().__init__("Invalid photo type")
 
 class MaxPhotosReachedException(UsersException):
     code = "MAX_FIVE_PHOTOS"

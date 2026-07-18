@@ -29,9 +29,17 @@ def make_token(user_id: int, expired: bool = False) -> str:
 class FakeRepository:
     def __init__(self, users: dict):
         self.users = users
+        self.tags = [1]
+        self.photos = [1]
 
     async def get_user_by_id(self, current_user_id: int):
         return self.users.get(current_user_id)
+
+    async def get_my_tags(self, current_user_id: int):
+        return self.tags
+
+    async def get_my_photos(self, current_user_id: int):
+        return self.photos
 
 @pytest.fixture
 def fake_user():
@@ -42,7 +50,11 @@ def fake_user():
         first_name = "Ann",
         last_name = "MOMO",
         is_verified = True,
-        created_at = datetime.datetime.now(datetime.UTC)
+        created_at = datetime.datetime.now(datetime.UTC),
+        gender = "female",
+        sexual_preference = "man",
+        age = 24,
+        bio = "hello",
     )
 
 @pytest.fixture
@@ -58,28 +70,28 @@ class TestGetMe:
     def test_no_auth_header(self):
         response = client.get("/users/me")
         assert response.status_code == 401
-        assert response.json()["code"] == "MISSING_AUTHORIZATION_HEADER"
+        assert response.json()["code"] == "MISSING_TOKEN"
 
     def test_invalid_auth_header(self):
         response = client.get("/users/me", headers={"Authorization" : "Basics xxx"})
         assert response.status_code == 401
-        assert response.json()["code"] == "INVALID_AUTHORIZATION_HEADER"
+        assert response.json()["code"] == "INVALID_TOKEN"
 
     def test_empty_token(self):
         response = client.get("/users/me", headers={"Authorization" : "Bearer "})
         assert response.status_code == 401
-        assert response.json()["code"] == "INVALID_ACCESS_TOKEN"
+        assert response.json()["code"] == "INVALID_TOKEN"
     
     def test_incorrect_token_format(self):
         response = client.get("/users/me", headers={"Authorization" : "Bearer no_valid_token"})
         assert response.status_code == 401
-        assert response.json()["code"] == "INVALID_ACCESS_TOKEN"
+        assert response.json()["code"] == "INVALID_TOKEN"
     
     def test_expired_token(self):
         token = make_token(user_id=1, expired=True)
         response = client.get("/users/me", headers={"Authorization" : f"Bearer {token}"})
         assert response.status_code == 401
-        assert response.json()["code"] == "INVALID_ACCESS_TOKEN"
+        assert response.json()["code"] == "EXPIRED_TOKEN"
 
     def test_user_not_found(self, override_service):
         token = make_token(user_id=222)
@@ -94,3 +106,4 @@ class TestGetMe:
         body = response.json()
         assert body["id"] == fake_user.id
         assert body["email"] == fake_user.email
+        assert body["is_profile_completed"] is True

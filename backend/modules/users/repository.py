@@ -10,12 +10,22 @@ from typing import List
 from fastapi import UploadFile
 from modules.users.exceptions import (
     FileTooLargeException,
+    InvalidPhotoTypeException,
     MaxPhotosReachedException
 )
-import os, uuid
+import imghdr
+import uuid
+from pathlib import Path
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = Path("uploads")
 MAX_SIZE = 5 * 1024 * 1024
+ALLOWED_IMAGE_TYPES = {"jpeg", "png", "gif", "webp"}
+IMAGE_TYPE_EXTENSIONS = {
+    "jpeg": ".jpg",
+    "png": ".png",
+    "gif": ".gif",
+    "webp": ".webp",
+}
 T = TypeVar("T", bound=BaseModel)
 
 USER_COLUMNS = """
@@ -120,17 +130,19 @@ class UsersRepository:
         content = await file.read()
         if len(content) > MAX_SIZE:
             raise FileTooLargeException()
+        image_type = imghdr.what(None, content)
+        if image_type not in ALLOWED_IMAGE_TYPES:
+            raise InvalidPhotoTypeException()
         
-        extension = os.path.splitext(file.filename)[1]
-        file_name = f"{uuid.uuid4()}{extension}"
-        file_path = os.path.join(UPLOAD_DIR, file_name)
+        file_name = f"{uuid.uuid4()}{IMAGE_TYPE_EXTENSIONS[image_type]}"
+        file_path = UPLOAD_DIR / file_name
 
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
         with open(file_path, "wb") as f:
             f.write(content)
 
-        url = f"/{UPLOAD_DIR}/{file_name}"
+        url = f"/uploads/{file_name}"
 
         query = """
                 INSERT INTO user_photos (user_id, url)
@@ -140,7 +152,7 @@ class UsersRepository:
         try:
             return await self._fetch_one(PhotoOut, query, current_user_id, url)
         except asyncpg.exceptions.RaiseError:
-            os.remove(file_path)
+            file_path.unlink(missing_ok=True)
             raise MaxPhotosReachedException()
     
     async def get_my_photos(
@@ -157,17 +169,30 @@ class UsersRepository:
             photo_id: int,
             current_user_id: int
     ) -> None:
-        query = """
-                DELETE from user_photos
-                WHERE id = $1 AND user_id = $2 
-                """
-        return await self.connection.execute(query, photo_id, current_user_id)
+        row = await self.connection.fetchrow(
+            """
+            DELETE FROM user_photos
+            WHERE id = $1 AND user_id = $2
+            RETURNING url
+            """,
+            photo_id,
+            current_user_id,
+        )
+        if row and row["url"]:
+            Path(row["url"].lstrip("/")).unlink(missing_ok=True)
     
     async def set_photo_as_avatar(
             self,
             photo_id: int,
             current_user_id: int
     ) -> None:
+        exists = await self.connection.fetchval(
+            "SELECT 1 FROM user_photos WHERE id = $1 AND user_id = $2",
+            photo_id,
+            current_user_id,
+        )
+        if not exists:
+            return
         set_false_query = """
                         UPDATE user_photos
                         SET is_profile_photo = false
@@ -188,20 +213,29 @@ class UsersRepository:
             file: UploadFile,
             current_user_id: int
     ) -> PhotoOut:
+        old_row = await self.connection.fetchrow(
+            "SELECT url FROM user_photos WHERE id = $1 AND user_id = $2",
+            photo_id,
+            current_user_id,
+        )
+        if not old_row:
+            return None
         content = await file.read()
         if len(content) > MAX_SIZE:
             raise FileTooLargeException()
+        image_type = imghdr.what(None, content)
+        if image_type not in ALLOWED_IMAGE_TYPES:
+            raise InvalidPhotoTypeException()
         
-        extension = os.path.splitext(file.filename)[1]
-        file_name = f"{uuid.uuid4()}{extension}"
-        file_path = os.path.join(UPLOAD_DIR, file_name)
+        file_name = f"{uuid.uuid4()}{IMAGE_TYPE_EXTENSIONS[image_type]}"
+        file_path = UPLOAD_DIR / file_name
 
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
         with open(file_path, "wb") as f:
             f.write(content)
 
-        url = f"/{UPLOAD_DIR}/{file_name}"
+        url = f"/uploads/{file_name}"
     
         query = """
                 UPDATE user_photos
@@ -209,4 +243,9 @@ class UsersRepository:
                 WHERE id = $1 AND user_id = $2
                 RETURNING id, url, is_profile_photo
                 """    
-        return await self._fetch_one(PhotoOut, query, photo_id, current_user_id, url)
+        photo = await self._fetch_one(PhotoOut, query, photo_id, current_user_id, url)
+        if not photo:
+            file_path.unlink(missing_ok=True)
+            return None
+        Path(old_row["url"].lstrip("/")).unlink(missing_ok=True)
+        return photo

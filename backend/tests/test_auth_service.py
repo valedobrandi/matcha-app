@@ -6,11 +6,13 @@ from modules.auth.exceptions import (
 )
 from modules.auth.schemas import LoginInput, UserRecord
 from modules.auth.service import AuthService
+from modules.users.service import UsersService
 
 
 class FakeRepository:
     def __init__(self, user: UserRecord | None = None) -> None:
         self.user = user
+        self.connection = object()
 
     async def find_by_username(self, username: str) -> UserRecord | None:
         if self.user and self.user.username == username:
@@ -61,7 +63,7 @@ async def test_get_current_user_raises_when_user_missing() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_current_user_returns_session_contract() -> None:
+async def test_get_current_user_returns_session_contract(monkeypatch) -> None:
     user = UserRecord(
         id=1,
         email="a@b.com",
@@ -72,10 +74,16 @@ async def test_get_current_user_returns_session_contract() -> None:
         is_verified=True,
     )
     service = AuthService(FakeRepository(user))
+
+    async def fake_get_profile(self, user_id: int):
+        return type("Profile", (), {"is_profile_completed": True})()
+
+    monkeypatch.setattr(UsersService, "get_profile", fake_get_profile)
+
     current_user = await service.get_current_user(1)
 
     assert current_user.id == 1
     assert current_user.username == "alice"
     assert current_user.email_verified is True
-    assert current_user.profile_completed is False
+    assert current_user.profile_completed is True
     assert current_user.has_password is True

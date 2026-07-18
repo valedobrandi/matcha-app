@@ -5,6 +5,8 @@ from modules.users.schemas import (
 )
 from modules.users.exceptions import UserNotFoundException
 from modules.tags.schemas import TagInput, TagOut
+from modules.tags.exceptions import TagContentProfanity
+from modules.tags.service import profanity
 from typing import List
 from fastapi import UploadFile
 
@@ -53,6 +55,8 @@ class UsersService:
             current_user_id: int,
             tag_input: TagInput
     ) -> TagOut:
+        if profanity.contains_profanity(tag_input.name):
+            raise TagContentProfanity()
         return await self.repository.add_one_tag(current_user_id, tag_input)
 
     async def get_my_tags(

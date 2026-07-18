@@ -8,9 +8,11 @@ from core.database import db_lifespan
 from modules.auth.controller import auth_router
 from modules.users.controller import users_router
 from modules.tags.controller import tags_router
+from modules.users.repository import UPLOAD_DIR
 
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app = FastAPI(title="Matcha API", version="1.0", lifespan=db_lifespan)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 register_auth_exception_handlers(app)
 register_users_exception_handlers(app)
 register_tags_exception_handlers(app)

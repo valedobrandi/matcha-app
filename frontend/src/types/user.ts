@@ -10,10 +10,6 @@ export type UserProfile = {
     sexual_preference: string | null
     age: number | null
     bio: string | null
-    fame_rating: number
-    latitude: number | null
-    longitude: number | null
-    last_connection: string | null
     is_profile_completed: boolean
 }
 

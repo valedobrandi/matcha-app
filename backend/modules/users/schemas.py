@@ -1,7 +1,6 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Literal, Optional
-from fastapi import UploadFile
 
 class UserProfile(BaseModel):
     id: int
@@ -20,8 +19,8 @@ class UserProfile(BaseModel):
 class UserProfileInput(BaseModel):
     gender: Literal["male", "female", "other"]
     sexual_preference: Literal["man", "woman", "bisexual"]
-    age: int
-    bio: str
+    age: int = Field(..., ge=18, le=100)
+    bio: str = Field(..., min_length=1)
     
 class PhotoOut(BaseModel):
     id: int

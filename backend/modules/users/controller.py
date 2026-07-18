@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File
 import asyncpg
 from core.database import get_db_connection
+from core.auth import get_current_user_id
 from modules.users.repository import UsersRepository
 from modules.users.service import UsersService
 from modules.users.schemas import (
@@ -8,7 +9,6 @@ from modules.users.schemas import (
     UserProfileInput,
     PhotoOut,
 )
-from modules.users.dependencies import get_current_user_id
 from modules.tags.schemas import TagOut, TagInput
 from typing import List
 
