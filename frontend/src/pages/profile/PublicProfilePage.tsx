@@ -68,6 +68,7 @@ function PublicProfilePage() {
             const res = await socialApi.postReport(accessToken, targetId, payload)
             if (!res.ok)
                 throw Error("Report failed")
+            setReportValue(null)
         } catch (err) {
             if (err instanceof ApiError) {
                 setReportError(resolveErrorMessage(err.code, err.message))
@@ -77,8 +78,6 @@ function PublicProfilePage() {
                 setReportError("Report failed, please try it later")
             }
         }
-        setReportValue(null)
-        setReportError(null)
     }
 
     return (
@@ -177,6 +176,7 @@ function PublicProfilePage() {
                             && likeError && <p className="p-1 m-auto">{likeError}</p>}
                         {blockError && <p className="p-1 m-auto">{blockError}</p>}
                         {reportError && <p className="p-1 m-auto">{reportError}</p>}
+                        {visitError && <p className="p-1 m-auto">{visitError}</p>}
                         {!relationship?.blocked_by_me && !relationship?.blocked_you && (
                             <div className="my-4 mx-8 sm:px-8">
                                 <div>{publicProfile.gender}</div>

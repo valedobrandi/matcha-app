@@ -3,7 +3,6 @@ import { apiDelete, apiGet, apiPost } from "./client";
 import { toQueryString } from "./discovery";
 import type { BasicQueryParamsValues } from "@/schemas/discovery";
 import type { reportInputValue } from "@/schemas/social";
-import { string } from "zod";
 
 export async function postLike(
     token: string,

@@ -5,7 +5,6 @@ import { useAuth } from "@/auth/useAuth"
 import { resolveErrorMessage } from "@/i18n/errors"
 import type { Tag } from "@/types/user"
 import { useCallback, useEffect, useState } from "react"
-import { trim } from "zod"
 
 function useProfileTags() {
     const { accessToken } = useAuth()

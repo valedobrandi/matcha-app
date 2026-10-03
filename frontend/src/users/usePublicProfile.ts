@@ -27,7 +27,7 @@ export function usePublicProfile(target_id: number) {
                 const targetProfile = await usersApi.getPublicProfile(accessToken, target_id)
                 setPubilcProfile(targetProfile)
                 const avatar = targetProfile.photos.filter(p=> p.is_profile_photo)?.[0]
-                setProfileAvatar(avatar.url?? null)
+                setProfileAvatar(avatar?.url ?? null)
             } catch (err) {
                 if (err instanceof ApiError) {
                     setServerError(resolveErrorMessage(err.code, err.message))
