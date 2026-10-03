@@ -167,7 +167,7 @@ class TestSocialVisits:
             headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 404
-        assert response.json()["code"] == "USER_NOT_FOUND"
+        assert response.json()["code"] == "TARGET_USER_NOT_FOUND"
 
     def test_visit_blocked(self, override_social):
         override_social.blocked = True
@@ -266,7 +266,7 @@ class TestSocialRelationship:
             headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 404
-        assert response.json()["code"] == "USER_NOT_FOUND"
+        assert response.json()["code"] == "TARGET_USER_NOT_FOUND"
 
 
 class TestSocialLists:

@@ -24,20 +24,41 @@ from modules.tags.schemas import TagInput, TagOut
 from modules.tags.exceptions import TagContentProfanity
 from modules.tags.service import profanity
 from core.presence import ONLINE_WINDOW_SECONDS
-from typing import List, Optional, Any
+from typing import List, Optional, Protocol
 from fastapi import UploadFile
 import bcrypt
+
+
+class ProfileSocialReads(Protocol):
+    async def is_blocked_either_way(self, user_a: int, user_b: int) -> bool: ...
+    async def count_likes_received(self, target_user_id: int) -> int: ...
+    async def count_visitors(self, target_user_id: int) -> int: ...
+
+
+def is_profile_completed(
+        user: UserProfile,
+        tags: List[TagOut],
+        photos: List[PhotoOut],
+) -> bool:
+    return (
+        user.bio is not None
+        and user.age is not None
+        and user.gender is not None
+        and user.sexual_preference is not None
+        and len(tags) > 0
+        and len(photos) > 0
+    )
 
 
 class UsersService:
     def __init__(
             self,
             repository: UsersRepository,
-            social_repo: Any = None,
+            social_repo: ProfileSocialReads,
     ):
         self.repository = repository
         self.social_repo = social_repo
-    
+
     async def get_profile(
             self,
             current_user_id: int
@@ -51,17 +72,8 @@ class UsersService:
         likes_received_count = await self.social_repo.count_likes_received(current_user_id)
         visitors_count = await self.social_repo.count_visitors(current_user_id)
 
-        is_completed = (
-            current_user.bio is not None
-            and current_user.age is not None
-            and current_user.gender is not None
-            and current_user.sexual_preference is not None
-            and len(tags) > 0
-            and len(photos) > 0
-        )
-        
         return current_user.model_copy(update={
-            "is_profile_completed": is_completed,
+            "is_profile_completed": is_profile_completed(current_user, tags, photos),
             "likes_received_count": likes_received_count,
             "visitors_count": visitors_count,
             })
@@ -71,9 +83,8 @@ class UsersService:
             viewer_id: int,
             target_id: int,
     ) -> PublicProfile:
-        if self.social_repo is not None:
-            if await self.social_repo.is_blocked_either_way(viewer_id, target_id):
-                raise BlockedException()
+        if await self.social_repo.is_blocked_either_way(viewer_id, target_id):
+            raise BlockedException()
         target = await self.repository.get_user_by_id(target_id)
         if not target:
             raise UserNotFoundException()

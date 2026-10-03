@@ -12,6 +12,7 @@ from modules.discovery.schemas import (
     DiscoveryProfileCard,
     SuggestQueryParams,
     SearchQueryParams,
+    SearchingBarProfile,
 )
 from modules.discovery.exceptions import (
     LocationRequiredException,
@@ -53,6 +54,7 @@ class FakeDiscoveryService:
     def __init__(self):
         self.raise_location = False
         self.raise_invalid_filter = False
+        self.search_by_name_calls = []
 
     async def suggest(self, viewer_id: int, params: SuggestQueryParams):
         if self.raise_location:
@@ -71,7 +73,16 @@ class FakeDiscoveryService:
                 distance_km=1.2,
                 common_tags_count=1,
                 location_label="Paris",
+                liked_by_me=False,
             )
+        ]
+
+    async def search_by_name(self, viewer_id: int, target: str):
+        self.search_by_name_calls.append((viewer_id, target))
+        if self.raise_invalid_filter:
+            raise InvalidFilterException("Invalid target", field="target")
+        return [
+            SearchingBarProfile(id=2, username="bob", first_name="Bob", last_name="B")
         ]
 
     async def search(self, viewer_id: int, params: SearchQueryParams):
@@ -195,3 +206,50 @@ class TestDiscoveryRouter:
             assert response.json()["field"] == "age_min"
         finally:
             app.dependency_overrides.clear()
+
+
+class TestSearchByName:
+    def test_should_return_401_when_unauthenticated(self):
+        response = client.get("/discovery/search-list", params={"target": "bo"})
+        assert response.status_code == 401
+
+    def test_should_return_422_when_target_missing(self, override_discovery):
+        token = make_token(1)
+        response = client.get(
+            "/discovery/search-list",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 422
+
+    def test_should_return_422_when_target_shorter_than_two_chars(self, override_discovery):
+        token = make_token(1)
+        response = client.get(
+            "/discovery/search-list",
+            params={"target": "b"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 422
+        assert override_discovery.search_by_name_calls == []
+
+    def test_should_pass_viewer_id_and_target_to_service_when_valid(self, override_discovery):
+        token = make_token(7)
+        response = client.get(
+            "/discovery/search-list",
+            params={"target": "bob"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert override_discovery.search_by_name_calls == [(7, "bob")]
+        assert response.json() == [
+            {"id": 2, "username": "bob", "first_name": "Bob", "last_name": "B"}
+        ]
+
+    def test_should_map_invalid_filter_to_400_when_service_rejects_target(self, override_discovery):
+        override_discovery.raise_invalid_filter = True
+        token = make_token(1)
+        response = client.get(
+            "/discovery/search-list",
+            params={"target": "bob"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 400

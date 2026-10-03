@@ -31,6 +31,20 @@ def make_token(user_id: int, expired: bool = False) -> str:
         algorithm=settings.JWT_ALGORITHM,
     )
 
+class FakeSocial:
+    def __init__(self, blocked=False):
+        self.blocked = blocked
+
+    async def is_blocked_either_way(self, user_a, user_b):
+        return self.blocked
+
+    async def count_likes_received(self, target_user_id):
+        return 0
+
+    async def count_visitors(self, target_user_id):
+        return 0
+
+
 class FakeRepository:
     def __init__(self, users: dict):
         self.users = users
@@ -107,7 +121,7 @@ def fake_user():
 @pytest.fixture
 def override_service(fake_user):
     fake_repo = FakeRepository({1: fake_user})
-    fake_service = UsersService(fake_repo)
+    fake_service = UsersService(fake_repo, FakeSocial())
 
     app.dependency_overrides[get_users_service] = lambda: fake_service
     app.dependency_overrides[get_current_user_id_and_touch] = get_current_user_id
@@ -238,7 +252,7 @@ class TestPatchAccount:
     def test_account_update_email_taken(self, fake_user):
         fake_repo = FakeRepository({1: fake_user})
         fake_repo.raise_on_account = EmailAlreadyTakenException("taken@example.com")
-        fake_service = UsersService(fake_repo)
+        fake_service = UsersService(fake_repo, FakeSocial())
         app.dependency_overrides[get_users_service] = lambda: fake_service
         app.dependency_overrides[get_current_user_id_and_touch] = get_current_user_id
         try:
@@ -321,11 +335,6 @@ class TestGetPublicProfile:
         override_service.repository.tags = []
         override_service.repository.photos = []
 
-        class FakeSocial:
-            async def is_blocked_either_way(self, a, b):
-                return False
-
-        override_service.social_repo = FakeSocial()
         token = make_token(1)
         response = client.get("/users/2", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
@@ -340,21 +349,12 @@ class TestGetPublicProfile:
     def test_should_return_403_when_blocked(self, override_service, fake_user):
         override_service.repository.users[2] = fake_user.model_copy(update={"id": 2})
 
-        class FakeSocial:
-            async def is_blocked_either_way(self, a, b):
-                return True
-
-        override_service.social_repo = FakeSocial()
+        override_service.social_repo = FakeSocial(blocked=True)
         token = make_token(1)
         response = client.get("/users/2", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 403
 
     def test_should_return_404_when_missing(self, override_service):
-        class FakeSocial:
-            async def is_blocked_either_way(self, a, b):
-                return False
-
-        override_service.social_repo = FakeSocial()
         token = make_token(1)
         response = client.get("/users/99", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 404

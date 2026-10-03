@@ -40,9 +40,9 @@ async def search_profiles(
 
 
 @discovery_router.get("/search-list", response_model=List[SearchingBarProfile])
-async def get_seaching_bar_profiles(
-    target: str,
+async def search_profiles_by_name(
+    target: Annotated[str, Query(min_length=2, max_length=50)],
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: DiscoveryService = Depends(get_discovery_service),
 ) -> List[SearchingBarProfile]:
-    return await service.get_seaching_bar_profiles(target)
+    return await service.search_by_name(current_user_id, target)

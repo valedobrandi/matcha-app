@@ -6,7 +6,9 @@ from modules.auth.exceptions import (
 )
 from modules.auth.schemas import LoginInput, UserRecord
 from modules.auth.service import AuthService
-from modules.users.service import UsersService
+from modules.users.repository import UsersRepository
+from modules.users.schemas import PhotoOut
+from modules.tags.schemas import TagOut
 
 
 class FakeRepository:
@@ -75,10 +77,20 @@ async def test_get_current_user_returns_session_contract(monkeypatch) -> None:
     )
     service = AuthService(FakeRepository(user))
 
-    async def fake_get_profile(self, user_id: int):
-        return type("Profile", (), {"is_profile_completed": True})()
+    async def fake_get_user_by_id(self, user_id: int):
+        return type("Profile", (), {
+            "bio": "hi", "age": 30, "gender": "female", "sexual_preference": "man",
+        })()
 
-    monkeypatch.setattr(UsersService, "get_profile", fake_get_profile)
+    async def fake_get_my_tags(self, user_id: int):
+        return [TagOut(id=1, name="music")]
+
+    async def fake_get_my_photos(self, user_id: int):
+        return [PhotoOut(id=1, url="/uploads/a.jpg", is_profile_photo=True)]
+
+    monkeypatch.setattr(UsersRepository, "get_user_by_id", fake_get_user_by_id)
+    monkeypatch.setattr(UsersRepository, "get_my_tags", fake_get_my_tags)
+    monkeypatch.setattr(UsersRepository, "get_my_photos", fake_get_my_photos)
 
     current_user = await service.get_current_user(1)
 
