@@ -1,8 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from typing import Optional
 
 class OkResponse(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
     ok: bool = True
 
 class LikeStateResponse(BaseModel):
@@ -16,6 +17,7 @@ class ReportInput(BaseModel):
     reason: Optional[str] = Field(None, max_length=500)
 
 class RelationshipResponse(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
     liked_by_me: bool
     liked_you: bool
     connected: bool

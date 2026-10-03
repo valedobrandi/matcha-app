@@ -264,6 +264,57 @@ export interface paths {
         patch: operations["set_photo_as_avatar_users_me_photos__photo_id__patch"];
         trace?: never;
     };
+    "/users/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Me */
+        patch: operations["patch_me_users_me_profile_patch"];
+        trace?: never;
+    };
+    "/users/me/password-change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change Password */
+        patch: operations["change_password_users_me_password_change_patch"];
+        trace?: never;
+    };
+    "/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Profile */
+        get: operations["get_public_profile_users__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tags/": {
         parameters: {
             query?: never;
@@ -453,6 +504,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/discovery/search-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Profiles By Name */
+        get: operations["search_profiles_by_name_discovery_search_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Notifications */
+        get: operations["list_notifications_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Unread Count */
+        get: operations["get_unread_count_notifications_unread_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark All Notifications Read */
+        post: operations["mark_all_notifications_read_notifications_read_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Notification Read */
+        post: operations["mark_notification_read_notifications__notification_id__read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/chat/messages/{peer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Messages */
+        get: operations["list_messages_chat_messages__peer_id__get"];
+        put?: never;
+        /** Send Message */
+        post: operations["send_message_chat_messages__peer_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -547,14 +701,41 @@ export interface components {
             /** Fame Rating */
             fame_rating: number;
             /** Distance Km */
-            distance_km?: number | null;
+            distance_km: number | null;
             /**
              * Common Tags Count
              * @default 0
              */
             common_tags_count: number;
             /** Location Label */
+            location_label: string | null;
+            /** Liked By Me */
+            liked_by_me: boolean;
+        };
+        /** EditProfileInput */
+        EditProfileInput: {
+            /**
+             * Gender
+             * @enum {string}
+             */
+            gender: "male" | "female" | "other";
+            /**
+             * Sexual Preference
+             * @enum {string}
+             */
+            sexual_preference: "man" | "woman" | "bisexual";
+            /** Age */
+            age: number;
+            /** Bio */
+            bio: string;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Location Label */
             location_label?: string | null;
+            /** Location Consent */
+            location_consent: boolean;
         };
         /** ForgotPasswordInput */
         ForgotPasswordInput: {
@@ -604,13 +785,51 @@ export interface components {
             /** Password */
             password: string;
         };
-        /** OkResponse */
-        OkResponse: {
+        /** MessageOut */
+        MessageOut: {
+            /** Id */
+            id: number;
+            /** From User Id */
+            from_user_id: number;
+            /** To User Id */
+            to_user_id: number;
+            /** Body */
+            body: string;
             /**
-             * Ok
-             * @default true
+             * Created At
+             * Format: date-time
              */
-            ok: boolean;
+            created_at: string;
+        };
+        /** NotificationOut */
+        NotificationOut: {
+            /** Id */
+            id: number;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "liked" | "visited" | "matched" | "unliked" | "message";
+            /** Actor Id */
+            actor_id: number;
+            /** Entity Id */
+            entity_id?: number | null;
+            /** Read At */
+            read_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PasswordChangeInput */
+        PasswordChangeInput: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+            /** Confirm Password */
+            confirm_password: string;
         };
         /** PhotoOut */
         PhotoOut: {
@@ -620,6 +839,53 @@ export interface components {
             url: string;
             /** Is Profile Photo */
             is_profile_photo: boolean;
+        };
+        /** PublicProfile */
+        PublicProfile: {
+            /** Id */
+            id: number;
+            /** Username */
+            username: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Gender */
+            gender: ("male" | "female" | "other") | null;
+            /** Sexual Preference */
+            sexual_preference: ("man" | "woman" | "bisexual") | null;
+            /** Age */
+            age: number | null;
+            /** Bio */
+            bio: string | null;
+            /**
+             * Fame Rating
+             * @default 0
+             */
+            fame_rating: number;
+            /** Location Label */
+            location_label: string | null;
+            /** Last Connection */
+            last_connection: string | null;
+            /**
+             * Is Online
+             * @default false
+             */
+            is_online: boolean;
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
+            /** Photos */
+            photos: components["schemas"]["PhotoOut"][];
+            /**
+             * Likes Received Count
+             * @default 0
+             */
+            likes_received_count: number;
+            /**
+             * Visitors Count
+             * @default 0
+             */
+            visitors_count: number;
         };
         /** RegisterResponse */
         RegisterResponse: {
@@ -645,7 +911,7 @@ export interface components {
              */
             blocked_you: boolean;
             /** Last Connection */
-            last_connection?: string | null;
+            last_connection: string | null;
             /**
              * Is Online
              * @default false
@@ -689,6 +955,22 @@ export interface components {
              */
             token_type: string;
         };
+        /** SearchingBarProfile */
+        SearchingBarProfile: {
+            /** Id */
+            id: number;
+            /** Username */
+            username: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+        };
+        /** SendMessageInput */
+        SendMessageInput: {
+            /** Body */
+            body: string;
+        };
         /** TagInput */
         TagInput: {
             /** Name */
@@ -711,8 +993,15 @@ export interface components {
              */
             token_type: string;
         };
+        /** UnreadCountOut */
+        UnreadCountOut: {
+            /** Unread Count */
+            unread_count: number;
+        };
         /** UserAccountInput */
         UserAccountInput: {
+            /** Username */
+            username: string;
             /** First Name */
             first_name: string;
             /** Last Name */
@@ -757,13 +1046,13 @@ export interface components {
              */
             created_at: string;
             /** Gender */
-            gender?: ("male" | "female" | "other") | null;
+            gender: ("male" | "female" | "other") | null;
             /** Sexual Preference */
-            sexual_preference?: ("man" | "woman" | "bisexual") | null;
+            sexual_preference: ("man" | "woman" | "bisexual") | null;
             /** Age */
-            age?: number | null;
+            age: number | null;
             /** Bio */
-            bio?: string | null;
+            bio: string | null;
             /**
              * Is Profile Completed
              * @default false
@@ -775,18 +1064,28 @@ export interface components {
              */
             fame_rating: number;
             /** Latitude */
-            latitude?: number | null;
+            latitude: number | null;
             /** Longitude */
-            longitude?: number | null;
+            longitude: number | null;
             /** Location Label */
-            location_label?: string | null;
+            location_label: string | null;
             /**
              * Location Consent
              * @default false
              */
             location_consent: boolean;
             /** Last Connection */
-            last_connection?: string | null;
+            last_connection: string | null;
+            /**
+             * Likes Received Count
+             * @default 0
+             */
+            likes_received_count: number;
+            /**
+             * Visitors Count
+             * @default 0
+             */
+            visitors_count: number;
         };
         /** UserProfileInput */
         UserProfileInput: {
@@ -849,6 +1148,22 @@ export interface components {
              * Format: date-time
              */
             visited_at: string;
+        };
+        /** OkResponse */
+        modules__notifications__schemas__OkResponse: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
+        };
+        /** OkResponse */
+        modules__social__schemas__OkResponse: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
         };
     };
     responses: never;
@@ -1521,6 +1836,111 @@ export interface operations {
             };
         };
     };
+    patch_me_users_me_profile_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditProfileInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_password_users_me_password_change_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_profile_users__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProfile"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_search_tags_tags__get: {
         parameters: {
             query: {
@@ -1573,7 +1993,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OkResponse"];
+                    "application/json": components["schemas"]["modules__social__schemas__OkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1877,7 +2297,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OkResponse"];
+                    "application/json": components["schemas"]["modules__social__schemas__OkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1956,6 +2376,241 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DiscoveryProfileCard"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_profiles_by_name_discovery_search_list_get: {
+        parameters: {
+            query: {
+                target: string;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchingBarProfile"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notifications_notifications_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_unread_count_notifications_unread_count_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_all_notifications_read_notifications_read_all_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["modules__notifications__schemas__OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_notification_read_notifications__notification_id__read_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                notification_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["modules__notifications__schemas__OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_messages_chat_messages__peer_id__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                peer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_message_chat_messages__peer_id__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                peer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageOut"];
                 };
             };
             /** @description Validation Error */

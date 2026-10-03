@@ -19,7 +19,7 @@ function makeProfile(overrides: Partial<DiscoveryProfile> = {}): DiscoveryProfil
         age: 25,
         gender: 'female',
         fame_rating: 80,
-        commun_tags_count: 2,
+        common_tags_count: 2,
         location_label: 'Paris',
         liked_by_me: false,
         ...overrides,

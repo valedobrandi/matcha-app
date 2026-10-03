@@ -1,8 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Literal, Optional
 
 
 class DiscoveryProfileCard(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
     id: int
     username: str
     first_name: str

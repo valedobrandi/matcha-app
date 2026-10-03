@@ -6,7 +6,7 @@ export const basicQueryParamsSchema = z.object({
 })
 
 export const suggestQueryParamsSchema = basicQueryParamsSchema.extend({
-    sort: z.enum(["age", "distance", "fame", "tags"]).optional(),
+    sort: z.enum(["age", "distance", "fame", "common_tags"]).optional(),
     order: z.enum(["asc", "desc"]).optional()
 })
 

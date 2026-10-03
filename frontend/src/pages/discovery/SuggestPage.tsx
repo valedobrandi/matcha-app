@@ -21,7 +21,7 @@ const sortList = [
     { label: "age", value: "age" },
     { label: "distance", value: "distance" },
     { label: "fame", value: "fame" },
-    { label: "tags", value: "tags" },
+    { label: "tags", value: "common_tags" },
 ]
 
 const orderList = [
