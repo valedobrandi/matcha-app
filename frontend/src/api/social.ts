@@ -1,6 +1,6 @@
 import type { LikeReceivedOut, LikeStateResponse, VisitorOut, RelationshipResponse, BlockStateResponse, OkResponse, BlockedUserOut } from "@/types/social";
 import { apiDelete, apiGet, apiPost } from "./client";
-import { toQueryString } from "./discovery";
+import { toQueryString } from "./query";
 import type { BasicQueryParamsValues } from "@/schemas/discovery";
 import type { reportInputValue } from "@/schemas/social";
 

@@ -1,20 +1,14 @@
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"
+import { limitList } from "@/lib/pagination"
 import { ProfileCard } from "@/components/ProfileCard"
 import { SelectFilter } from "@/components/selectFilter"
 import useSuggestedProfiles from "@/discovery/useSuggestedProfiles"
 import type { SuggestQueryParamsValues } from "@/schemas/discovery"
 import { useLikes } from "@/social/useLikes"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import AdvancedSearchForm, { type AdvancedFilters } from "@/components/AdvancedSearchForm"
 import useSearchProfiles from "@/discovery/useSearchProfiles"
-
-export const limitList = [
-    { label: "Limit", value: null },
-    { label: "1", value: "1" },
-    { label: "10", value: "10" },
-    { label: "20", value: "20" },
-    { label: "40", value: "40" }
-]
 
 const sortList = [
     { label: "Sort by", value: null },
@@ -60,29 +54,13 @@ function SuggestPage() {
             tag_ids: advancedFilters.tagIds,    
     }), [base, advancedFilters])
 
-    const sentinelRef = useRef<HTMLDivElement>(null)
-
     const suggest = useSuggestedProfiles(base, !advancedSearch)
     const search = useSearchProfiles(advanced, advancedSearch)
     const {suggestedProfiles, serverError, isLoading, hasMore, loadMore} = advancedSearch ? search : suggest
 
-    const loadMoreRef = useRef(loadMore)
+    const sentinelRef = useInfiniteScroll(loadMore)
 
     const {like, unlike, likeState, serverError: likeError} = useLikes()
-
-    useEffect(()=>{
-        const el = sentinelRef.current
-        if (!el) return 
-        const observer = new IntersectionObserver(
-            (entires) => {
-                if (entires[0].isIntersecting)
-                    loadMoreRef.current()
-            },
-            { rootMargin: "200px" }
-        )
-        observer.observe(el)
-        return ()=>observer.disconnect()
-    }, [])
 
     const handleAdvancedSearch = ()=> {
         setAdvancedSearch(prev=>!prev)

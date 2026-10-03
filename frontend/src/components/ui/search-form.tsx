@@ -30,7 +30,7 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
     if (!accessToken) return
     setServerError(null)
     const trimmed = inputValue.trim()
-    if (trimmed.length === 0) {
+    if (trimmed.length < 2) {
       setInputValue("")
       setSeachingBarProfileList([])
       setIsOpen(false)

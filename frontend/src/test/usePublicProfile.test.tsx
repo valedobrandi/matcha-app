@@ -126,3 +126,21 @@ describe('usePublicProfile', ()=>{
         await waitFor(() => expect(authValue.logout).toHaveBeenCalledTimes(1))
     })
 })
+describe('usePublicProfile without a profile photo', ()=>{
+    it('does keep the profile and a null avatar when the profile has no photos', async ()=> {
+        server.use(
+            http.get(RELATIONSHIP_URL, ()=>HttpResponse.json(makeRelationship())),
+            http.get(PUBLIC_PROFILE_URL, ()=>HttpResponse.json(makePublicProfile({ photos: [] })))
+        )
+
+        const { result } = renderHook(
+            ()=>usePublicProfile(5),
+            {wrapper: authWrapper(makeAuthValue())}
+        )
+
+        await waitFor(()=> expect(result.current.isLoading).toBe(false))
+        expect(result.current.publicProfile?.username).toBe('bob')
+        expect(result.current.profileAvatar).toBeNull()
+        expect(result.current.serverError).toBeNull()
+    })
+})

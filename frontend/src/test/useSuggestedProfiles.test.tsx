@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../api/client'
 import useSuggestedProfiles from '../discovery/useSuggestedProfiles'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { authWrapper, makeAuthValue } from './renderWithAuth'
-import { toQueryString } from '../api/discovery'
+import { toQueryString } from '../api/query'
 import {type DiscoveryProfile} from '../types/discovery'
 
 const SUGGEST_URL = `${API_BASE_URL}/discovery/suggest`
@@ -130,7 +130,7 @@ describe('useSuggestedProfiles', () => {
             return HttpResponse.json([])
         })
     )
-    const { result } = renderHook(
+    renderHook(
         () => useSuggestedProfiles({ limit: 20, sort: undefined, order: undefined }),
         { wrapper: authWrapper(makeAuthValue({accessToken: null})) }
     )
@@ -154,6 +154,6 @@ describe('toQueryString', () => {
   })
 
   it('Return null', () => {
-    expect(toQueryString({})).toBeNull()
+    expect(toQueryString({})).toBe('')
   })
 })

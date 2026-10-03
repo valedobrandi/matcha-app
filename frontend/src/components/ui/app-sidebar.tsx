@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Link, useLocation } from "react-router-dom"
 import {
   Sidebar,
   SidebarContent,
@@ -17,10 +18,6 @@ const data = {
       url: "/suggest",
     },
     {
-      title: "Chat",
-      url: "/#",
-    },
-    {
       title: "Likes",
       url: "/likes",
     },
@@ -29,16 +26,13 @@ const data = {
       url: "/visitors",
     },
     {
-      title: "Calendar",
-      url: "#",
-    },
-    {
       title: "Me",
       url: "/profile",
     }
   ]
 }
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { pathname } = useLocation()
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -48,8 +42,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {data.navMain.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    isActive={location.pathname === item.url}
-                    render={<a href={item.url} />}
+                    isActive={pathname === item.url}
+                    render={<Link to={item.url} />}
                   >
                     {item.title}
                   </SidebarMenuButton>

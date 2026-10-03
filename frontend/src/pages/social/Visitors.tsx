@@ -1,13 +1,13 @@
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"
 import { SelectFilter } from "@/components/selectFilter"
 import useVisitors from "@/social/useVisitors"
-import { useEffect, useMemo, useRef, useState } from "react"
-import { limitList } from "../discovery/SuggestPage"
+import { useMemo, useState } from "react"
+import { limitList } from "@/lib/pagination"
 import { Separator } from "@/components/ui/separator"
 import { useNavigate } from "react-router-dom"
 
 function Visitors() {
     const [limit, setLimit] = useState("20")
-    const sentinelRef = useRef<HTMLDivElement>(null)
     const navigate = useNavigate()
     
     const filter = useMemo(()=>({
@@ -16,20 +16,7 @@ function Visitors() {
 
     const {visitorsList, serverError, isLoading, hasMore, loadMore} = useVisitors(filter, true)
 
-    const loadMoreRef = useRef(loadMore)
-
-    useEffect(()=>{
-        const el = sentinelRef.current
-        if (!el) return
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting)
-                    loadMoreRef.current()
-            }, { rootMargin: "200px"}
-        )
-        observer.observe(el)
-        return ()=>observer.disconnect()
-    }, [])
+    const sentinelRef = useInfiniteScroll(loadMore)
 
     return (
         <>

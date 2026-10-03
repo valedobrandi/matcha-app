@@ -1,6 +1,7 @@
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"
 import { SelectFilter } from "@/components/selectFilter"
-import { useEffect, useMemo, useRef, useState } from "react"
-import { limitList } from "../discovery/SuggestPage"
+import { useMemo, useState } from "react"
+import { limitList } from "@/lib/pagination"
 import { Separator } from "@/components/ui/separator"
 import { useBlockList } from "@/social/useBlockList"
 import { Button } from "@/components/ui/button"
@@ -8,28 +9,13 @@ import { useBlock } from "@/social/useBlock"
 
 export function BlockListPage() {
     const [limit, setLimit] = useState("20")
-    const sentinelRef = useRef<HTMLDivElement>(null)
     const filter = useMemo(()=>({
         limit: Number(limit)
     }),[limit])
     const { blockList, serverError, isLoading, hasMore, loadMore} = useBlockList(filter, true)
     const {unblock, serverError: blockError} = useBlock()
-    const loadMoreRef = useRef(loadMore)
+    const sentinelRef = useInfiniteScroll(loadMore)
     const [removeIds, setRemoveIds] = useState<Set<number>>(new Set())
-    
-    useEffect(()=>{
-        const el = sentinelRef.current
-        if (!el) return 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting) {
-                    loadMoreRef.current()
-                }
-            }, {rootMargin: "10px"}
-        )
-        observer.observe(el)
-        return ()=>observer.disconnect()
-    }, [])
 
     const displayedBlockList = blockList.filter(block => !removeIds.has(block.id))
 

@@ -21,29 +21,40 @@ export function usePagination<TFilters extends {limit: number}, TData>({
     const [ data, setData ] = useState<TData[]>([])
     
     const offsetRef = useRef(0)
+    // Bumped by every first-page request (new filters). A response from an older
+    // generation is stale and must not touch state.
+    const generationRef = useRef(0)
     const isFetchingRef = useRef(false)
 
     const getPage = useCallback(
         async (offset: number, replace: boolean)=>{
             if (!accessToken || !enabled) return
-            if (isFetchingRef.current) return
+            if (replace)
+                generationRef.current += 1
+            else if (isFetchingRef.current)
+                return
+            const generation = generationRef.current
+            isFetchingRef.current = true
             setServerError(null)
             setIsLoading(true)
-            isFetchingRef.current = true
-            try {  
+            try {
                 const page = await fetchPage(accessToken, {...filters, offset})
+                if (generation !== generationRef.current) return
                 setData(prev=>replace ? page : [...prev, ...page])
                 setHasMore(page.length === filters.limit)
                 offsetRef.current = offset
             } catch (err) {
+                if (generation !== generationRef.current) return
                 if (err instanceof ApiError) {
                     setServerError(resolveErrorMessage(err.code, err.message))
                     if (err.code == "USER_NOT_FOUND")
                         logout()
                 }
             } finally {
-                setIsLoading(false)
-                isFetchingRef.current = false
+                if (generation === generationRef.current) {
+                    isFetchingRef.current = false
+                    setIsLoading(false)
+                }
             }
     }, [accessToken, logout, filters, enabled, fetchPage])
 
@@ -55,9 +66,9 @@ export function usePagination<TFilters extends {limit: number}, TData>({
 
     const loadMore = useCallback(()=>{
         if (!enabled) return
-        if (isLoading || !hasMore) return
+        if (!hasMore) return
         getPage(offsetRef.current + filters.limit, false)
-    }, [getPage, isLoading, hasMore, filters.limit, enabled])
+    }, [getPage, hasMore, filters.limit, enabled])
 
     return {data, serverError, isLoading, hasMore, loadMore}
 }
