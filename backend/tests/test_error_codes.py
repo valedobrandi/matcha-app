@@ -51,3 +51,32 @@ def test_should_publish_error_contract_when_openapi_is_generated():
     schemas = app.openapi()["components"]["schemas"]
     assert set(schemas["ErrorCode"]["enum"]) == {c.value for c in ErrorCode}
     assert set(schemas["ErrorResponse"]["required"]) == {"detail", "code", "field"}
+
+
+def _documented_schema(operation: dict, status: str) -> str | None:
+    content = operation.get("responses", {}).get(status, {}).get("content", {})
+    return content.get("application/json", {}).get("schema", {}).get("$ref")
+
+
+def test_should_document_the_error_response_on_every_operation_when_the_openapi_is_built():
+    paths = app.openapi()["paths"]
+    missing = [
+        f"{method.upper()} {path}"
+        for path, operations in paths.items()
+        for method, operation in operations.items()
+        if _documented_schema(operation, "default") != "#/components/schemas/ErrorResponse"
+    ]
+
+    assert missing == []
+
+
+def test_should_keep_documenting_the_validation_error_body_when_a_default_error_response_exists():
+    paths = app.openapi()["paths"]
+    missing = [
+        f"{method.upper()} {path}"
+        for path, operations in paths.items()
+        for method, operation in operations.items()
+        if _documented_schema(operation, "422") != "#/components/schemas/ValidationErrorResponse"
+    ]
+
+    assert missing == []

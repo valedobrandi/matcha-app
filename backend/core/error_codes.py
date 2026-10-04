@@ -46,3 +46,13 @@ class ErrorResponse(ApiModel):
     detail: str
     code: ErrorCode
     field: str | None = None
+
+
+class ValidationIssue(ApiModel):
+    loc: list[str | int]
+    msg: str
+    type: str
+
+
+class ValidationErrorResponse(ApiModel):
+    detail: list[ValidationIssue]
