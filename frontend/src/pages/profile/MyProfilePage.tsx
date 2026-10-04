@@ -16,40 +16,26 @@ import {
 import ProfileTab from "@/components/ProfileTab"
 import type { UserProfile } from "@/types/user"
 import AccountTab from "@/components/AccountTab"
-import { useEffect, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useServerError } from "@/hooks/useServerError"
 import * as usersApi from "@/api/users"
 import { useAuth } from "@/auth/useAuth"
-import { API_BASE_URL, ApiError } from "@/api/client"
-import { resolveErrorMessage } from "@/i18n/errors"
+import { API_BASE_URL } from "@/api/client"
 import { FieldError } from "@/components/ui/field"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 
 function MyProfilePage() {
-    const { accessToken, logout } = useAuth()
+    const { accessToken } = useAuth()
     const { profile, error, fetchProfile } = useUserProfile()
-    const [ avatar, setAvatar ] = useState<string | null>(null)
-    const [serverError, setServerError] = useState<string | null>(null)
+    const photos = useQuery({
+        queryKey: ["my-photos", accessToken],
+        queryFn: () => usersApi.getMyPhotos(accessToken!),
+        enabled: !!accessToken,
+    })
+    const serverError = useServerError(photos.error)
+    const avatar = photos.data?.find(p=>p.is_profile_photo)?.url ?? null
     const navigate = useNavigate()
-
-    useEffect(()=>{
-        if (!accessToken)
-            return
-        const loadAvatar = async () => {
-            try {
-                const photos = await usersApi.getMyPhotos(accessToken!)
-                const avatar_src = photos.filter(p=>p.is_profile_photo)
-                setAvatar(avatar_src[0]?.url ?? null)
-            } catch (err) {
-                if (err instanceof ApiError) {
-                    setServerError(resolveErrorMessage(err.code, err.message))
-                    if (err.code === "USER_NOT_FOUND")
-                        logout()
-                }
-            }
-        }
-        loadAvatar()
-    }, [accessToken, logout])
 
     if (error) {
         return (
