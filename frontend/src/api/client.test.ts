@@ -33,4 +33,32 @@ describe('apiGet', () => {
 
     expect(logout).not.toHaveBeenCalled()
   })
+
+  it('does log out when a request that carried a token gets 401', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/probe`, () =>
+        HttpResponse.json({ detail: 'expired', code: 'EXPIRED_TOKEN' }, { status: 401 }),
+      ),
+    )
+    const logout = vi.fn()
+    setOnUnauthorized(logout)
+
+    await expect(apiGet('/probe', { token: 't' })).rejects.toBeInstanceOf(ApiError)
+
+    expect(logout).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not log out when a request without a token gets 401', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/probe`, () =>
+        HttpResponse.json({ detail: 'bad credentials', code: 'INVALID_CREDENTIALS' }, { status: 401 }),
+      ),
+    )
+    const logout = vi.fn()
+    setOnUnauthorized(logout)
+
+    await expect(apiGet('/probe')).rejects.toBeInstanceOf(ApiError)
+
+    expect(logout).not.toHaveBeenCalled()
+  })
 })

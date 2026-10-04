@@ -55,7 +55,7 @@ async function parseError(response: Response): Promise<ParsedError> {
   }
 }
 
-function callerAccountIsGone(response: Response, code?: ErrorCode): boolean {
+function sessionIsInvalid(response: Response, code?: ErrorCode): boolean {
   return response.status === 401 || code === 'USER_NOT_FOUND'
 }
 
@@ -64,7 +64,7 @@ async function failRequest(
   options?: RequestOptions,
 ): Promise<never> {
   const parsedError = await parseError(response)
-  if (options?.token && onUnauthorized && callerAccountIsGone(response, parsedError.code)) {
+  if (options?.token && onUnauthorized && sessionIsInvalid(response, parsedError.code)) {
     onUnauthorized()
   }
   throw new ApiError(
