@@ -71,3 +71,7 @@ export default defineConfig([
   },
 ])
 ```
+
+## Generated API types
+
+`src/types/api.d.ts` is generated from the backend OpenAPI schema; do not edit it by hand. Prerequisite: the backend Python dependencies are installed (`pip install -r ../backend/requirements.txt`) and `python` on your PATH resolves to that environment. Then run `npm run gen:api` (no server needed). CI fails if the committed file is stale.
