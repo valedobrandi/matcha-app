@@ -4,7 +4,7 @@ import { shouldRetry } from './queryClient'
 
 describe('shouldRetry', () => {
   it('does not retry when the API answers with a client error', () => {
-    expect(shouldRetry(0, new ApiError(404, 'gone', 'USER_NOT_FOUND'))).toBe(false)
+    expect(shouldRetry(0, new ApiError(404, 'gone', 'TARGET_USER_NOT_FOUND'))).toBe(false)
   })
 
   it('does retry when the API answers with a server error', () => {

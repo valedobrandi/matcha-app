@@ -71,9 +71,7 @@ jobs:
       - run: npx tsc -b
       - run: npm run build
       - run: npm run test:run
-      # 4 known findings remain (AuthProvider, search-form, use-mobile, ProfileTab); lint does not block yet.
       - run: npm run lint
-        continue-on-error: true
 
   contract:
     runs-on: ubuntu-latest

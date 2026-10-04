@@ -25,13 +25,20 @@ called the relationship endpoint first, which already returned a target code.
 
 | Code | Raised by | Meaning | Frontend |
 |------|-----------|---------|----------|
-| `USER_NOT_FOUND` | users module (`/users/me`, account and profile edits) | The caller's account is gone | Logs out |
-| `TARGET_USER_NOT_FOUND` | users module (`GET /users/{id}`), social module | The profile the caller asked for does not exist | Shows a message |
+| `USER_NOT_FOUND` | users module (`/users/me`, account and profile edits), HTTP 401 | The caller's account is gone | Logs out (any 401 with a token) |
+| `TARGET_USER_NOT_FOUND` | users module (`GET /users/{id}`), social module, HTTP 404 | The profile the caller asked for does not exist | Shows a message |
 | `CHAT_USER_NOT_FOUND` | chat module | The chat recipient does not exist | No message mapped yet |
 | `NOTIFICATION_NOT_FOUND` | notifications module | The notification does not exist | No message mapped yet |
 
 A new module that reports a missing target adds a code to this table instead of reusing
 `USER_NOT_FOUND`.
+
+## Amendment (2026-10-04)
+
+A session whose user no longer exists is an authentication failure, so `USER_NOT_FOUND` now
+returns HTTP **401** instead of 404 (`UserNotFoundException` in `users/handlers.py`). The
+frontend client logs out on any 401 that carried a token and no longer inspects the code.
+A 404 never logs the user out.
 
 ## Status
 

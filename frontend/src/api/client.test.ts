@@ -9,7 +9,7 @@ describe('apiGet', () => {
   it('does log out once when the API reports USER_NOT_FOUND', async () => {
     server.use(
       http.get(`${API_BASE_URL}/probe`, () =>
-        HttpResponse.json({ detail: 'gone', code: 'USER_NOT_FOUND' }, { status: 404 }),
+        HttpResponse.json({ detail: 'gone', code: 'USER_NOT_FOUND' }, { status: 401 }),
       ),
     )
     const logout = vi.fn()
@@ -18,6 +18,20 @@ describe('apiGet', () => {
     await expect(apiGet('/probe', { token: 't' })).rejects.toBeInstanceOf(ApiError)
 
     expect(logout).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not log out when a 404 carries USER_NOT_FOUND because the status decides', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/probe`, () =>
+        HttpResponse.json({ detail: 'gone', code: 'USER_NOT_FOUND' }, { status: 404 }),
+      ),
+    )
+    const logout = vi.fn()
+    setOnUnauthorized(logout)
+
+    await expect(apiGet('/probe', { token: 't' })).rejects.toBeInstanceOf(ApiError)
+
+    expect(logout).not.toHaveBeenCalled()
   })
 
   it('does not log out when the API reports TARGET_USER_NOT_FOUND', async () => {

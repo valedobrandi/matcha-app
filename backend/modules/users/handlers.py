@@ -13,7 +13,7 @@ from modules.users.exceptions import (
 )
 
 _EXCEPTION_STATUS = {
-    UserNotFoundException: status.HTTP_404_NOT_FOUND,
+    UserNotFoundException: status.HTTP_401_UNAUTHORIZED,
     TargetUserNotFoundException: status.HTTP_404_NOT_FOUND,
     FileTooLargeException: status.HTTP_413_CONTENT_TOO_LARGE,
     InvalidPhotoTypeException: status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,

@@ -72,7 +72,7 @@ describe('useSuggestedProfiles', () => {
         http.get(SUGGEST_URL, () =>
             HttpResponse.json(
                 { detail: 'User not found', code: 'USER_NOT_FOUND' },
-                { status: 404 }
+                { status: 401 }
             )
         )
     )

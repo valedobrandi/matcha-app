@@ -114,7 +114,7 @@ describe('usePublicProfile', ()=>{
     it('code is USER_NOT_FOUND call logout', async () => {
         server.use(
             http.get(RELATIONSHIP_URL, () =>
-                HttpResponse.json({ detail: 'not found', code: 'USER_NOT_FOUND' }, { status: 404 })
+                HttpResponse.json({ detail: 'not found', code: 'USER_NOT_FOUND' }, { status: 401 })
             )
         )
 

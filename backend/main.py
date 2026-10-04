@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from pydantic.json_schema import models_json_schema
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from modules.auth.handlers import register_auth_exception_handlers
@@ -10,7 +9,7 @@ from modules.discovery.handlers import register_discovery_exception_handlers
 from modules.notifications.handlers import register_notifications_exception_handlers
 from modules.chat.handlers import register_chat_exception_handlers
 from core.database import db_lifespan
-from core.error_codes import ErrorResponse
+from core.error_codes import ErrorResponse, ValidationErrorResponse
 from modules.auth.controller import auth_router
 from modules.users.controller import users_router
 from modules.tags.controller import tags_router
@@ -26,21 +25,17 @@ origins = os.getenv("CORS_ORIGINS", "http://localhost:5173")
 allow_origins = [origin.strip() for origin in origins.split(',') if origin.strip()]
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-app = FastAPI(title="Matcha API", version="1.0", lifespan=db_lifespan)
+app = FastAPI(
+    title="Matcha API",
+    version="1.0",
+    lifespan=db_lifespan,
+    responses={
+        "default": {"model": ErrorResponse, "description": "Error"},
+        422: {"model": ValidationErrorResponse, "description": "Validation Error"},
+    },
+)
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
-
-def openapi_with_error_contract() -> dict:
-    schema = FastAPI.openapi(app)
-    _, definitions = models_json_schema(
-        [(ErrorResponse, "serialization")],
-        ref_template="#/components/schemas/{model}",
-    )
-    schema["components"]["schemas"].update(definitions["$defs"])
-    return schema
-
-
-app.openapi = openapi_with_error_contract
 register_auth_exception_handlers(app)
 register_users_exception_handlers(app)
 register_tags_exception_handlers(app)

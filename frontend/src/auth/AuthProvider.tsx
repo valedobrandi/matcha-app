@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { CurrentUser, LoginInput } from '../types/auth'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { LoginInput } from '../types/auth'
 import * as authApi from '../api/auth'
-import { ApiError, setOnUnauthorized } from '../api/client'
+import { setOnUnauthorized } from '../api/client'
 import {
   clearAccessToken,
   getAccessToken,
@@ -15,55 +16,33 @@ type AuthProviderProps = {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const queryClient = useQueryClient()
   const [accessToken, setToken] = useState<string | null>(() =>
     getAccessToken(),
   )
-  const [user, setUser] = useState<CurrentUser | null>(null)
-  const [isLoading, setIsLoading] = useState(() => getAccessToken() !== null)
+  const me = useQuery({
+    queryKey: ['auth-me', accessToken],
+    queryFn: () => authApi.getMe(accessToken!),
+    enabled: accessToken !== null,
+  })
+  const user = accessToken !== null ? (me.data ?? null) : null
+  const isLoading = accessToken !== null && me.isPending
+  const { refetch } = me
 
   const refreshUser = useCallback(async () => {
-    const token = getAccessToken()
-    if (!token) {
-      setUser(null)
-      setIsLoading(false)
-      return
-    }
+    if (accessToken !== null) await refetch()
+  }, [accessToken, refetch])
 
-    setIsLoading(true)
-    try {
-      const me = await authApi.getMe(token)
-      setUser(me)
-      setToken(token)
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        clearAccessToken()
-        setToken(null)
-        setUser(null)
-      }
-    } finally {
-      setIsLoading(false)
-    }
+  const loginWithToken = useCallback(async (token: string) => {
+    setAccessToken(token)
+    setToken(token)
   }, [])
-
-  const loginWithToken = useCallback(
-    async (token: string) => {
-      setAccessToken(token)
-      setToken(token)
-      setIsLoading(true)
-      void refreshUser()
-    },
-    [refreshUser],
-  )
 
   const logout = useCallback(() => {
     clearAccessToken()
     setToken(null)
-    setUser(null)
-  }, [])
-
-  useEffect(() => {
-    void refreshUser()
-  }, [refreshUser])
+    queryClient.removeQueries({ queryKey: ['auth-me'] })
+  }, [queryClient])
 
   useEffect(() => {
     setOnUnauthorized(logout)
