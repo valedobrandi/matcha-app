@@ -55,6 +55,9 @@ class FakeRepository:
     async def get_user_by_id(self, current_user_id: int):
         return self.users.get(current_user_id)
 
+    async def is_profile_completed(self, current_user_id: int) -> bool:
+        return True
+
     async def get_my_tags(self, current_user_id: int):
         return self.tags
 

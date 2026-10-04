@@ -21,7 +21,7 @@ from core.config import settings
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 
-# Effect of each migration: ("table", name) or ("column", "table.column").
+# Effect of each migration: ("table", name), ("view", name) or ("column", "table.column").
 EFFECTS: dict[str, tuple[str, str]] = {
     "0001_create_users": ("table", "users"),
     "0002_create_email_outbox": ("table", "email_outbox"),
@@ -34,6 +34,7 @@ EFFECTS: dict[str, tuple[str, str]] = {
     "0009_add_blocks_and_reports": ("table", "reports"),
     "0010_create_in_app_notifications": ("table", "in_app_notifications"),
     "0011_create_chat_messages": ("table", "chat_messages"),
+    "0012_create_profile_completeness_view": ("view", "profile_completeness"),
 }
 
 
@@ -43,7 +44,7 @@ class MigrationError(Exception):
 
 async def _effect_present(conn: asyncpg.Connection, version: str) -> bool:
     kind, name = EFFECTS[version]
-    if kind == "table":
+    if kind in ("table", "view"):
         return await conn.fetchval(
             "SELECT EXISTS (SELECT 1 FROM information_schema.tables "
             "WHERE table_schema = current_schema() AND table_name = $1)",

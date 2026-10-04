@@ -36,21 +36,6 @@ class ProfileSocialReads(Protocol):
     async def count_visitors(self, target_user_id: int) -> int: ...
 
 
-def is_profile_completed(
-        user: UserProfile,
-        tags: List[TagOut],
-        photos: List[PhotoOut],
-) -> bool:
-    return (
-        user.bio is not None
-        and user.age is not None
-        and user.gender is not None
-        and user.sexual_preference is not None
-        and len(tags) > 0
-        and len(photos) > 0
-    )
-
-
 class UsersService:
     def __init__(
             self,
@@ -68,13 +53,12 @@ class UsersService:
         if not current_user:
             raise UserNotFoundException()
 
-        tags = await self.repository.get_my_tags(current_user_id)
-        photos = await self.repository.get_my_photos(current_user_id)
+        is_completed = await self.repository.is_profile_completed(current_user_id)
         likes_received_count = await self.social_repo.count_likes_received(current_user_id)
         visitors_count = await self.social_repo.count_visitors(current_user_id)
 
         return current_user.model_copy(update={
-            "is_profile_completed": is_profile_completed(current_user, tags, photos),
+            "is_profile_completed": is_completed,
             "likes_received_count": likes_received_count,
             "visitors_count": visitors_count,
             })

@@ -1,78 +1,23 @@
 """Runs the viewer-visibility SQL of discovery on a real Postgres.
 
-Not part of the default run. From backend/, with `docker compose up -d database` running:
+Not part of the default run. From backend/, with `docker compose up -d database` running
+and the schema migrated (`python -m database.migrate`):
 
     pytest -m integration
 
-Every test runs in a transaction that is rolled back: nothing is committed and no row is
-deleted. Each test finds its own users through a unique name token, so rows that already
-exist in the database do not change the result. The tests fail (they do not skip) when
-Postgres is unreachable, so a missing database cannot hide a broken query.
+Fixtures and row builders live in conftest.py and db_support.py. Each test finds its own
+users through a unique name token, so rows that already exist in the database do not
+change the result.
 """
-import uuid
-
-import asyncpg
 import pytest
-import pytest_asyncio
 
-from core.config import settings
+from db_support import add_block, add_user
 from modules.discovery.repository import DiscoveryRepository
 from modules.discovery.schemas import DiscoveryQuery
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 MANY = 1000
-
-
-@pytest_asyncio.fixture
-async def connection():
-    try:
-        conn = await asyncpg.connect(settings.DATABASE_URL, timeout=3)
-    except (OSError, asyncpg.PostgresError) as error:
-        pytest.fail(f"Integration tests need Postgres at DATABASE_URL: {error}", pytrace=False)
-    transaction = conn.transaction()
-    await transaction.start()
-    yield conn
-    await transaction.rollback()
-    await conn.close()
-
-
-@pytest.fixture
-def token() -> str:
-    return uuid.uuid4().hex[:10]
-
-
-@pytest_asyncio.fixture
-async def tag_id(connection, token) -> int:
-    return await connection.fetchval(
-        "INSERT INTO tags (name) VALUES ($1) RETURNING id", f"tag-{token}"
-    )
-
-
-async def add_user(connection, token, label, *, tag_ids=(), photo=True, bio="bio", age=25) -> int:
-    user_id = await connection.fetchval(
-        """
-        INSERT INTO users (email, username, first_name, last_name, gender, sexual_preference, age, bio)
-        VALUES ($1, $2, $3, $4, 'female', 'bisexual', $5, $6)
-        RETURNING id
-        """,
-        f"{token}{label}@example.test", f"{token}{label}", label.capitalize(), "Tester", age, bio,
-    )
-    for tag in tag_ids:
-        await connection.execute("INSERT INTO user_tags (user_id, tag_id) VALUES ($1, $2)", user_id, tag)
-    if photo:
-        await connection.execute(
-            "INSERT INTO user_photos (user_id, url, is_profile_photo) VALUES ($1, $2, TRUE)",
-            user_id, f"/uploads/{token}{label}.jpg",
-        )
-    return user_id
-
-
-async def add_block(connection, from_user_id, to_user_id, status="active") -> None:
-    await connection.execute(
-        "INSERT INTO blocks (from_user_id, to_user_id, status) VALUES ($1, $2, $3)",
-        from_user_id, to_user_id, status,
-    )
 
 
 async def search_ids(connection, viewer_id, term, limit=MANY) -> list[int]:

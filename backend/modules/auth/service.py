@@ -8,7 +8,6 @@ from core.config import settings
 from modules.auth.schemas import CurrentUserResponse, LoginInput, UserRecord, UserRegisterInput
 from modules.auth.repository import AuthRepository
 from modules.users.repository import UsersRepository
-from modules.users.service import is_profile_completed
 
 from modules.auth.exceptions import (
     InvalidCredentialsException,
@@ -153,10 +152,7 @@ class AuthService:
         user = await self.repository.find_by_id(user_id)
         if not user:
             raise InvalidTokenException()
-        users_repository = UsersRepository(self.repository.connection)
-        profile = await users_repository.get_user_by_id(user_id)
-        tags = await users_repository.get_my_tags(user_id)
-        photos = await users_repository.get_my_photos(user_id)
+        profile_completed = await UsersRepository(self.repository.connection).is_profile_completed(user_id)
 
         return CurrentUserResponse(
             id=user.id,
@@ -165,6 +161,6 @@ class AuthService:
             first_name=user.first_name,
             last_name=user.last_name,
             email_verified=user.is_verified,
-            profile_completed=is_profile_completed(profile, tags, photos),
+            profile_completed=profile_completed,
             has_password=user.password_hash is not None,
         )

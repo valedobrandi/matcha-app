@@ -66,6 +66,15 @@ class UsersRepository:
         query = f"SELECT {USER_COLUMNS} FROM users WHERE id = $1"
         return await self._fetch_one(UserProfile, query, current_user_id)
     
+    async def is_profile_completed(
+            self,
+            current_user_id: int
+    ) -> bool:
+        return bool(await self.connection.fetchval(
+            "SELECT is_completed FROM profile_completeness WHERE user_id = $1",
+            current_user_id,
+        ))
+
     async def patch_user_profile(
             self,
             current_user_id,

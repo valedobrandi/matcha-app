@@ -126,8 +126,9 @@ async def test_change_password_success(monkeypatch):
     assert bcrypt.checkpw(b"Xk9#mQvzTr4!!", hashed_password.encode("utf-8"))
 
 class FakeRepository:
-    def __init__(self, user, tags=None, photos=None):
+    def __init__(self, user, tags=None, photos=None, completed=True):
         self.user = user
+        self.completed = completed
         self.tags = tags or []
         self.photos = photos or []
         self.current_user_id = None
@@ -138,6 +139,9 @@ class FakeRepository:
     async def get_user_by_id(self, user_id: int):
         self.current_user_id = user_id
         return self.user
+
+    async def is_profile_completed(self, user_id: int) -> bool:
+        return self.completed
 
     async def get_my_tags(self, user_id: int):
         return self.tags
@@ -216,9 +220,9 @@ async def test_get_profile_when_user_found():
 
 
 @pytest.mark.asyncio
-async def test_get_profile_is_incomplete_without_photos() -> None:
+async def test_get_profile_is_incomplete_when_the_repository_says_incomplete() -> None:
     user = _complete_user()
-    repo = FakeRepository(user, tags=[{"id": 1}], photos=[])
+    repo = FakeRepository(user, completed=False)
     service = UsersService(repo, FakeSocial())
 
     res = await service.get_profile(1)
