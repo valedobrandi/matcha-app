@@ -5,7 +5,7 @@ from modules.notifications.schemas import (
     NotificationOut,
     NotificationType,
     UnreadCountOut,
-    OkResponse,
+    NotificationOkResponse,
 )
 from modules.notifications.exceptions import NotificationNotFoundException
 
@@ -42,15 +42,15 @@ class NotificationsService:
     ) -> List[NotificationOut]:
         return await self.repository.list_for_user(user_id, limit, offset)
 
-    async def mark_read(self, user_id: int, notification_id: int) -> OkResponse:
+    async def mark_read(self, user_id: int, notification_id: int) -> NotificationOkResponse:
         updated = await self.repository.mark_read(user_id, notification_id)
         if not updated:
             raise NotificationNotFoundException()
-        return OkResponse()
+        return NotificationOkResponse()
 
-    async def mark_all_read(self, user_id: int) -> OkResponse:
+    async def mark_all_read(self, user_id: int) -> NotificationOkResponse:
         await self.repository.mark_all_read(user_id)
-        return OkResponse()
+        return NotificationOkResponse()
 
     async def unread_count(self, user_id: int) -> UnreadCountOut:
         count = await self.repository.unread_count(user_id)

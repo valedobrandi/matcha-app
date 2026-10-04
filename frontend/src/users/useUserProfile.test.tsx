@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { server, sampleProfile } from '@/test/server'
-import { API_BASE_URL } from '@/api/client'
+import { API_BASE_URL, setOnUnauthorized } from '@/api/client'
 import { makeAuthValue, authWrapper } from '@/test/renderWithAuth'
 import useUserProfile from './useUserProfile'
 
@@ -55,12 +55,14 @@ describe('useUserProfile', () => {
       ),
     )
 
-    const auth = makeAuthValue()
+    const logout = vi.fn()
+    setOnUnauthorized(logout)
     const { result } = renderHook(() => useUserProfile(), {
-      wrapper: authWrapper(auth),
+      wrapper: authWrapper(makeAuthValue()),
     })
 
-    await waitFor(() => expect(auth.logout).toHaveBeenCalledOnce())
+    await waitFor(() => expect(logout).toHaveBeenCalledOnce())
+    setOnUnauthorized(null)
     expect(result.current.profile).toBeNull()
   })
 })

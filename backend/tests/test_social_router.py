@@ -9,7 +9,7 @@ from core.auth import get_current_user_id
 from core.presence import get_current_user_id_and_touch
 from modules.social.controller import get_social_service
 from modules.social.schemas import (
-    OkResponse,
+    SocialOkResponse,
     LikeStateResponse,
     BlockStateResponse,
     RelationshipResponse,
@@ -51,14 +51,14 @@ class FakeSocialService:
         self.users = {1, 2}
         self.blocked = False
 
-    async def record_visit(self, viewer_id: int, target_id: int) -> OkResponse:
+    async def record_visit(self, viewer_id: int, target_id: int) -> SocialOkResponse:
         if viewer_id == target_id:
             raise CannotVisitSelfException()
         if target_id not in self.users:
             raise SocialUserNotFoundException()
         if self.blocked:
             raise BlockedException()
-        return OkResponse()
+        return SocialOkResponse()
 
     async def list_visitors(self, user_id: int, limit: int, offset: int):
         return [
@@ -124,12 +124,12 @@ class FakeSocialService:
 
     async def report(
         self, reporter_id: int, target_id: int, reason: str | None
-    ) -> OkResponse:
+    ) -> SocialOkResponse:
         if reporter_id == target_id:
             raise CannotReportSelfException()
         if target_id not in self.users:
             raise SocialUserNotFoundException()
-        return OkResponse()
+        return SocialOkResponse()
 
 
 @pytest.fixture
@@ -167,7 +167,7 @@ class TestSocialVisits:
             headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 404
-        assert response.json()["code"] == "USER_NOT_FOUND"
+        assert response.json()["code"] == "TARGET_USER_NOT_FOUND"
 
     def test_visit_blocked(self, override_social):
         override_social.blocked = True
@@ -266,7 +266,7 @@ class TestSocialRelationship:
             headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 404
-        assert response.json()["code"] == "USER_NOT_FOUND"
+        assert response.json()["code"] == "TARGET_USER_NOT_FOUND"
 
 
 class TestSocialLists:

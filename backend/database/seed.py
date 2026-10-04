@@ -4,7 +4,7 @@ Prerequisites
   - Run from ``backend/`` with the project venv active and deps installed
     (``Faker`` is listed in ``requirements.txt``).
   - ``DATABASE_URL`` must point at a migrated database (e.g. after
-    ``docker compose up`` so init scripts ``0001``–``0009``+ have applied).
+    ``python -m database.migrate`` or ``docker compose up``).
   - Prefer a fresh DB: re-seeding into a non-empty users table will add more
     rows and may hit unique constraints on email/username.
 

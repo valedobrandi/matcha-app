@@ -22,6 +22,7 @@ class FakeDiscoveryRepository:
         self.viewer = viewer
         self.cards = cards or []
         self.last_query: DiscoveryQuery | None = None
+        self.last_name_search: tuple | None = None
 
     async def get_viewer_context(self, user_id: int):
         return self.viewer
@@ -29,6 +30,10 @@ class FakeDiscoveryRepository:
     async def list_profiles(self, query: DiscoveryQuery):
         self.last_query = query
         return self.cards
+
+    async def search_by_name(self, viewer_id: int, term: str, limit: int):
+        self.last_name_search = (viewer_id, term, limit)
+        return []
 
 
 @pytest.mark.parametrize(
@@ -122,6 +127,7 @@ async def test_suggest_builds_orientation_query():
                 age=25,
                 gender="female",
                 fame_rating=1,
+                liked_by_me=False,
             )
         ],
     )
@@ -241,3 +247,21 @@ async def test_search_passes_filters_and_dedupes_tags():
     assert q.fame_min == 1 and q.fame_max == 50
     assert q.max_distance_km == 25
     assert q.tag_ids == [3, 1]
+
+
+@pytest.mark.asyncio
+async def test_search_by_name_should_pass_viewer_and_trimmed_term_when_valid():
+    repo = FakeDiscoveryRepository()
+    service = DiscoveryService(repo)
+    await service.search_by_name(5, "  bob ")
+    assert repo.last_name_search == (5, "bob", 10)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("target", ["", " ", "  ", "a", " a "])
+async def test_search_by_name_should_raise_invalid_filter_when_term_shorter_than_two_chars(target):
+    repo = FakeDiscoveryRepository()
+    service = DiscoveryService(repo)
+    with pytest.raises(InvalidFilterException):
+        await service.search_by_name(5, target)
+    assert repo.last_name_search is None

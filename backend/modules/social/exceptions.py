@@ -3,10 +3,10 @@ class SocialException(Exception):
     field: str | None = None
 
 class SocialUserNotFoundException(SocialException):
-    code = "USER_NOT_FOUND"
+    code = "TARGET_USER_NOT_FOUND"
     field = None
     def __init__(self):
-        super().__init__("User not found")
+        super().__init__("Target user not found")
 
 class CannotVisitSelfException(SocialException):
     code = "CANNOT_VISIT_SELF"

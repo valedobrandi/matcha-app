@@ -4,6 +4,7 @@ from modules.discovery.schemas import (
     DiscoveryProfileCard,
     DiscoveryQuery,
     ViewerContext,
+    SearchingBarProfile
 )
 
 # Earth radius km for Haversine.
@@ -15,6 +16,25 @@ _SORT_SQL = {
     "fame": "fame_rating",
     "common_tags": "common_tags_count",
 }
+
+# Who a viewer ($1) may see as "u": not self, profile completed, no active block
+# either way. Shared by every discovery query so visibility cannot drift.
+# Profile completion is owned by the profile_completeness view (migration 0012).
+# Block exclusion twins SocialRepository.is_blocked_either_way.
+_VISIBLE_TO_VIEWER_SQL = """
+                u.id <> $1
+                AND EXISTS (
+                  SELECT 1 FROM profile_completeness pc
+                  WHERE pc.user_id = u.id AND pc.is_completed
+                )
+                AND NOT EXISTS (
+                  SELECT 1 FROM blocks
+                  WHERE status = 'active'
+                    AND (
+                      (from_user_id = $1 AND to_user_id = u.id)
+                      OR (from_user_id = u.id AND to_user_id = $1)
+                    )
+                )"""
 
 
 class DiscoveryRepository:
@@ -37,7 +57,7 @@ class DiscoveryRepository:
     async def list_profiles(self, query: DiscoveryQuery) -> List[DiscoveryProfileCard]:
         """Single suggest/search list path — do not fork a second SQL string.
 
-        Completion filter twins UsersService.get_profile is_completed.
+        Profile completion comes from the profile_completeness view.
         Block exclusion twins SocialRepository.is_blocked_either_way.
         """
         sort_expr = _SORT_SQL.get(query.sort, "fame_rating")
@@ -90,25 +110,14 @@ class DiscoveryRepository:
                   JOIN user_tags ct ON ct.tag_id = vt.tag_id
                   WHERE vt.user_id = $1 AND ct.user_id = u.id
                 ) AS common_tags_count,
-                u.location_label
+                u.location_label,
+                EXISTS (
+                  SELECT 1
+                  FROM likes
+                  WHERE from_user_id = $1 AND to_user_id = u.id AND status = 'active'
+                ) AS liked_by_me
               FROM users u
-              WHERE u.id <> $1
-                -- twin of UsersService.get_profile is_completed
-                AND u.bio IS NOT NULL
-                AND u.age IS NOT NULL
-                AND u.gender IS NOT NULL
-                AND u.sexual_preference IS NOT NULL
-                AND EXISTS (SELECT 1 FROM user_tags ut WHERE ut.user_id = u.id)
-                AND EXISTS (SELECT 1 FROM user_photos up WHERE up.user_id = u.id)
-                -- twin of SocialRepository.is_blocked_either_way
-                AND NOT EXISTS (
-                  SELECT 1 FROM blocks
-                  WHERE status = 'active'
-                    AND (
-                      (from_user_id = $1 AND to_user_id = u.id)
-                      OR (from_user_id = u.id AND to_user_id = $1)
-                    )
-                )
+              WHERE {_VISIBLE_TO_VIEWER_SQL}
                 AND u.gender = ANY($4::text[])
                 AND u.sexual_preference = ANY($5::text[])
                 AND ($6::int IS NULL OR u.age >= $6)
@@ -151,3 +160,30 @@ class DiscoveryRepository:
             query.offset,
         )
         return [DiscoveryProfileCard.model_validate(dict(r)) for r in rows]
+
+
+    async def search_by_name(
+            self,
+            viewer_id: int,
+            term: str,
+            limit: int,
+    ) -> List[SearchingBarProfile]:
+        escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        rows = await self.connection.fetch(
+            f"""
+            SELECT u.id, u.username, u.first_name, u.last_name
+            FROM users u
+            WHERE {_VISIBLE_TO_VIEWER_SQL}
+              AND (
+                u.username ILIKE $2 ESCAPE '\\'
+                OR u.first_name ILIKE $2 ESCAPE '\\'
+                OR u.last_name ILIKE $2 ESCAPE '\\'
+              )
+            ORDER BY u.username ASC, u.id ASC
+            LIMIT $3
+            """,
+            viewer_id,
+            f"%{escaped}%",
+            limit,
+        )
+        return [SearchingBarProfile.model_validate(dict(r)) for r in rows]

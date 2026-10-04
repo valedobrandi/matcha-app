@@ -1,8 +1,9 @@
+from core.api_model import ApiModel
 from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
 
 
-class DiscoveryProfileCard(BaseModel):
+class DiscoveryProfileCard(ApiModel):
     id: int
     username: str
     first_name: str
@@ -13,6 +14,7 @@ class DiscoveryProfileCard(BaseModel):
     distance_km: Optional[float] = None
     common_tags_count: int = 0
     location_label: Optional[str] = None
+    liked_by_me: bool
 
 
 class SuggestQueryParams(BaseModel):
@@ -59,3 +61,10 @@ class ViewerContext(BaseModel):
     sexual_preference: Optional[Literal["man", "woman", "bisexual"]] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+
+
+class SearchingBarProfile(ApiModel):
+    id: int
+    username: str
+    first_name: str
+    last_name: str

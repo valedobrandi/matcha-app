@@ -10,10 +10,13 @@ from modules.discovery.schemas import (
     SuggestQueryParams,
     SearchQueryParams,
     ViewerContext,
+    SearchingBarProfile,
 )
 
 _ALLOWED_SORTS = frozenset({"age", "distance", "fame", "common_tags"})
 _ALLOWED_ORDERS = frozenset({"asc", "desc"})
+_NAME_SEARCH_MIN_LENGTH = 2
+_NAME_SEARCH_LIMIT = 10
 _DEFAULT_ORDER = {
     "age": "asc",
     "distance": "asc",
@@ -199,4 +202,20 @@ class DiscoveryService:
             order=order,
             limit=limit,
             offset=offset,
+        )
+
+
+    async def search_by_name(
+            self,
+            viewer_id: int,
+            target: str,
+    ) -> List[SearchingBarProfile]:
+        term = target.strip()
+        if len(term) < _NAME_SEARCH_MIN_LENGTH:
+            raise InvalidFilterException(
+                f"target must be at least {_NAME_SEARCH_MIN_LENGTH} characters",
+                field="target",
+            )
+        return await self.repository.search_by_name(
+            viewer_id, term, _NAME_SEARCH_LIMIT
         )

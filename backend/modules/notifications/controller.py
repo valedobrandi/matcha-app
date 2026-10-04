@@ -8,7 +8,7 @@ from modules.notifications.service import NotificationsService
 from modules.notifications.schemas import (
     NotificationOut,
     UnreadCountOut,
-    OkResponse,
+    NotificationOkResponse,
 )
 from core.ws_hub import hub
 
@@ -39,18 +39,18 @@ async def get_unread_count(
     return await service.unread_count(current_user_id)
 
 
-@notifications_router.post("/read-all", response_model=OkResponse)
+@notifications_router.post("/read-all", response_model=NotificationOkResponse)
 async def mark_all_notifications_read(
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: NotificationsService = Depends(get_notifications_service),
-) -> OkResponse:
+) -> NotificationOkResponse:
     return await service.mark_all_read(current_user_id)
 
 
-@notifications_router.post("/{notification_id}/read", response_model=OkResponse)
+@notifications_router.post("/{notification_id}/read", response_model=NotificationOkResponse)
 async def mark_notification_read(
     notification_id: int,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: NotificationsService = Depends(get_notifications_service),
-) -> OkResponse:
+) -> NotificationOkResponse:
     return await service.mark_read(current_user_id, notification_id)

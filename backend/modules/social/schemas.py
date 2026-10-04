@@ -1,21 +1,22 @@
+from core.api_model import ApiModel
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
 
-class OkResponse(BaseModel):
+class SocialOkResponse(ApiModel):
     ok: bool = True
 
-class LikeStateResponse(BaseModel):
+class LikeStateResponse(ApiModel):
     liked: bool
     connected: bool
 
-class BlockStateResponse(BaseModel):
+class BlockStateResponse(ApiModel):
     blocked: bool
 
 class ReportInput(BaseModel):
     reason: Optional[str] = Field(None, max_length=500)
 
-class RelationshipResponse(BaseModel):
+class RelationshipResponse(ApiModel):
     liked_by_me: bool
     liked_you: bool
     connected: bool
@@ -24,7 +25,7 @@ class RelationshipResponse(BaseModel):
     last_connection: Optional[datetime] = None
     is_online: bool = False
 
-class SocialUserCard(BaseModel):
+class SocialUserCard(ApiModel):
     id: int
     username: str
     first_name: str

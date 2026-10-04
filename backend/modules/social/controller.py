@@ -9,7 +9,7 @@ from modules.notifications.service import NotificationsService
 from modules.social.service import SocialService
 from core.ws_hub import hub
 from modules.social.schemas import (
-    OkResponse,
+    SocialOkResponse,
     LikeStateResponse,
     BlockStateResponse,
     ReportInput,
@@ -28,12 +28,12 @@ def get_social_service(
     notifier = NotificationsService(InAppNotificationsRepository(db), hub=hub)
     return SocialService(SocialRepository(db), UsersRepository(db), notifier=notifier)
 
-@social_router.post("/visits/{target_user_id}", response_model=OkResponse)
+@social_router.post("/visits/{target_user_id}", response_model=SocialOkResponse)
 async def create_visit(
     target_user_id: int,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
-) -> OkResponse:
+) -> SocialOkResponse:
     return await service.record_visit(current_user_id, target_user_id)
 
 @social_router.get("/visitors", response_model=List[VisitorOut])
@@ -103,11 +103,11 @@ async def list_blocks(
 ) -> List[BlockedUserOut]:
     return await service.list_blocks(current_user_id, limit, offset)
 
-@social_router.post("/reports/{target_user_id}", response_model=OkResponse)
+@social_router.post("/reports/{target_user_id}", response_model=SocialOkResponse)
 async def create_report(
     target_user_id: int,
     payload: ReportInput,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
-) -> OkResponse:
+) -> SocialOkResponse:
     return await service.report(current_user_id, target_user_id, payload.reason)

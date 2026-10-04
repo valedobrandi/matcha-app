@@ -30,7 +30,6 @@ export function ProfileCompletePage() {
         tagsSearchList,
         tagsList,
         serverError: tagsError,
-        handleMyTags,
         handleInput,
         handleAddTag,
         handleDeleteTag, 
@@ -39,7 +38,6 @@ export function ProfileCompletePage() {
   const {
         photoList,
         serverError: photosError,
-        handleGetMyPhotos,
         handleAddPhoto,
         handleAsAvatar,
         handlePatchPhoto,
@@ -83,7 +81,6 @@ export function ProfileCompletePage() {
             tagsSearchList = {tagsSearchList}
             tagsList = {tagsList}
             serverError = {tagsError}
-            handleMyTags = {handleMyTags}
             handleInput = {handleInput}
             handleAddTag = {handleAddTag}
             handleDeleteTag = {handleDeleteTag}
@@ -95,7 +92,6 @@ export function ProfileCompletePage() {
           <PhotosForm
             photoList = {photoList}
             serverError = {photosError}
-            handleGetMyPhotos = {handleGetMyPhotos}
             handleAddPhoto = {handleAddPhoto}
             handleAsAvatar = {handleAsAvatar}
             handlePatchPhoto = {handlePatchPhoto}

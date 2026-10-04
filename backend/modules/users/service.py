@@ -12,6 +12,7 @@ from modules.users.schemas import (
 )
 from modules.users.exceptions import (
     UserNotFoundException,
+    TargetUserNotFoundException,
     InvalidLocationException,
 )
 from modules.auth.exceptions import (
@@ -24,20 +25,26 @@ from modules.tags.schemas import TagInput, TagOut
 from modules.tags.exceptions import TagContentProfanity
 from modules.tags.service import profanity
 from core.presence import ONLINE_WINDOW_SECONDS
-from typing import List, Optional, Any
+from typing import List, Optional, Protocol
 from fastapi import UploadFile
 import bcrypt
+
+
+class ProfileSocialReads(Protocol):
+    async def is_blocked_either_way(self, user_a: int, user_b: int) -> bool: ...
+    async def count_likes_received(self, target_user_id: int) -> int: ...
+    async def count_visitors(self, target_user_id: int) -> int: ...
 
 
 class UsersService:
     def __init__(
             self,
             repository: UsersRepository,
-            social_repo: Any = None,
+            social_repo: ProfileSocialReads,
     ):
         self.repository = repository
         self.social_repo = social_repo
-    
+
     async def get_profile(
             self,
             current_user_id: int
@@ -45,34 +52,33 @@ class UsersService:
         current_user = await self.repository.get_user_by_id(current_user_id)
         if not current_user:
             raise UserNotFoundException()
-        
-        tags = await self.repository.get_my_tags(current_user_id)
-        photos = await self.repository.get_my_photos(current_user_id)
 
-        is_completed = (
-            current_user.bio is not None
-            and current_user.age is not None
-            and current_user.gender is not None
-            and current_user.sexual_preference is not None
-            and len(tags) > 0
-            and len(photos) > 0
-        )
-        
-        return current_user.model_copy(update={"is_profile_completed": is_completed})
+        is_completed = await self.repository.is_profile_completed(current_user_id)
+        likes_received_count = await self.social_repo.count_likes_received(current_user_id)
+        visitors_count = await self.social_repo.count_visitors(current_user_id)
+
+        return current_user.model_copy(update={
+            "is_profile_completed": is_completed,
+            "likes_received_count": likes_received_count,
+            "visitors_count": visitors_count,
+            })
 
     async def get_public_profile(
             self,
             viewer_id: int,
             target_id: int,
     ) -> PublicProfile:
-        if self.social_repo is not None:
-            if await self.social_repo.is_blocked_either_way(viewer_id, target_id):
-                raise BlockedException()
+        if await self.social_repo.is_blocked_either_way(viewer_id, target_id):
+            raise BlockedException()
         target = await self.repository.get_user_by_id(target_id)
         if not target:
-            raise UserNotFoundException()
+            raise TargetUserNotFoundException()
+
         tags = await self.repository.get_my_tags(target_id)
         photos = await self.repository.get_my_photos(target_id)
+        likes_received_count = await self.social_repo.count_likes_received(target_id)
+        visitors_count = await self.social_repo.count_visitors(target_id)
+
         return PublicProfile(
             id=target.id,
             username=target.username,
@@ -88,6 +94,8 @@ class UsersService:
             is_online=self._is_online(target.last_connection),
             tags=tags or [],
             photos=photos or [],
+            likes_received_count=likes_received_count,
+            visitors_count=visitors_count,
         )
 
     @staticmethod

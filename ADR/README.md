@@ -19,3 +19,4 @@ Status vocabulary: `Pending` · `Decided` · `Approved` · `Superseded` · `Reje
 | [0001](0001-public-profile-is-a-projection-in-the-users-module.md) | Public profile is a projection in the users module | Decided | Backend | 2026-07-30 |
 | [0002](0002-chat-and-in-app-notifications-are-separate-modules-fed.md) | Chat and in-app notifications are separate modules fed by thin social emit hooks | Decided | Backend | 2026-07-30 |
 | [0003](0003-realtime-delivery-uses-a-fastapi-websocket-hub.md) | Realtime delivery uses a FastAPI WebSocket hub | Decided | Backend | 2026-07-30 |
+| [0004](0004-user-not-found-codes-separate-caller-from-target.md) | "User not found" codes separate the caller account from a target | Decided | Backend | 2026-10-04 |

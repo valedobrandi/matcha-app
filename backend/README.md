@@ -1,26 +1,35 @@
 # Backend
 
-## Migrations (docker)
+## Migrations
 
-SQL under `database/migrations/` is mounted into Postgres
-`docker-entrypoint-initdb.d/` via `docker-compose.yml`. Those scripts run **only
-on first volume init**.
+`python -m database.migrate` (run from `backend/`) applies `database/migrations/*.sql`
+in filename order and records each in `schema_migrations`. Each file runs in its own
+transaction; a failing file rolls back and stops the run. A second run applies nothing.
 
-If you pull new migrations (e.g. `0010` in-app notifications, `0011` chat) onto
-an existing local volume, recreate it before expecting the new tables:
+`docker compose up` runs it before starting uvicorn, so existing volumes receive new
+migrations on the next start; `down -v` is no longer needed. A database created by the
+old docker init scripts (tables but no `schema_migrations`) is converged on first run:
+migrations whose tables/columns already exist are recorded as applied, the rest are applied.
+
+## Integration tests (real Postgres)
+
+The default `pytest` run needs no database. Tests marked `integration` run the
+discovery visibility SQL (suggest, search and name search) on Postgres:
 
 ```bash
-docker compose down -v
-docker compose up -d
+docker compose up -d database
+cd backend && python -m database.migrate && pytest -m integration
 ```
 
-(`-v` deletes the named postgres volume — local data only.)
+Each test runs in a transaction that is rolled back, so nothing is committed and no
+row is deleted. The tests fail, they do not skip, when Postgres is unreachable. Run
+them before you merge a change to the discovery SQL.
 
 ## Seed demo data
 
 For discovery/search demos you need enough profiles (≥500 for subject eval).
 
-1. Start a migrated Postgres (fresh volume so all migrations apply — see above).
+1. Start a migrated Postgres (`docker compose up`, or run the migration runner — see above).
 2. From `backend/` with the venv active and `DATABASE_URL` set:
 
 ```bash

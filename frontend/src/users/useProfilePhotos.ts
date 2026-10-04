@@ -1,8 +1,7 @@
 import { useAuth } from "@/auth/useAuth"
-import { useCallback, useEffect, useState } from "react"
-import type { Photo } from "../types/user"
-import { ApiError } from "@/api/client"
-import { resolveErrorMessage } from "@/i18n/errors"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toServerMessage } from "@/hooks/toServerMessage"
 import {
     getMyPhotos,
     postProfilePhoto,
@@ -13,78 +12,54 @@ import {
 
 function useProfilePhotos() {
     const { accessToken } = useAuth()
-    const [ photoList, setPhotoList] = useState<Photo[]>([])
-    const [ serverError, setServerError] = useState<string | null>(null)
+    const queryClient = useQueryClient()
+    const [ actionError, setActionError ] = useState<string | null>(null)
 
-    const handleGetMyPhotos = useCallback(async ()=>{
-        try {
-            const myPhotos = await getMyPhotos(accessToken!)
-            setPhotoList(myPhotos)
-        } catch (err) {
-            if (err instanceof ApiError)
-                setServerError(resolveErrorMessage(err.code, err.message))
-        }
-    }, [accessToken])
+    const myPhotos = useQuery({
+        queryKey: ["my-photos", accessToken],
+        queryFn: () => getMyPhotos(accessToken!),
+        enabled: !!accessToken,
+    })
 
-    useEffect(()=>{
-        void handleGetMyPhotos()
-    }, [handleGetMyPhotos])
-
-    const handleAddPhoto = async (photo_input: File) => {
-        setServerError(null)
-        try {
-            const newPhoto: Photo = await postProfilePhoto(accessToken!, photo_input)
-            setPhotoList(prev=>([
-                ...prev,
-                newPhoto
-            ]))
-        } catch (err) {
-            if (err instanceof ApiError)
-                setServerError(resolveErrorMessage(err.code, err.message))
-        }
+    // Every photo change can alter the avatar, which other queries also show.
+    const mutationOptions = {
+        onSuccess: () => Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["my-photos"] }),
+            queryClient.invalidateQueries({ queryKey: ["me"] }),
+        ]),
+        onError: (err: unknown) => setActionError(toServerMessage(err)),
     }
+    const add = useMutation({
+        mutationFn: (photo_input: File) => postProfilePhoto(accessToken!, photo_input),
+        ...mutationOptions,
+    })
+    const setAvatar = useMutation({
+        mutationFn: (photo_id: number) => patchAsAvatar(accessToken!, photo_id),
+        ...mutationOptions,
+    })
+    const replace = useMutation({
+        mutationFn: ({ photo_id, photo_input }: { photo_id: number, photo_input: File }) =>
+            patchPhotoByNew(accessToken!, photo_id, photo_input),
+        ...mutationOptions,
+    })
+    const remove = useMutation({
+        mutationFn: (photo_id: number) => deleteProfilePhoto(accessToken!, photo_id),
+        ...mutationOptions,
+    })
 
-    const handleAsAvatar = async (photo_id: number) => {
-        setServerError(null)
-        try {
-            await patchAsAvatar(accessToken!, photo_id)
-            await handleGetMyPhotos()
-        } catch (err) {
-            if (err instanceof ApiError)
-                setServerError(resolveErrorMessage(err.code, err.message))   
-        }   
-    }
-
-    const handlePatchPhoto = async (photo_id: number, photo_input: File) => {
-        setServerError(null)
-        try {
-            const newPhoto: Photo = await patchPhotoByNew(accessToken!, photo_id, photo_input)
-            setPhotoList(prev=>prev.map(p=>(p.id === photo_id? newPhoto : p)))
-        } catch (err) {
-            if (err instanceof ApiError)
-                setServerError(resolveErrorMessage(err.code, err.message))   
-        }
-    }
-
-    const handleDeletePhoto = async (photo_id: number) => {
-        setServerError(null)
-        try {
-            await deleteProfilePhoto(accessToken!, photo_id)
-            setPhotoList(prev=>prev.filter((p)=>p.id !== photo_id))
-        } catch (err) {
-            if (err instanceof ApiError)
-                setServerError(resolveErrorMessage(err.code, err.message))   
-        }
+    const run = <T,>(mutate: (variables: T) => void) => (variables: T) => {
+        setActionError(null)
+        mutate(variables)
     }
 
     return {
-        photoList,
-        serverError,
-        handleGetMyPhotos,
-        handleAddPhoto,
-        handleAsAvatar,
-        handlePatchPhoto,
-        handleDeletePhoto
+        photoList: myPhotos.data ?? [],
+        serverError: actionError ?? toServerMessage(myPhotos.error),
+        handleAddPhoto: run(add.mutate),
+        handleAsAvatar: run(setAvatar.mutate),
+        handlePatchPhoto: (photo_id: number, photo_input: File) =>
+            run(replace.mutate)({ photo_id, photo_input }),
+        handleDeletePhoto: run(remove.mutate),
     }
 }
 

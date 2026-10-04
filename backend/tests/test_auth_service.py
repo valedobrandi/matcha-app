@@ -6,7 +6,7 @@ from modules.auth.exceptions import (
 )
 from modules.auth.schemas import LoginInput, UserRecord
 from modules.auth.service import AuthService
-from modules.users.service import UsersService
+from modules.users.repository import UsersRepository
 
 
 class FakeRepository:
@@ -75,10 +75,10 @@ async def test_get_current_user_returns_session_contract(monkeypatch) -> None:
     )
     service = AuthService(FakeRepository(user))
 
-    async def fake_get_profile(self, user_id: int):
-        return type("Profile", (), {"is_profile_completed": True})()
+    async def fake_is_profile_completed(self, user_id: int) -> bool:
+        return True
 
-    monkeypatch.setattr(UsersService, "get_profile", fake_get_profile)
+    monkeypatch.setattr(UsersRepository, "is_profile_completed", fake_is_profile_completed)
 
     current_user = await service.get_current_user(1)
 

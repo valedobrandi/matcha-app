@@ -4,57 +4,6 @@
  */
 
 export interface paths {
-    "/auth/resend-verification": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Resend Verification */
-        post: operations["resend_verification_auth_resend_verification_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Register */
-        post: operations["register_auth_register_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Login */
-        post: operations["login_auth_login_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/auth/callback/42": {
         parameters: {
             query?: never;
@@ -66,23 +15,6 @@ export interface paths {
         put?: never;
         /** Fortytwo Oauth Callback */
         post: operations["fortytwo_oauth_callback_auth_callback_42_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/verify/{token}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Verify Email */
-        get: operations["verify_email_auth_verify__token__get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -106,6 +38,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login */
+        post: operations["login_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Me */
+        get: operations["get_me_auth_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register */
+        post: operations["register_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/resend-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend Verification */
+        post: operations["resend_verification_auth_resend_verification_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/reset-password": {
         parameters: {
             query?: never;
@@ -123,15 +123,324 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/me": {
+    "/auth/verify/{token}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Me */
-        get: operations["get_me_auth_me_get"];
+        /** Verify Email */
+        get: operations["verify_email_auth_verify__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/chat/messages/{peer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Messages */
+        get: operations["list_messages_chat_messages__peer_id__get"];
+        put?: never;
+        /** Send Message */
+        post: operations["send_message_chat_messages__peer_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/discovery/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Profiles */
+        get: operations["search_profiles_discovery_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/discovery/search-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Profiles By Name */
+        get: operations["search_profiles_by_name_discovery_search_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/discovery/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Suggest Profiles */
+        get: operations["suggest_profiles_discovery_suggest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Execute Health Check */
+        get: operations["execute_health_check_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Notifications */
+        get: operations["list_notifications_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark All Notifications Read */
+        post: operations["mark_all_notifications_read_notifications_read_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Unread Count */
+        get: operations["get_unread_count_notifications_unread_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Notification Read */
+        post: operations["mark_notification_read_notifications__notification_id__read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/social/blocks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Blocks */
+        get: operations["list_blocks_social_blocks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/social/blocks/{target_user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Block */
+        post: operations["create_block_social_blocks__target_user_id__post"];
+        /** Delete Block */
+        delete: operations["delete_block_social_blocks__target_user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/social/likes/received": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Likes Received */
+        get: operations["list_likes_received_social_likes_received_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/social/likes/{target_user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Like */
+        post: operations["create_like_social_likes__target_user_id__post"];
+        /** Delete Like */
+        delete: operations["delete_like_social_likes__target_user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/social/relationship/{target_user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Relationship */
+        get: operations["get_relationship_social_relationship__target_user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/social/reports/{target_user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Report */
+        post: operations["create_report_social_reports__target_user_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/social/visitors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Visitors */
+        get: operations["list_visitors_social_visitors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/social/visits/{target_user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Visit */
+        post: operations["create_visit_social_visits__target_user_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tags/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Search Tags */
+        get: operations["get_search_tags_tags__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -158,23 +467,6 @@ export interface paths {
         patch: operations["patch_me_users_me_patch"];
         trace?: never;
     };
-    "/users/me/location": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Patch Me Location */
-        patch: operations["patch_me_location_users_me_location_patch"];
-        trace?: never;
-    };
     "/users/me/account": {
         parameters: {
             query?: never;
@@ -192,25 +484,7 @@ export interface paths {
         patch: operations["patch_me_account_users_me_account_patch"];
         trace?: never;
     };
-    "/users/me/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get My Tags */
-        get: operations["get_my_tags_users_me_tags_get"];
-        put?: never;
-        /** Add One Profile Tag */
-        post: operations["add_one_profile_tag_users_me_tags_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/users/me/tags/{tag_id}": {
+    "/users/me/location": {
         parameters: {
             query?: never;
             header?: never;
@@ -220,11 +494,28 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete One Tag */
-        delete: operations["delete_one_tag_users_me_tags__tag_id__delete"];
+        delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Patch Me Location */
+        patch: operations["patch_me_location_users_me_location_patch"];
+        trace?: never;
+    };
+    "/users/me/password-change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change Password */
+        patch: operations["change_password_users_me_password_change_patch"];
         trace?: never;
     };
     "/users/me/photos": {
@@ -264,24 +555,7 @@ export interface paths {
         patch: operations["set_photo_as_avatar_users_me_photos__photo_id__patch"];
         trace?: never;
     };
-    "/tags/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Search Tags */
-        get: operations["get_search_tags_tags__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/social/visits/{target_user_id}": {
+    "/users/me/profile": {
         parameters: {
             query?: never;
             header?: never;
@@ -290,32 +564,33 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create Visit */
-        post: operations["create_visit_social_visits__target_user_id__post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Patch Me */
+        patch: operations["patch_me_users_me_profile_patch"];
         trace?: never;
     };
-    "/social/visitors": {
+    "/users/me/tags": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Visitors */
-        get: operations["list_visitors_social_visitors_get"];
+        /** Get My Tags */
+        get: operations["get_my_tags_users_me_tags_get"];
         put?: never;
-        post?: never;
+        /** Add One Profile Tag */
+        post: operations["add_one_profile_tag_users_me_tags_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/social/likes/{target_user_id}": {
+    "/users/me/tags/{tag_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -324,144 +599,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create Like */
-        post: operations["create_like_social_likes__target_user_id__post"];
-        /** Delete Like */
-        delete: operations["delete_like_social_likes__target_user_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/social/likes/received": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Likes Received */
-        get: operations["list_likes_received_social_likes_received_get"];
-        put?: never;
         post?: never;
-        delete?: never;
+        /** Delete One Tag */
+        delete: operations["delete_one_tag_users_me_tags__tag_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/social/relationship/{target_user_id}": {
+    "/users/{user_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Relationship */
-        get: operations["get_relationship_social_relationship__target_user_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/social/blocks/{target_user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create Block */
-        post: operations["create_block_social_blocks__target_user_id__post"];
-        /** Delete Block */
-        delete: operations["delete_block_social_blocks__target_user_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/social/blocks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Blocks */
-        get: operations["list_blocks_social_blocks_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/social/reports/{target_user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create Report */
-        post: operations["create_report_social_reports__target_user_id__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/discovery/suggest": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Suggest Profiles */
-        get: operations["suggest_profiles_discovery_suggest_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/discovery/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Search Profiles */
-        get: operations["search_profiles_discovery_search_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Execute Health Check */
-        get: operations["execute_health_check_health_get"];
+        /** Get Public Profile */
+        get: operations["get_public_profile_users__user_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -481,19 +635,19 @@ export interface components {
         };
         /** BlockedUserOut */
         BlockedUserOut: {
-            /** Id */
-            id: number;
-            /** Username */
-            username: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
             /**
              * Blocked At
              * Format: date-time
              */
             blocked_at: string;
+            /** First Name */
+            first_name: string;
+            /** Id */
+            id: number;
+            /** Last Name */
+            last_name: string;
+            /** Username */
+            username: string;
         };
         /** Body_patch_photo_by_new_users_me_photos__photo_id__put */
         Body_patch_photo_by_new_users_me_photos__photo_id__put: {
@@ -507,54 +661,97 @@ export interface components {
         };
         /** CurrentUserResponse */
         CurrentUserResponse: {
-            /** Id */
-            id: number;
-            /** Username */
-            username: string;
             /**
              * Email
              * Format: email
              */
             email: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
             /** Email Verified */
             email_verified: boolean;
-            /** Profile Completed */
-            profile_completed: boolean;
+            /** First Name */
+            first_name: string;
             /** Has Password */
             has_password: boolean;
+            /** Id */
+            id: number;
+            /** Last Name */
+            last_name: string;
+            /** Profile Completed */
+            profile_completed: boolean;
+            /** Username */
+            username: string;
         };
         /** DiscoveryProfileCard */
         DiscoveryProfileCard: {
-            /** Id */
-            id: number;
-            /** Username */
-            username: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
             /** Age */
             age: number;
-            /**
-             * Gender
-             * @enum {string}
-             */
-            gender: "male" | "female" | "other";
-            /** Fame Rating */
-            fame_rating: number;
-            /** Distance Km */
-            distance_km?: number | null;
             /**
              * Common Tags Count
              * @default 0
              */
             common_tags_count: number;
+            /** Distance Km */
+            distance_km: number | null;
+            /** Fame Rating */
+            fame_rating: number;
+            /** First Name */
+            first_name: string;
+            /**
+             * Gender
+             * @enum {string}
+             */
+            gender: "male" | "female" | "other";
+            /** Id */
+            id: number;
+            /** Last Name */
+            last_name: string;
+            /** Liked By Me */
+            liked_by_me: boolean;
+            /** Location Label */
+            location_label: string | null;
+            /** Username */
+            username: string;
+        };
+        /** EditProfileInput */
+        EditProfileInput: {
+            /** Age */
+            age: number;
+            /** Bio */
+            bio: string;
+            /**
+             * Gender
+             * @enum {string}
+             */
+            gender: "male" | "female" | "other";
+            /** Latitude */
+            latitude: number;
+            /** Location Consent */
+            location_consent: boolean;
             /** Location Label */
             location_label?: string | null;
+            /** Longitude */
+            longitude: number;
+            /**
+             * Sexual Preference
+             * @enum {string}
+             */
+            sexual_preference: "man" | "woman" | "bisexual";
+        };
+        /**
+         * ErrorCode
+         * @enum {string}
+         */
+        ErrorCode: "ACCOUNT_NOT_VERIFIED" | "AUTH_ERROR" | "BLOCKED" | "CANNOT_BLOCK_SELF" | "CANNOT_LIKE_SELF" | "CANNOT_REPORT_SELF" | "CANNOT_VISIT_SELF" | "CHAT_BLOCKED" | "CHAT_NOT_CONNECTED" | "CHAT_USER_NOT_FOUND" | "DISCOVERY_ERROR" | "EMAIL_TAKEN" | "EXPIRED_TOKEN" | "FILE_TOO_LARGE" | "INVALID_CREDENTIALS" | "INVALID_FILTER" | "INVALID_LOCATION" | "INVALID_PHOTO_TYPE" | "INVALID_RESET_TOKEN" | "INVALID_TOKEN" | "INVALID_VERIFICATION_TOKEN" | "LOCATION_REQUIRED" | "MAX_FIVE_PHOTOS" | "MISSING_TOKEN" | "NOTIFICATION_NOT_FOUND" | "NO_PASSWORD_SET" | "OAUTH_ACCOUNT_CONFLICT" | "OAUTH_EXCHANGE_FAILED" | "PROFILE_PHOTO_REQUIRED" | "SOCIAL_ERROR" | "TAGS_ERROR" | "TAG_CONTENT_PROFANITY" | "TARGET_USER_NOT_FOUND" | "USERNAME_TAKEN" | "USERS_ERROR" | "USER_NOT_FOUND";
+        /** ErrorResponse */
+        ErrorResponse: {
+            code: components["schemas"]["ErrorCode"];
+            /** Detail */
+            detail: string;
+            /**
+             * Field
+             * @default null
+             */
+            field: string | null;
         };
         /** ForgotPasswordInput */
         ForgotPasswordInput: {
@@ -576,12 +773,10 @@ export interface components {
         };
         /** LikeReceivedOut */
         LikeReceivedOut: {
-            /** Id */
-            id: number;
-            /** Username */
-            username: string;
             /** First Name */
             first_name: string;
+            /** Id */
+            id: number;
             /** Last Name */
             last_name: string;
             /**
@@ -589,37 +784,132 @@ export interface components {
              * Format: date-time
              */
             liked_at: string;
+            /** Username */
+            username: string;
         };
         /** LikeStateResponse */
         LikeStateResponse: {
-            /** Liked */
-            liked: boolean;
             /** Connected */
             connected: boolean;
+            /** Liked */
+            liked: boolean;
         };
         /** LoginInput */
         LoginInput: {
-            /** Username */
-            username: string;
             /** Password */
             password: string;
+            /** Username */
+            username: string;
         };
-        /** OkResponse */
-        OkResponse: {
+        /** MessageOut */
+        MessageOut: {
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** From User Id */
+            from_user_id: number;
+            /** Id */
+            id: number;
+            /** To User Id */
+            to_user_id: number;
+        };
+        /** NotificationOkResponse */
+        NotificationOkResponse: {
             /**
              * Ok
              * @default true
              */
             ok: boolean;
         };
+        /** NotificationOut */
+        NotificationOut: {
+            /** Actor Id */
+            actor_id: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Entity Id */
+            entity_id: number | null;
+            /** Id */
+            id: number;
+            /** Read At */
+            read_at: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "liked" | "visited" | "matched" | "unliked" | "message";
+        };
+        /** PasswordChangeInput */
+        PasswordChangeInput: {
+            /** Confirm Password */
+            confirm_password: string;
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+        };
         /** PhotoOut */
         PhotoOut: {
             /** Id */
             id: number;
-            /** Url */
-            url: string;
             /** Is Profile Photo */
             is_profile_photo: boolean;
+            /** Url */
+            url: string;
+        };
+        /** PublicProfile */
+        PublicProfile: {
+            /** Age */
+            age: number | null;
+            /** Bio */
+            bio: string | null;
+            /**
+             * Fame Rating
+             * @default 0
+             */
+            fame_rating: number;
+            /** First Name */
+            first_name: string;
+            /** Gender */
+            gender: ("male" | "female" | "other") | null;
+            /** Id */
+            id: number;
+            /**
+             * Is Online
+             * @default false
+             */
+            is_online: boolean;
+            /** Last Connection */
+            last_connection: string | null;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Likes Received Count
+             * @default 0
+             */
+            likes_received_count: number;
+            /** Location Label */
+            location_label: string | null;
+            /** Photos */
+            photos: components["schemas"]["PhotoOut"][];
+            /** Sexual Preference */
+            sexual_preference: ("man" | "woman" | "bisexual") | null;
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
+            /** Username */
+            username: string;
+            /**
+             * Visitors Count
+             * @default 0
+             */
+            visitors_count: number;
         };
         /** RegisterResponse */
         RegisterResponse: {
@@ -628,12 +918,6 @@ export interface components {
         };
         /** RelationshipResponse */
         RelationshipResponse: {
-            /** Liked By Me */
-            liked_by_me: boolean;
-            /** Liked You */
-            liked_you: boolean;
-            /** Connected */
-            connected: boolean;
             /**
              * Blocked By Me
              * @default false
@@ -644,13 +928,19 @@ export interface components {
              * @default false
              */
             blocked_you: boolean;
-            /** Last Connection */
-            last_connection?: string | null;
+            /** Connected */
+            connected: boolean;
             /**
              * Is Online
              * @default false
              */
             is_online: boolean;
+            /** Last Connection */
+            last_connection: string | null;
+            /** Liked By Me */
+            liked_by_me: boolean;
+            /** Liked You */
+            liked_you: boolean;
         };
         /** ReportInput */
         ReportInput: {
@@ -672,22 +962,46 @@ export interface components {
         };
         /** ResetPasswordInput */
         ResetPasswordInput: {
-            /** Token */
-            token: string;
             /** Password */
             password: string;
+            /** Token */
+            token: string;
         };
         /** ResetPasswordResponse */
         ResetPasswordResponse: {
-            /** Message */
-            message: string;
             /** Access Token */
             access_token: string;
+            /** Message */
+            message: string;
             /**
              * Token Type
              * @default bearer
              */
             token_type: string;
+        };
+        /** SearchingBarProfile */
+        SearchingBarProfile: {
+            /** First Name */
+            first_name: string;
+            /** Id */
+            id: number;
+            /** Last Name */
+            last_name: string;
+            /** Username */
+            username: string;
+        };
+        /** SendMessageInput */
+        SendMessageInput: {
+            /** Body */
+            body: string;
+        };
+        /** SocialOkResponse */
+        SocialOkResponse: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
         };
         /** TagInput */
         TagInput: {
@@ -711,85 +1025,106 @@ export interface components {
              */
             token_type: string;
         };
+        /** UnreadCountOut */
+        UnreadCountOut: {
+            /** Unread Count */
+            unread_count: number;
+        };
         /** UserAccountInput */
         UserAccountInput: {
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
             /**
              * Email
              * Format: email
              */
             email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Username */
+            username: string;
         };
         /** UserLocationInput */
         UserLocationInput: {
             /** Latitude */
             latitude: number;
-            /** Longitude */
-            longitude: number;
-            /** Location Label */
-            location_label?: string | null;
             /** Location Consent */
             location_consent: boolean;
+            /** Location Label */
+            location_label?: string | null;
+            /** Longitude */
+            longitude: number;
         };
         /** UserProfile */
         UserProfile: {
-            /** Id */
-            id: number;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Username */
-            username: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Is Verified */
-            is_verified: boolean;
+            /** Age */
+            age: number | null;
+            /** Bio */
+            bio: string | null;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
-            /** Gender */
-            gender?: ("male" | "female" | "other") | null;
-            /** Sexual Preference */
-            sexual_preference?: ("man" | "woman" | "bisexual") | null;
-            /** Age */
-            age?: number | null;
-            /** Bio */
-            bio?: string | null;
             /**
-             * Is Profile Completed
-             * @default false
+             * Email
+             * Format: email
              */
-            is_profile_completed: boolean;
+            email: string;
             /**
              * Fame Rating
              * @default 0
              */
             fame_rating: number;
+            /** First Name */
+            first_name: string;
+            /** Gender */
+            gender: ("male" | "female" | "other") | null;
+            /** Id */
+            id: number;
+            /**
+             * Is Profile Completed
+             * @default false
+             */
+            is_profile_completed: boolean;
+            /** Is Verified */
+            is_verified: boolean;
+            /** Last Connection */
+            last_connection: string | null;
+            /** Last Name */
+            last_name: string;
             /** Latitude */
-            latitude?: number | null;
-            /** Longitude */
-            longitude?: number | null;
-            /** Location Label */
-            location_label?: string | null;
+            latitude: number | null;
+            /**
+             * Likes Received Count
+             * @default 0
+             */
+            likes_received_count: number;
             /**
              * Location Consent
              * @default false
              */
             location_consent: boolean;
-            /** Last Connection */
-            last_connection?: string | null;
+            /** Location Label */
+            location_label: string | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Sexual Preference */
+            sexual_preference: ("man" | "woman" | "bisexual") | null;
+            /** Username */
+            username: string;
+            /**
+             * Visitors Count
+             * @default 0
+             */
+            visitors_count: number;
         };
         /** UserProfileInput */
         UserProfileInput: {
+            /** Age */
+            age: number;
+            /** Bio */
+            bio: string;
             /**
              * Gender
              * @enum {string}
@@ -800,10 +1135,6 @@ export interface components {
              * @enum {string}
              */
             sexual_preference: "man" | "woman" | "bisexual";
-            /** Age */
-            age: number;
-            /** Bio */
-            bio: string;
         };
         /** UserRegisterInput */
         UserRegisterInput: {
@@ -812,38 +1143,38 @@ export interface components {
              * Format: email
              */
             email: string;
-            /** Username */
-            username: string;
             /** First Name */
             first_name: string;
             /** Last Name */
             last_name: string;
             /** Password */
             password: string;
+            /** Username */
+            username: string;
         };
         /** ValidationError */
         ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
             /** Location */
             loc: (string | number)[];
             /** Message */
             msg: string;
             /** Error Type */
             type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
         };
         /** VisitorOut */
         VisitorOut: {
-            /** Id */
-            id: number;
-            /** Username */
-            username: string;
             /** First Name */
             first_name: string;
+            /** Id */
+            id: number;
             /** Last Name */
             last_name: string;
+            /** Username */
+            username: string;
             /**
              * Visited At
              * Format: date-time
@@ -859,105 +1190,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    resend_verification_auth_resend_verification_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResendVerificationInput"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResendVerificationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    register_auth_register_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserRegisterInput"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RegisterResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    login_auth_login_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginInput"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     fortytwo_oauth_callback_auth_callback_42_post: {
         parameters: {
             query: {
@@ -965,37 +1197,6 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    verify_email_auth_verify__token__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1053,6 +1254,136 @@ export interface operations {
             };
         };
     };
+    login_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_me_auth_me_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentUserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserRegisterInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resend_verification_auth_resend_verification_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResendVerificationInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResendVerificationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reset_password_auth_reset_password_post: {
         parameters: {
             query?: never;
@@ -1086,7 +1417,276 @@ export interface operations {
             };
         };
     };
-    get_me_auth_me_get: {
+    verify_email_auth_verify__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_messages_chat_messages__peer_id__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                peer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_message_chat_messages__peer_id__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                peer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_profiles_discovery_search_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                sort?: string | null;
+                order?: string | null;
+                age_min?: number | null;
+                age_max?: number | null;
+                fame_min?: number | null;
+                fame_max?: number | null;
+                max_distance_km?: number | null;
+                tag_ids?: number[];
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryProfileCard"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_profiles_by_name_discovery_search_list_get: {
+        parameters: {
+            query: {
+                target: string;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchingBarProfile"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suggest_profiles_discovery_suggest_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                sort?: string | null;
+                order?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryProfileCard"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    execute_health_check_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    list_notifications_notifications_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_all_notifications_read_notifications_read_all_post: {
         parameters: {
             query?: never;
             header?: {
@@ -1103,7 +1703,441 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CurrentUserResponse"];
+                    "application/json": components["schemas"]["NotificationOkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_unread_count_notifications_unread_count_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_notification_read_notifications__notification_id__read_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                notification_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationOkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_blocks_social_blocks_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockedUserOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_block_social_blocks__target_user_id__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                target_user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_block_social_blocks__target_user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                target_user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_likes_received_social_likes_received_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeReceivedOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_like_social_likes__target_user_id__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                target_user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_like_social_likes__target_user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                target_user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_relationship_social_relationship__target_user_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                target_user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelationshipResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_report_social_reports__target_user_id__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                target_user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialOkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_visitors_social_visitors_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisitorOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_visit_social_visits__target_user_id__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                target_user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialOkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_search_tags_tags__get: {
+        parameters: {
+            query: {
+                search: string;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"][];
                 };
             };
             /** @description Validation Error */
@@ -1183,41 +2217,6 @@ export interface operations {
             };
         };
     };
-    patch_me_location_users_me_location_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserLocationInput"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserProfile"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     patch_me_account_users_me_account_patch: {
         parameters: {
             query?: never;
@@ -1253,38 +2252,7 @@ export interface operations {
             };
         };
     };
-    get_my_tags_users_me_tags_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_one_profile_tag_users_me_tags_post: {
+    patch_me_location_users_me_location_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -1295,7 +2263,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TagInput"];
+                "application/json": components["schemas"]["UserLocationInput"];
             };
         };
         responses: {
@@ -1305,7 +2273,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TagOut"];
+                    "application/json": components["schemas"]["UserProfile"];
                 };
             };
             /** @description Validation Error */
@@ -1319,18 +2287,20 @@ export interface operations {
             };
         };
     };
-    delete_one_tag_users_me_tags__tag_id__delete: {
+    change_password_users_me_password_change_patch: {
         parameters: {
             query?: never;
             header?: {
                 authorization?: string | null;
             };
-            path: {
-                tag_id: number;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeInput"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1338,7 +2308,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: string;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -1521,11 +2493,44 @@ export interface operations {
             };
         };
     };
-    get_search_tags_tags__get: {
+    patch_me_users_me_profile_patch: {
         parameters: {
-            query: {
-                search: string;
+            query?: never;
+            header?: {
+                authorization?: string | null;
             };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditProfileInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_tags_users_me_tags_get: {
+        parameters: {
+            query?: never;
             header?: {
                 authorization?: string | null;
             };
@@ -1554,320 +2559,18 @@ export interface operations {
             };
         };
     };
-    create_visit_social_visits__target_user_id__post: {
+    add_one_profile_tag_users_me_tags_post: {
         parameters: {
             query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                target_user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OkResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_visitors_social_visitors_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
             header?: {
                 authorization?: string | null;
             };
             path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VisitorOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_like_social_likes__target_user_id__post: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                target_user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LikeStateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_like_social_likes__target_user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                target_user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LikeStateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_likes_received_social_likes_received_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LikeReceivedOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_relationship_social_relationship__target_user_id__get: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                target_user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RelationshipResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_block_social_blocks__target_user_id__post: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                target_user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BlockStateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_block_social_blocks__target_user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                target_user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BlockStateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_blocks_social_blocks_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BlockedUserOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_report_social_reports__target_user_id__post: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                target_user_id: number;
-            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReportInput"];
+                "application/json": components["schemas"]["TagInput"];
             };
         };
         responses: {
@@ -1877,7 +2580,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OkResponse"];
+                    "application/json": components["schemas"]["TagOut"];
                 };
             };
             /** @description Validation Error */
@@ -1891,89 +2594,15 @@ export interface operations {
             };
         };
     };
-    suggest_profiles_discovery_suggest_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-                sort?: string | null;
-                order?: string | null;
-            };
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiscoveryProfileCard"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_profiles_discovery_search_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-                sort?: string | null;
-                order?: string | null;
-                age_min?: number | null;
-                age_max?: number | null;
-                fame_min?: number | null;
-                fame_max?: number | null;
-                max_distance_km?: number | null;
-                tag_ids?: number[];
-            };
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiscoveryProfileCard"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    execute_health_check_health_get: {
+    delete_one_tag_users_me_tags__tag_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
-            path?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                tag_id: number;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1985,6 +2614,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_profile_users__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProfile"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

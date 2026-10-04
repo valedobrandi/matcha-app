@@ -9,9 +9,9 @@ type TagsFormProps = {
     tagsSearchList: Tag[],
     tagsList: Tag[],
     serverError: string | null,
-    handleInput: (value: string)=>Promise<void>,
-    handleAddTag: (tag_name: string)=>Promise<void>,
-    handleDeleteTag: (tag_id: number)=>Promise<void>,
+    handleInput: (value: string)=>void,
+    handleAddTag: (tag_name: string)=>void,
+    handleDeleteTag: (tag_id: number)=>void,
     nextStep?: ()=>void,
     showNextStep: boolean
 }

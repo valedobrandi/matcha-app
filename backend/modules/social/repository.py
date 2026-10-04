@@ -158,7 +158,7 @@ class SocialRepository:
             FROM likes l
             JOIN users u ON u.id = l.from_user_id
             WHERE l.to_user_id = $1 AND l.status = 'active'
-            ORDER BY l.updated_at DESC
+            ORDER BY l.updated_at DESC, l.id DESC
             LIMIT $2 OFFSET $3
             """,
             user_id, limit, offset,
@@ -239,4 +239,28 @@ class SocialRepository:
             reporter_id,
             target_id,
             reason,
+        )
+
+    async def count_likes_received(
+            self, target_user_id: int
+    ) -> int:
+        return await self.connection.fetchval(
+            """
+            SELECT COUNT(*)
+            FROM likes
+            WHERE to_user_id = $1 AND status = 'active'
+            """,
+            target_user_id
+        )
+
+    async def count_visitors(
+            self, target_user_id: int
+    ) -> int:
+        return await self.connection.fetchval(
+            """
+            SELECT COUNT(*)
+            FROM visits
+            WHERE target_id = $1
+            """,
+            target_user_id
         )

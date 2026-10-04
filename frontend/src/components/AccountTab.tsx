@@ -20,7 +20,7 @@ import { ApiError } from "@/api/client"
 import { resolveErrorMessage } from "@/i18n/errors"
 
 function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>void}) {
-    const { accessToken, logout, user } = useAuth()
+    const { accessToken, user } = useAuth()
     const [accountEditing, setAccountEditing] = useState<boolean>(false)
     const [passwordEditing, setPasswordEditing] = useState<boolean>(false)
     const [serverError, setServerError] = useState<string | null>(null)
@@ -59,8 +59,6 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
         } catch (err) {
             if (err instanceof ApiError) {
                 setServerError(resolveErrorMessage(err.code, err.message))
-                if (err.code === "USER_NOT_FOUND")
-                    logout()
             }
         }
     }
@@ -74,8 +72,6 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
         } catch (err) {
             if (err instanceof ApiError) {
                 setServerError(resolveErrorMessage(err.code, err.message))
-                if (err.code === "USER_NOT_FOUND")
-                    logout()
             } else {
                 setServerError("Request failed")
             }

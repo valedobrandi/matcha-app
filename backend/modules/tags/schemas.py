@@ -1,6 +1,7 @@
+from core.api_model import ApiModel
 from pydantic import BaseModel
 
-class TagOut(BaseModel):
+class TagOut(ApiModel):
     id: int
     name: str
 

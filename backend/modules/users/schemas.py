@@ -1,10 +1,11 @@
+from core.api_model import ApiModel
 from pydantic import BaseModel, EmailStr, Field, model_validator, field_validator
 from datetime import datetime
 from typing import List, Literal, Optional
 from modules.auth.schemas import validate_password_strength
 from modules.tags.schemas import TagOut
 
-class UserProfile(BaseModel):
+class UserProfile(ApiModel):
     id: int
     email: EmailStr
     username: str 
@@ -23,6 +24,8 @@ class UserProfile(BaseModel):
     location_label: Optional[str] = None
     location_consent: bool = False
     last_connection: Optional[datetime] = None
+    likes_received_count: int = 0
+    visitors_count: int = 0
 
 class UserProfileInput(BaseModel):
     gender: Literal["male", "female", "other"]
@@ -42,7 +45,7 @@ class UserAccountInput(BaseModel):
     last_name: str = Field(..., min_length=1)
     email: EmailStr
     
-class PhotoOut(BaseModel):
+class PhotoOut(ApiModel):
     id: int
     url: str
     is_profile_photo: bool
@@ -79,7 +82,7 @@ class PasswordChangeInput(BaseModel):
 
 
 # ADR-0001: public projection — never include email/password/tokens/coords/consent
-class PublicProfile(BaseModel):
+class PublicProfile(ApiModel):
     id: int
     username: str
     first_name: str
@@ -94,3 +97,5 @@ class PublicProfile(BaseModel):
     is_online: bool = False
     tags: List[TagOut] = Field(default_factory=list)
     photos: List[PhotoOut] = Field(default_factory=list)
+    likes_received_count: int = 0
+    visitors_count: int = 0

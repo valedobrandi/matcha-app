@@ -6,7 +6,7 @@ import {
     apiPostFormData,
     apiPutFormData,
 } from "./client"
-import type { UserProfile, Tag, TagInput, Photo } from "../types/user"
+import type { UserProfile, Tag, TagInput, Photo, PublicProfile } from "../types/user"
 import type {
     AccountValues,
     EditProfileValues,
@@ -68,4 +68,8 @@ export async function patchPhotoByNew(token: string, photo_id: number, photo_inp
     const formData = new FormData()
     formData.append("file", photo_input)
     return apiPutFormData<Photo>(`/users/me/photos/${photo_id}`, formData, {token})
+}
+
+export async function getPublicProfile(token: string, target_id: number): Promise<PublicProfile> {
+    return apiGet<PublicProfile>(`/users/${target_id}`, {token})
 }

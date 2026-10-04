@@ -22,7 +22,6 @@ function ProfileForm({
     control,
     serverError,
     onSubmit,
-    onSuccess,
 }: ProfileFormProps) {
     return (
         <>

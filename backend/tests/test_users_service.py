@@ -10,6 +10,7 @@ from modules.users.schemas import (
 from modules.users.service import UsersService
 from modules.users.exceptions import (
     UserNotFoundException,
+    TargetUserNotFoundException,
     InvalidLocationException,
     EmailAlreadyTakenException,
 )
@@ -21,6 +22,22 @@ from modules.auth.exceptions import (
 from modules.auth.repository import AuthRepository
 from types import SimpleNamespace
 from pydantic import ValidationError
+
+
+class FakeSocial:
+    def __init__(self, blocked=False, likes_received=3, visitors=5):
+        self.blocked = blocked
+        self.likes_received = likes_received
+        self.visitors = visitors
+
+    async def is_blocked_either_way(self, user_a: int, user_b: int) -> bool:
+        return self.blocked
+
+    async def count_likes_received(self, target_user_id: int) -> int:
+        return self.likes_received
+
+    async def count_visitors(self, target_user_id: int) -> int:
+        return self.visitors
 
 
 class FakeUserAuth:
@@ -38,7 +55,7 @@ async def test_change_password_wrong_current_password(monkeypatch):
         return fake_auth_user
 
     monkeypatch.setattr(AuthRepository, "find_by_id", fake_user_by_id)
-    service = UsersService(repository=SimpleNamespace(connection=None))
+    service = UsersService(repository=SimpleNamespace(connection=None), social_repo=FakeSocial())
 
     passwords = PasswordChangeInput(
         current_password="WrongPassword123!",
@@ -58,7 +75,7 @@ async def test_change_password_no_password_set(monkeypatch):
         return fake_auth_user
 
     monkeypatch.setattr(AuthRepository, "find_by_id", fake_user_by_id)
-    service = UsersService(repository=SimpleNamespace(connection=None))
+    service = UsersService(repository=SimpleNamespace(connection=None), social_repo=FakeSocial())
 
     passwords = PasswordChangeInput(
         current_password="emptySoAnything!",
@@ -89,7 +106,7 @@ async def test_change_password_success(monkeypatch):
             self.change_password_called = (hashed_password, current_user_id)
 
     fake_repo = FakeUserRepo()
-    service = UsersService(fake_repo)
+    service = UsersService(fake_repo, FakeSocial())
     
     passwords = PasswordChangeInput(
         current_password="OldPwd123!",
@@ -109,8 +126,9 @@ async def test_change_password_success(monkeypatch):
     assert bcrypt.checkpw(b"Xk9#mQvzTr4!!", hashed_password.encode("utf-8"))
 
 class FakeRepository:
-    def __init__(self, user, tags=None, photos=None):
+    def __init__(self, user, tags=None, photos=None, completed=True):
         self.user = user
+        self.completed = completed
         self.tags = tags or []
         self.photos = photos or []
         self.current_user_id = None
@@ -121,6 +139,9 @@ class FakeRepository:
     async def get_user_by_id(self, user_id: int):
         self.current_user_id = user_id
         return self.user
+
+    async def is_profile_completed(self, user_id: int) -> bool:
+        return self.completed
 
     async def get_my_tags(self, user_id: int):
         return self.tags
@@ -188,7 +209,7 @@ def _complete_user(**overrides) -> UserProfile:
 async def test_get_profile_when_user_found():
     user = _complete_user()
     repo = FakeRepository(user, tags=[{"id": 1}], photos=[{"id": 1}])
-    service = UsersService(repo)
+    service = UsersService(repo, FakeSocial())
 
     res = await service.get_profile(1)
     assert res.id == user.id
@@ -199,10 +220,10 @@ async def test_get_profile_when_user_found():
 
 
 @pytest.mark.asyncio
-async def test_get_profile_is_incomplete_without_photos() -> None:
+async def test_get_profile_is_incomplete_when_the_repository_says_incomplete() -> None:
     user = _complete_user()
-    repo = FakeRepository(user, tags=[{"id": 1}], photos=[])
-    service = UsersService(repo)
+    repo = FakeRepository(user, completed=False)
+    service = UsersService(repo, FakeSocial())
 
     res = await service.get_profile(1)
     assert res.is_profile_completed is False
@@ -212,7 +233,7 @@ async def test_get_profile_is_incomplete_without_photos() -> None:
 async def test_get_profile_completed_without_location() -> None:
     user = _complete_user(latitude=None, longitude=None, location_consent=False)
     repo = FakeRepository(user, tags=[{"id": 1}], photos=[{"id": 1}])
-    service = UsersService(repo)
+    service = UsersService(repo, FakeSocial())
 
     res = await service.get_profile(1)
     assert res.is_profile_completed is True
@@ -221,7 +242,7 @@ async def test_get_profile_completed_without_location() -> None:
 @pytest.mark.asyncio
 async def test_get_profile_when_user_not_found():
     repo = FakeRepository(None)
-    service = UsersService(repo)
+    service = UsersService(repo, FakeSocial())
 
     with pytest.raises(UserNotFoundException):
         await service.get_profile(12)
@@ -231,7 +252,7 @@ async def test_get_profile_when_user_not_found():
 async def test_update_location_rejects_when_consent_false():
     user = _complete_user()
     repo = FakeRepository(user, tags=[1], photos=[1])
-    service = UsersService(repo)
+    service = UsersService(repo, FakeSocial())
     with pytest.raises(InvalidLocationException):
         await service.update_location(
             1,
@@ -249,7 +270,7 @@ async def test_update_location_rejects_when_consent_false():
 async def test_update_location_succeeds_when_consent_true():
     user = _complete_user()
     repo = FakeRepository(user, tags=[1], photos=[1])
-    service = UsersService(repo)
+    service = UsersService(repo, FakeSocial())
     payload = UserLocationInput(
         latitude=48.85,
         longitude=2.35,
@@ -268,7 +289,7 @@ async def test_update_location_succeeds_when_consent_true():
 async def test_update_account_should_keep_verified_when_email_unchanged():
     user = _complete_user(email="aaa@gmail.com", is_verified=True)
     repo = FakeRepository(user)
-    service = UsersService(repo)
+    service = UsersService(repo, FakeSocial())
     payload = UserAccountInput(
         username="aaa",
         first_name="New",
@@ -285,7 +306,7 @@ async def test_update_account_should_keep_verified_when_email_unchanged():
 async def test_update_account_should_require_reverification_when_email_changes():
     user = _complete_user(email="aaa@gmail.com", is_verified=True)
     repo = FakeRepository(user)
-    service = UsersService(repo)
+    service = UsersService(repo, FakeSocial())
     payload = UserAccountInput(
         username="aaa",
         first_name="Ann",
@@ -303,7 +324,7 @@ async def test_update_account_propagates_email_taken():
     user = _complete_user()
     repo = FakeRepository(user)
     repo.raise_on_account = EmailAlreadyTakenException("taken@example.com")
-    service = UsersService(repo)
+    service = UsersService(repo, FakeSocial())
     with pytest.raises(EmailAlreadyTakenException):
         await service.update_account(
             1,
@@ -319,7 +340,7 @@ async def test_update_account_propagates_email_taken():
 @pytest.mark.asyncio
 async def test_update_account_should_raise_when_user_missing():
     repo = FakeRepository(None)
-    service = UsersService(repo)
+    service = UsersService(repo, FakeSocial())
     with pytest.raises(UserNotFoundException):
         await service.update_account(
             1,
@@ -373,13 +394,9 @@ async def test_get_public_profile_should_return_projection_without_email():
     photos = [PhotoOut(id=1, url="/uploads/a.jpg", is_profile_photo=True)]
     tags = [TagOut(id=1, name="music")]
 
-    class FakeSocial:
-        async def is_blocked_either_way(self, a: int, b: int) -> bool:
-            return False
-
     service = UsersService(
         FakeRepository(target, tags=tags, photos=photos),
-        social_repo=FakeSocial(),
+        social_repo=FakeSocial(likes_received=7, visitors=11),
     )
     result = await service.get_public_profile(viewer_id=1, target_id=2)
     assert isinstance(result, PublicProfile)
@@ -388,6 +405,8 @@ async def test_get_public_profile_should_return_projection_without_email():
     assert result.fame_rating == 0
     assert result.tags == tags
     assert result.photos == photos
+    assert result.likes_received_count == 7
+    assert result.visitors_count == 11
     assert "email" not in result.model_dump()
 
 
@@ -397,21 +416,18 @@ async def test_get_public_profile_should_raise_when_blocked():
 
     target = _complete_user(id=2)
 
-    class FakeSocial:
-        async def is_blocked_either_way(self, a: int, b: int) -> bool:
-            return True
-
-    service = UsersService(FakeRepository(target), social_repo=FakeSocial())
+    service = UsersService(FakeRepository(target), social_repo=FakeSocial(blocked=True))
     with pytest.raises(BlockedException):
         await service.get_public_profile(viewer_id=1, target_id=2)
 
 
 @pytest.mark.asyncio
 async def test_get_public_profile_should_raise_when_missing():
-    class FakeSocial:
-        async def is_blocked_either_way(self, a: int, b: int) -> bool:
-            return False
-
     service = UsersService(FakeRepository(None), social_repo=FakeSocial())
-    with pytest.raises(UserNotFoundException):
+    with pytest.raises(TargetUserNotFoundException):
         await service.get_public_profile(viewer_id=1, target_id=99)
+
+
+def test_target_user_not_found_should_not_share_the_caller_account_code():
+    assert TargetUserNotFoundException.code == "TARGET_USER_NOT_FOUND"
+    assert TargetUserNotFoundException.code != UserNotFoundException.code

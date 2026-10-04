@@ -117,6 +117,7 @@ def list_profiles_twin(
                 distance_km=distance_km,
                 common_tags_count=len(set(c.tag_ids) & viewer_tags),
                 location_label=c.location_label,
+                liked_by_me=False,
             )
         )
     return out[query.offset : query.offset + query.limit]

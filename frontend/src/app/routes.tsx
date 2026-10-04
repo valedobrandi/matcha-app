@@ -15,6 +15,11 @@ import { ResendVerificationPage } from '../pages/auth/ResendVerificationPage'
 import { VerifyEmailPage } from '../pages/auth/VerifyEmailPage'
 import { ProfileCompletePage } from '../pages/profile/ProfileCompletePage'
 import MyProfilePage from '@/pages/profile/MyProfilePage'
+import SuggestPage from '@/pages/discovery/SuggestPage'
+import Likes from '@/pages/social/LikesReceived'
+import Visitors from '@/pages/social/Visitors'
+import PublicProfilePage from '@/pages/profile/PublicProfilePage'
+import { BlockListPage } from '@/pages/social/BlockListPage'
 
 export function AppRoutes() {
   return (
@@ -27,6 +32,11 @@ export function AppRoutes() {
           <Route element={<ProfileCompleteRoute />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/profile" element={<MyProfilePage />} />
+            <Route path="/suggest" element={<SuggestPage />} />
+            <Route path="/likes" element={<Likes />} />
+            <Route path="/visitors" element={<Visitors />} />
+            <Route path="/blocks" element={<BlockListPage />} />
+            <Route path="/users/:userId" element={<PublicProfilePage />} />
           </Route>
         </Route>
       </Route>

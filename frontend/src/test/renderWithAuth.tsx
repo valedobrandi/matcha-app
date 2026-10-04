@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { vi } from 'vitest'
 import { AuthContext } from '@/auth/AuthContext'
+import { QueryWrapper } from './QueryWrapper'
 
 type AuthContextValue = React.ContextType<typeof AuthContext>
 
@@ -26,6 +27,10 @@ export function makeAuthValue(
 // state is injected, not reached by driving the UI.
 export function authWrapper(value: NonNullable<AuthContextValue>) {
   return function Wrapper({ children }: { children: ReactNode }) {
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    return (
+      <QueryWrapper>
+        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+      </QueryWrapper>
+    )
   }
 }
