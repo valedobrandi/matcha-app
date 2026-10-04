@@ -75,3 +75,20 @@ export default defineConfig([
 ## Generated API types
 
 `src/types/api.d.ts` is generated from the backend OpenAPI schema; do not edit it by hand. Prerequisite: the backend Python dependencies are installed (`pip install -r ../backend/requirements.txt`) and `python` on your PATH resolves to that environment. Then run `npm run gen:api` (no server needed). CI fails if the committed file is stale.
+
+## End-to-end test (Playwright)
+
+One journey (`e2e/discovery-like.spec.ts`): log in, open `/suggest`, open a profile, like it.
+It needs a running stack; nothing is started for you.
+
+1. Postgres migrated and seeded: from `backend/`, `python -m database.migrate && python -m database.seed --users 20`
+   (all seeded users are verified and profile-complete, password `Password123!`).
+2. Backend running, with `CORS_ORIGINS` including `http://127.0.0.1:5173`.
+3. Vite dev server: `VITE_API_URL=<backend url> npm run dev -- --host 127.0.0.1 --port 5173`.
+4. Once: `npx playwright install chromium`.
+5. Run with any seeded username (read-only query), e.g.
+   `E2E_USERNAME=$(psql "$DATABASE_URL" -tAc "select username from users order by id limit 1") npm run e2e`.
+
+The spec likes one not-yet-liked profile per run, so it can be re-run until the seeded
+profiles are exhausted; re-seed a fresh database to reset. `E2E_BASE_URL` and
+`E2E_PASSWORD` override the defaults.

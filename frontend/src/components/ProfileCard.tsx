@@ -18,7 +18,7 @@ export function ProfileCard({profile, onLike, onUnlike, likeState}: ProfileCardP
     const isLiked = likeState?.[profile.id]?.liked ?? profile.liked_by_me
     
     return (
-      <div className="relative w-[350px] max-w-sm w-full rounded-3xl overflow-hidden cursor-pointer"
+      <div data-testid="profile-card" className="relative w-[350px] max-w-sm w-full rounded-3xl overflow-hidden cursor-pointer"
         onClick={()=>navigate(`/users/${profile.id}`)}>
           <div className="relative h-[380px]">
               <div
