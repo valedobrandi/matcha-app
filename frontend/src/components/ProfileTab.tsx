@@ -29,7 +29,7 @@ import { resolveErrorMessage } from "@/i18n/errors"
 import edit from "@/assets/edit.png"
 
 function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>void}) {
-    const { accessToken, logout } = useAuth()
+    const { accessToken } = useAuth()
     const [editing, setEditing] = useState<boolean>(false)
     const [serverError, setServerError] = useState<string | null>(null)
 
@@ -90,8 +90,6 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
         } catch (err) {
             if (err instanceof ApiError) {
                 setServerError(resolveErrorMessage(err.code, err.message))
-                if (err.code === "USER_NOT_FOUND")
-                    logout()
             }
         }
     }

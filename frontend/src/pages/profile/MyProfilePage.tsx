@@ -17,7 +17,7 @@ import ProfileTab from "@/components/ProfileTab"
 import type { UserProfile } from "@/types/user"
 import AccountTab from "@/components/AccountTab"
 import { useQuery } from "@tanstack/react-query"
-import { useServerError } from "@/hooks/useServerError"
+import { toServerMessage } from "@/hooks/toServerMessage"
 import * as usersApi from "@/api/users"
 import { useAuth } from "@/auth/useAuth"
 import { API_BASE_URL } from "@/api/client"
@@ -33,7 +33,7 @@ function MyProfilePage() {
         queryFn: () => usersApi.getMyPhotos(accessToken!),
         enabled: !!accessToken,
     })
-    const serverError = useServerError(photos.error)
+    const serverError = toServerMessage(photos.error)
     const avatar = photos.data?.find(p=>p.is_profile_photo)?.url ?? null
     const navigate = useNavigate()
 

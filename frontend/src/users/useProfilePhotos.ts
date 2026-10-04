@@ -1,7 +1,7 @@
 import { useAuth } from "@/auth/useAuth"
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { toServerMessage } from "@/hooks/useServerError"
+import { toServerMessage } from "@/hooks/toServerMessage"
 import {
     getMyPhotos,
     postProfilePhoto,

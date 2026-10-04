@@ -737,6 +737,22 @@ export interface components {
              */
             sexual_preference: "man" | "woman" | "bisexual";
         };
+        /**
+         * ErrorCode
+         * @enum {string}
+         */
+        ErrorCode: "ACCOUNT_NOT_VERIFIED" | "AUTH_ERROR" | "BLOCKED" | "CANNOT_BLOCK_SELF" | "CANNOT_LIKE_SELF" | "CANNOT_REPORT_SELF" | "CANNOT_VISIT_SELF" | "CHAT_BLOCKED" | "CHAT_NOT_CONNECTED" | "CHAT_USER_NOT_FOUND" | "DISCOVERY_ERROR" | "EMAIL_TAKEN" | "EXPIRED_TOKEN" | "FILE_TOO_LARGE" | "INVALID_CREDENTIALS" | "INVALID_FILTER" | "INVALID_LOCATION" | "INVALID_PHOTO_TYPE" | "INVALID_RESET_TOKEN" | "INVALID_TOKEN" | "INVALID_VERIFICATION_TOKEN" | "LOCATION_REQUIRED" | "MAX_FIVE_PHOTOS" | "MISSING_TOKEN" | "NOTIFICATION_NOT_FOUND" | "NO_PASSWORD_SET" | "OAUTH_ACCOUNT_CONFLICT" | "OAUTH_EXCHANGE_FAILED" | "PROFILE_PHOTO_REQUIRED" | "SOCIAL_ERROR" | "TAGS_ERROR" | "TAG_CONTENT_PROFANITY" | "TARGET_USER_NOT_FOUND" | "USERNAME_TAKEN" | "USERS_ERROR" | "USER_NOT_FOUND";
+        /** ErrorResponse */
+        ErrorResponse: {
+            code: components["schemas"]["ErrorCode"];
+            /** Detail */
+            detail: string;
+            /**
+             * Field
+             * @default null
+             */
+            field: string | null;
+        };
         /** ForgotPasswordInput */
         ForgotPasswordInput: {
             /**

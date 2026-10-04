@@ -2,7 +2,7 @@ import { useAuth } from "@/auth/useAuth"
 import { useEffect, useRef } from "react"
 import { useMutation } from "@tanstack/react-query"
 import * as socialApi from "@/api/social"
-import { useServerError } from "@/hooks/useServerError"
+import { toServerMessage } from "@/hooks/toServerMessage"
 
 export function useVisitTracker(targetId: number | null) {
     const { accessToken }  = useAuth()
@@ -18,7 +18,7 @@ export function useVisitTracker(targetId: number | null) {
             visitedRef.current = null
         },
     })
-    const apiError = useServerError(error)
+    const apiError = toServerMessage(error)
     const visitError = apiError ?? (error ? "Could not record the visit, please try it later" : null)
 
     useEffect(()=>{

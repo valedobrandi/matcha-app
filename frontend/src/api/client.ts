@@ -1,3 +1,7 @@
+import type { components } from '@/types/api'
+
+export type ErrorCode = components['schemas']['ErrorCode']
+
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 let onUnauthorized: (() => void) | null = null
@@ -8,10 +12,10 @@ export function setOnUnauthorized(handler: (() => void) | null): void {
 
 export class ApiError extends Error {
   status: number
-  code?: string
+  code?: ErrorCode
   field?: string
 
-  constructor(status: number, message: string, code?: string, field?: string) {
+  constructor(status: number, message: string, code?: ErrorCode, field?: string) {
     super(message)
     this.status = status
     this.code = code
@@ -25,7 +29,7 @@ type RequestOptions = {
 
 type ParsedError = {
   detail?: string
-  code?: string
+  code?: ErrorCode
   field?: string
 }
 
@@ -33,7 +37,7 @@ async function parseError(response: Response): Promise<ParsedError> {
   try {
     const body = (await response.json()) as { 
       detail?: string 
-      code?: string 
+      code?: ErrorCode
       field?: string 
     }
     if (typeof body.detail === 'string') {
@@ -49,6 +53,26 @@ async function parseError(response: Response): Promise<ParsedError> {
   return {
     detail: response.statusText,
   }
+}
+
+function callerAccountIsGone(response: Response, code?: ErrorCode): boolean {
+  return response.status === 401 || code === 'USER_NOT_FOUND'
+}
+
+async function failRequest(
+  response: Response,
+  options?: RequestOptions,
+): Promise<never> {
+  const parsedError = await parseError(response)
+  if (options?.token && onUnauthorized && callerAccountIsGone(response, parsedError.code)) {
+    onUnauthorized()
+  }
+  throw new ApiError(
+    response.status,
+    parsedError.detail ?? 'Request failed',
+    parsedError.code,
+    parsedError.field,
+  )
 }
 
 async function request<T>(
@@ -72,16 +96,7 @@ async function request<T>(
   })
 
   if (!response.ok) {
-    const parsedError = await parseError(response)
-    if (response.status === 401 && options?.token && onUnauthorized) {
-      onUnauthorized()
-    }
-    throw new ApiError(
-      response.status,
-      parsedError.detail ?? 'Request failed',
-      parsedError.code,
-      parsedError.field,
-    )
+    return failRequest(response, options)
   }
 
   return response.json() as Promise<T>
@@ -131,16 +146,7 @@ async function requestUpload<T>(
   })
 
   if (!response.ok) {
-      const parsedError = await parseError(response)
-    if (response.status === 401 && options?.token && onUnauthorized) {
-      onUnauthorized()
-    }
-    throw new ApiError(
-      response.status,
-      parsedError.detail ?? 'Request failed',
-      parsedError.code,
-      parsedError.field,
-    )
+      return failRequest(response, options)
   }
 
   return response.json() as Promise<T>

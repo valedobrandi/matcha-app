@@ -16,7 +16,7 @@ import type { SearchingBarProfile } from "@/types/discovery"
 import { useNavigate } from "react-router-dom"
 
 export function SearchForm({ ...props }: React.ComponentProps<"form">) {
-  const { accessToken, logout } = useAuth()
+  const { accessToken } = useAuth()
   const [inputValue, setInputValue] = useState<string>("")
   const [seachingBarProfileList, setSeachingBarProfileList] = useState<SearchingBarProfile[]>([])
   const [serverError, setServerError] = useState<string | null>(null)
@@ -49,8 +49,6 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
         if (err instanceof ApiError) {
           setServerError(resolveErrorMessage(err.code, err.message))
           setSeachingBarProfileList([])
-          if (err.code === "USER_NOT_FOUND")
-            logout()
         }
       } finally {
         if (currentRequestId === requestIdRef.current) {
@@ -59,7 +57,7 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
       }
     }, 300)
     return () => clearTimeout(timer)
-  }, [accessToken, logout, inputValue])
+  }, [accessToken, inputValue])
 
   useEffect(()=>{
     function handleClickOutside(e: MouseEvent) {

@@ -2,7 +2,7 @@ import { ApiError } from "@/api/client"
 import { getTags } from "@/api/tags"
 import { deleteProfileTags, postProfileTags, getMyTags } from "@/api/users"
 import { useAuth } from "@/auth/useAuth"
-import { toServerMessage } from "@/hooks/useServerError"
+import { toServerMessage } from "@/hooks/toServerMessage"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 

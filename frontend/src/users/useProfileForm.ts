@@ -5,7 +5,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useServerError } from "@/hooks/useServerError"
+import { toServerMessage } from "@/hooks/toServerMessage"
 import useUserProfile from "./useUserProfile"
 
 
@@ -41,7 +41,7 @@ function useProfileForm(onSuccess?: ()=>void) {
             onSuccess?.()
         },
     })
-    const submitError = useServerError(update.error)
+    const submitError = toServerMessage(update.error)
 
     return {
         register,

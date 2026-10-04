@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { useAuth } from "@/auth/useAuth"
-import { useServerError } from "./useServerError"
+import { toServerMessage } from "./toServerMessage"
 
 type UsePaginationOptions<TFilters, TData> = {
     queryKey: string,
@@ -27,7 +27,7 @@ export function usePagination<TFilters extends {limit: number}, TData>({
             lastPage.length === filters.limit ? lastOffset + filters.limit : undefined,
         enabled: enabled && !!accessToken,
     })
-    const serverError = useServerError(query.error)
+    const serverError = toServerMessage(query.error)
 
     const loadMore = () => {
         if (query.hasNextPage && !query.isFetching)

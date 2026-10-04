@@ -2,7 +2,7 @@ import { useAuth } from "@/auth/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import * as usersApi from "@/api/users"
 import * as socialApi from "@/api/social"
-import { useServerError } from "@/hooks/useServerError";
+import { toServerMessage } from "@/hooks/toServerMessage";
 
 export function usePublicProfile(target_id: number) {
     const {accessToken} = useAuth()
@@ -17,7 +17,7 @@ export function usePublicProfile(target_id: number) {
         queryFn: () => usersApi.getPublicProfile(accessToken!, target_id),
         enabled: !!accessToken && relationshipQuery.isSuccess,
     })
-    const serverError = useServerError(relationshipQuery.error ?? profileQuery.error)
+    const serverError = toServerMessage(relationshipQuery.error ?? profileQuery.error)
 
     const relationship = relationshipQuery.data ?? null
     const publicProfile = profileQuery.data ?? null

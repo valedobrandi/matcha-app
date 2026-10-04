@@ -1,7 +1,7 @@
-import { API_BASE_URL } from '../api/client'
+import { API_BASE_URL, setOnUnauthorized } from '../api/client'
 import type { RelationshipResponse } from '../types/social'
 import type { PublicProfile} from '../types/user'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { server } from './server'
 import { http, HttpResponse } from 'msw'
 import { renderHook, waitFor } from '@testing-library/react'
@@ -118,12 +118,14 @@ describe('usePublicProfile', ()=>{
             )
         )
 
-        const authValue = makeAuthValue()
+        const logout = vi.fn()
+        setOnUnauthorized(logout)
         renderHook(() => usePublicProfile(5), {
-            wrapper: authWrapper(authValue),
+            wrapper: authWrapper(makeAuthValue()),
         })
 
-        await waitFor(() => expect(authValue.logout).toHaveBeenCalledTimes(1))
+        await waitFor(() => expect(logout).toHaveBeenCalledTimes(1))
+        setOnUnauthorized(null)
     })
 })
 describe('usePublicProfile without a profile photo', ()=>{

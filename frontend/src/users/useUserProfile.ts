@@ -1,7 +1,7 @@
 import { useAuth } from "@/auth/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as usersApi from "../api/users"
-import { useServerError } from "@/hooks/useServerError";
+import { toServerMessage } from "@/hooks/toServerMessage";
 
 function useUserProfile() {
     const { accessToken } = useAuth()
@@ -11,7 +11,7 @@ function useUserProfile() {
         queryFn: () => usersApi.getUserProfile(accessToken!),
         enabled: !!accessToken,
     })
-    const error = useServerError(query.error)
+    const error = toServerMessage(query.error)
 
     const fetchProfile = () => queryClient.invalidateQueries({ queryKey: ["me"] })
 

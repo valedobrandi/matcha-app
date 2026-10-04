@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { server } from "./server"
 import { http, HttpResponse } from 'msw'
-import { API_BASE_URL } from '../api/client'
+import { API_BASE_URL, setOnUnauthorized } from '../api/client'
 import useSuggestedProfiles from '../discovery/useSuggestedProfiles'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { authWrapper, makeAuthValue } from './renderWithAuth'
@@ -77,13 +77,15 @@ describe('useSuggestedProfiles', () => {
         )
     )
 
-    const authValue = makeAuthValue()
+    const logout = vi.fn()
+    setOnUnauthorized(logout)
     renderHook(
       () => useSuggestedProfiles({ limit: 20, sort: undefined, order: undefined }),
-      { wrapper: authWrapper(authValue) }
+      { wrapper: authWrapper(makeAuthValue()) }
     )
 
-    await waitFor(() => expect(authValue.logout).toHaveBeenCalled())
+    await waitFor(() => expect(logout).toHaveBeenCalled())
+    setOnUnauthorized(null)
   })
 
   it('LoadMore do increment instead replace data', async ()=>{

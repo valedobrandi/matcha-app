@@ -3,7 +3,7 @@ import * as socialApi from "@/api/social"
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type LikeStateResponse } from "@/types/social";
-import { useServerError } from "@/hooks/useServerError";
+import { toServerMessage } from "@/hooks/toServerMessage";
 
 type LikeAction = { targetId: number, liked: boolean }
 
@@ -24,7 +24,7 @@ export function useLikes() {
             ])
         },
     })
-    const serverError = useServerError(mutation.error)
+    const serverError = toServerMessage(mutation.error)
 
     const send = async (action: LikeAction) => {
         if (!accessToken) return

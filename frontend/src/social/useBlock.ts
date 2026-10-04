@@ -1,7 +1,7 @@
 import { useAuth } from "@/auth/useAuth";
 import * as socialApi from "@/api/social"
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerError } from "@/hooks/useServerError";
+import { toServerMessage } from "@/hooks/toServerMessage";
 
 type BlockAction = { targetId: number, blocked: boolean }
 
@@ -19,7 +19,7 @@ export function useBlock() {
             )
         ),
     })
-    const serverError = useServerError(mutation.error)
+    const serverError = toServerMessage(mutation.error)
 
     const send = async (action: BlockAction) => {
         if (!accessToken) return
