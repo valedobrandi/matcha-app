@@ -50,10 +50,8 @@ jobs:
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r backend/requirements.txt
       - name: Apply migrations
-        run: |
-          for f in $(ls backend/database/migrations/*.sql | sort); do
-            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
-          done
+        run: python -m database.migrate
+        working-directory: backend
       - run: python -m pytest -q -p no:cacheprovider -m integration
         working-directory: backend
 
