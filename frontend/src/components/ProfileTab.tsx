@@ -96,7 +96,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
 
     const handleCancel = () => {
         setServerError(null)
-        reset(),
+        reset()
         setEditing(false)
     }
 
