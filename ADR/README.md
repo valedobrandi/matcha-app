@@ -12,7 +12,9 @@ silently contradicting it.
 Template: Tyree & Akerman, *Architecture Decisions: Demystifying Architecture*,
 IEEE Software 22(2), 2005.
 
-Status vocabulary: `Pending` · `Decided` · `Approved` · `Superseded` · `Rejected`
+Status vocabulary: `Open` · `Pending` · `Decided` · `Approved` · `Superseded` · `Rejected`
+
+`Open` means the decision is taken but its implementation is not merged yet. It becomes `Decided` when it is.
 
 | ADR | Title | Status | Group | Date |
 |-----|-------|--------|-------|------|
@@ -20,3 +22,6 @@ Status vocabulary: `Pending` · `Decided` · `Approved` · `Superseded` · `Reje
 | [0002](0002-chat-and-in-app-notifications-are-separate-modules-fed.md) | Chat and in-app notifications are separate modules fed by thin social emit hooks | Decided | Backend | 2026-07-30 |
 | [0003](0003-realtime-delivery-uses-a-fastapi-websocket-hub.md) | Realtime delivery uses a FastAPI WebSocket hub | Decided | Backend | 2026-07-30 |
 | [0004](0004-user-not-found-codes-separate-caller-from-target.md) | "User not found" codes separate the caller account from a target | Decided | Backend | 2026-10-04 |
+| [0005](0005-blocked-users-are-hidden-from-every-list.md) | Blocked users are hidden from the visitors, likes-received and notification lists | Open | Backend | 2026-10-04 |
+| [0006](0006-a-block-does-not-change-existing-likes.md) | A block does not change existing likes or connections | Open | Backend | 2026-10-04 |
+| [0007](0007-the-blocked-user-is-never-told.md) | The blocked user is never told about the block | Open | Backend, Frontend | 2026-10-04 |
