@@ -358,3 +358,4 @@ class TestGetPublicProfile:
         token = make_token(1)
         response = client.get("/users/99", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 404
+        assert response.json()["code"] == "TARGET_USER_NOT_FOUND"

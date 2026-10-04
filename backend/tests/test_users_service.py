@@ -10,6 +10,7 @@ from modules.users.schemas import (
 from modules.users.service import UsersService
 from modules.users.exceptions import (
     UserNotFoundException,
+    TargetUserNotFoundException,
     InvalidLocationException,
     EmailAlreadyTakenException,
 )
@@ -419,5 +420,10 @@ async def test_get_public_profile_should_raise_when_blocked():
 @pytest.mark.asyncio
 async def test_get_public_profile_should_raise_when_missing():
     service = UsersService(FakeRepository(None), social_repo=FakeSocial())
-    with pytest.raises(UserNotFoundException):
+    with pytest.raises(TargetUserNotFoundException):
         await service.get_public_profile(viewer_id=1, target_id=99)
+
+
+def test_target_user_not_found_should_not_share_the_caller_account_code():
+    assert TargetUserNotFoundException.code == "TARGET_USER_NOT_FOUND"
+    assert TargetUserNotFoundException.code != UserNotFoundException.code

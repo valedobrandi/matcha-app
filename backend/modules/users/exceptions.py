@@ -11,6 +11,12 @@ class UserNotFoundException(UsersException):
     def __init__(self):
         super().__init__("User not found")
 
+class TargetUserNotFoundException(UsersException):
+    code = "TARGET_USER_NOT_FOUND"
+    field = "None"
+    def __init__(self):
+        super().__init__("Target user not found")
+
 class FileTooLargeException(UsersException):
     code = "FILE_TOO_LARGE"
     field = "None"

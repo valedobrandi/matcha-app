@@ -12,6 +12,7 @@ from modules.users.schemas import (
 )
 from modules.users.exceptions import (
     UserNotFoundException,
+    TargetUserNotFoundException,
     InvalidLocationException,
 )
 from modules.auth.exceptions import (
@@ -87,7 +88,7 @@ class UsersService:
             raise BlockedException()
         target = await self.repository.get_user_by_id(target_id)
         if not target:
-            raise UserNotFoundException()
+            raise TargetUserNotFoundException()
 
         tags = await self.repository.get_my_tags(target_id)
         photos = await self.repository.get_my_photos(target_id)

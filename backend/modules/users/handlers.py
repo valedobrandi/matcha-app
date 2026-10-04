@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from modules.users.exceptions import (
     UsersException,
     UserNotFoundException,
+    TargetUserNotFoundException,
     FileTooLargeException,
     InvalidPhotoTypeException,
     MaxPhotosReachedException,
@@ -13,6 +14,7 @@ from modules.users.exceptions import (
 
 _EXCEPTION_STATUS = {
     UserNotFoundException: status.HTTP_404_NOT_FOUND,
+    TargetUserNotFoundException: status.HTTP_404_NOT_FOUND,
     FileTooLargeException: status.HTTP_413_CONTENT_TOO_LARGE,
     InvalidPhotoTypeException: status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
     MaxPhotosReachedException: status.HTTP_406_NOT_ACCEPTABLE,
