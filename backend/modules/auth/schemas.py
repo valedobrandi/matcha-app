@@ -1,3 +1,4 @@
+from core.api_model import ApiModel
 from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
 from zxcvbn import zxcvbn
@@ -55,10 +56,10 @@ class ResetPasswordInput(BaseModel):
 class ForgotPasswordInput(BaseModel):
     email: EmailStr
 
-class ForgotPasswordResponse(BaseModel):
+class ForgotPasswordResponse(ApiModel):
     message: str
 
-class ResetPasswordResponse(BaseModel):
+class ResetPasswordResponse(ApiModel):
     message: str
     access_token: str
     token_type: str = 'bearer'
@@ -67,20 +68,20 @@ class LoginInput(BaseModel):
     username: str
     password: str
 
-class TokenResponse(BaseModel):
+class TokenResponse(ApiModel):
     access_token: str
     token_type: str = 'bearer'
 
-class RegisterResponse(BaseModel):
+class RegisterResponse(ApiModel):
     message: str
 
 class ResendVerificationInput(BaseModel):
     email: EmailStr
 
-class ResendVerificationResponse(BaseModel):
+class ResendVerificationResponse(ApiModel):
     message: str
 
-class CurrentUserResponse(BaseModel):
+class CurrentUserResponse(ApiModel):
     id: int
     username: str
     email: EmailStr

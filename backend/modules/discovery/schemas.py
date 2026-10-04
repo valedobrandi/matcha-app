@@ -1,9 +1,9 @@
-from pydantic import BaseModel, ConfigDict, Field
+from core.api_model import ApiModel
+from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
 
 
-class DiscoveryProfileCard(BaseModel):
-    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+class DiscoveryProfileCard(ApiModel):
     id: int
     username: str
     first_name: str
@@ -63,7 +63,7 @@ class ViewerContext(BaseModel):
     longitude: Optional[float] = None
 
 
-class SearchingBarProfile(BaseModel):
+class SearchingBarProfile(ApiModel):
     id: int
     username: str
     first_name: str

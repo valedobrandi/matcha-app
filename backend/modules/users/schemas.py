@@ -1,11 +1,11 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator, field_validator
+from core.api_model import ApiModel
+from pydantic import BaseModel, EmailStr, Field, model_validator, field_validator
 from datetime import datetime
 from typing import List, Literal, Optional
 from modules.auth.schemas import validate_password_strength
 from modules.tags.schemas import TagOut
 
-class UserProfile(BaseModel):
-    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+class UserProfile(ApiModel):
     id: int
     email: EmailStr
     username: str 
@@ -45,7 +45,7 @@ class UserAccountInput(BaseModel):
     last_name: str = Field(..., min_length=1)
     email: EmailStr
     
-class PhotoOut(BaseModel):
+class PhotoOut(ApiModel):
     id: int
     url: str
     is_profile_photo: bool
@@ -82,8 +82,7 @@ class PasswordChangeInput(BaseModel):
 
 
 # ADR-0001: public projection — never include email/password/tokens/coords/consent
-class PublicProfile(BaseModel):
-    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+class PublicProfile(ApiModel):
     id: int
     username: str
     first_name: str

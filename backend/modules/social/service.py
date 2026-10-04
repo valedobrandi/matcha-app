@@ -12,7 +12,7 @@ from modules.social.exceptions import (
     BlockedException,
 )
 from modules.social.schemas import (
-    OkResponse,
+    SocialOkResponse,
     LikeStateResponse,
     BlockStateResponse,
     RelationshipResponse,
@@ -68,7 +68,7 @@ class SocialService:
                 actor_id,
             )
 
-    async def record_visit(self, viewer_id: int, target_id: int) -> OkResponse:
+    async def record_visit(self, viewer_id: int, target_id: int) -> SocialOkResponse:
         if viewer_id == target_id:
             raise CannotVisitSelfException()
         if not await self.social_repo.user_exists(target_id):
@@ -82,7 +82,7 @@ class SocialService:
         # Emit on every successful visit (including revisits that only bump visited_at).
         # Fame still awards only on first insert.
         await self._emit(target_id, "visited", viewer_id)
-        return OkResponse()
+        return SocialOkResponse()
 
     async def list_visitors(self, user_id: int, limit: int, offset: int) -> List[VisitorOut]:
         return await self.social_repo.list_visitors(user_id, limit, offset)
@@ -143,13 +143,13 @@ class SocialService:
 
     async def report(
         self, reporter_id: int, target_id: int, reason: Optional[str]
-    ) -> OkResponse:
+    ) -> SocialOkResponse:
         if reporter_id == target_id:
             raise CannotReportSelfException()
         if not await self.social_repo.user_exists(target_id):
             raise SocialUserNotFoundException()
         await self.social_repo.upsert_report(reporter_id, target_id, reason)
-        return OkResponse()
+        return SocialOkResponse()
 
     async def get_relationship(self, me: int, target_id: int) -> RelationshipResponse:
         if not await self.social_repo.user_exists(target_id):

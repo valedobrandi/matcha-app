@@ -8,7 +8,7 @@ from core.config import settings
 from core.auth import get_current_user_id
 from core.presence import get_current_user_id_and_touch
 from modules.notifications.controller import get_notifications_service
-from modules.notifications.schemas import NotificationOut, UnreadCountOut, OkResponse
+from modules.notifications.schemas import NotificationOut, UnreadCountOut, NotificationOkResponse
 from modules.notifications.exceptions import NotificationNotFoundException
 
 client = TestClient(app)
@@ -49,10 +49,10 @@ class FakeNotificationsService:
     async def mark_read(self, user_id, notification_id):
         if notification_id != 1:
             raise NotificationNotFoundException()
-        return OkResponse()
+        return NotificationOkResponse()
 
     async def mark_all_read(self, user_id):
-        return OkResponse()
+        return NotificationOkResponse()
 
 
 @pytest.fixture

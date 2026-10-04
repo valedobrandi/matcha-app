@@ -1,47 +1,10 @@
-export type RegisterInput = {
-  email: string
-  username: string
-  first_name: string
-  last_name: string
-  password: string
-}
+import type { components } from "./api"
 
-export type LoginInput = {
-  username: string
-  password: string
-}
-
-export type ForgotPasswordInput = {
-  email: string
-}
-
-export type ResetPasswordInput = {
-  token: string
-  password: string
-}
-
-export type MessageResponse = {
-  message: string
-}
-
-export type TokenResponse = {
-  access_token: string
-  token_type: string
-}
-
-export type ResetPasswordResponse = {
-  message: string
-  access_token: string
-  token_type: string
-}
-
-export type CurrentUser = {
-  id: number
-  username: string
-  email: string
-  first_name: string
-  last_name: string
-  email_verified: boolean
-  profile_completed: boolean
-  has_password: boolean
-}
+export type RegisterInput = components["schemas"]["UserRegisterInput"]
+export type LoginInput = components["schemas"]["LoginInput"]
+export type ForgotPasswordInput = components["schemas"]["ForgotPasswordInput"]
+export type ResetPasswordInput = components["schemas"]["ResetPasswordInput"]
+export type MessageResponse = components["schemas"]["RegisterResponse"]
+export type TokenResponse = components["schemas"]["TokenResponse"]
+export type ResetPasswordResponse = components["schemas"]["ResetPasswordResponse"]
+export type CurrentUser = components["schemas"]["CurrentUserResponse"]
