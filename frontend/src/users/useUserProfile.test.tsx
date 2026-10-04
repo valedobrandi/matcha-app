@@ -51,7 +51,7 @@ describe('useUserProfile', () => {
   it('logs out when the API reports USER_NOT_FOUND', async () => {
     server.use(
       http.get(`${API_BASE_URL}/users/me`, () =>
-        HttpResponse.json({ detail: 'gone', code: 'USER_NOT_FOUND' }, { status: 404 }),
+        HttpResponse.json({ detail: 'gone', code: 'USER_NOT_FOUND' }, { status: 401 }),
       ),
     )
 

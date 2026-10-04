@@ -161,7 +161,7 @@ class TestGetMe:
     def test_user_not_found(self, override_service):
         token = make_token(user_id=222)
         response = client.get("/users/me", headers={"Authorization" : f"Bearer {token}"})
-        assert response.status_code == 404
+        assert response.status_code == 401
         assert response.json()["code"] == "USER_NOT_FOUND"
 
     def test_user_found(self, override_service, fake_user):
