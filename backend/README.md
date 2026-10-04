@@ -16,6 +16,20 @@ docker compose up -d
 
 (`-v` deletes the named postgres volume — local data only.)
 
+## Integration tests (real Postgres)
+
+The default `pytest` run needs no database. Tests marked `integration` run the
+discovery visibility SQL (suggest, search and name search) on Postgres:
+
+```bash
+docker compose up -d database
+cd backend && pytest -m integration
+```
+
+Each test runs in a transaction that is rolled back, so nothing is committed and no
+row is deleted. The tests fail, they do not skip, when Postgres is unreachable. Run
+them before you merge a change to the discovery SQL.
+
 ## Seed demo data
 
 For discovery/search demos you need enough profiles (≥500 for subject eval).
