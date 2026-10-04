@@ -1,48 +1,40 @@
 import { useAuth } from "@/auth/useAuth";
 import * as socialApi from "@/api/social"
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type LikeStateResponse } from "@/types/social";
-import { ApiError } from "@/api/client";
-import { resolveErrorMessage } from "@/i18n/errors";
+import { useServerError } from "@/hooks/useServerError";
+
+type LikeAction = { targetId: number, liked: boolean }
 
 export function useLikes() {
-    const { accessToken, logout } = useAuth()
+    const { accessToken } = useAuth()
+    const queryClient = useQueryClient()
     const [ likeState, setLikeState ] = useState< Record<number, LikeStateResponse> | null>(null)
-    const [ serverError, setServerError ] = useState<string | null>(null)
 
-    const like = async (targetId: number) => {
+    const mutation = useMutation({
+        mutationFn: ({ targetId, liked }: LikeAction) => liked
+            ? socialApi.postLike(accessToken!, targetId)
+            : socialApi.postUnLike(accessToken!, targetId),
+        onSuccess: async (state, { targetId }) => {
+            setLikeState(prev=>({...prev, [targetId]: state}))
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["relationship"] }),
+                queryClient.invalidateQueries({ queryKey: ["public-profile"] }),
+            ])
+        },
+    })
+    const serverError = useServerError(mutation.error)
+
+    const send = async (action: LikeAction) => {
         if (!accessToken) return
-        try {
-            const likeState = await socialApi.postLike(accessToken, targetId)
-            if (!likeState) return
-            setLikeState(prev=>({...prev, [targetId]: likeState}))
-            return true
-        } catch (err) {
-            if (err instanceof ApiError) {
-                setServerError(resolveErrorMessage(err.code, err.message))
-                if (err.code == "USER_NOT_FOUND")
-                    logout()
-            }
-            return false
-        }
-    }
-    
-    const unlike = async (targetId: number) => {
-        if (!accessToken) return
-        try {
-            const likeState = await socialApi.postUnLike(accessToken, targetId)
-            if (!likeState) return
-            setLikeState(prev=>({...prev, [targetId]: likeState}))
-            return true
-        } catch (err) {
-            if (err instanceof ApiError) {
-                setServerError(resolveErrorMessage(err.code, err.message))
-                if (err.code == "USER_NOT_FOUND")
-                    logout()
-            }
-            return false
-        }
+        return mutation.mutateAsync(action).then(()=>true, ()=>false)
     }
 
-    return {like, unlike, likeState, serverError}
+    return {
+        like: (targetId: number) => send({ targetId, liked: true }),
+        unlike: (targetId: number) => send({ targetId, liked: false }),
+        likeState,
+        serverError,
+    }
 }

@@ -6,6 +6,7 @@ type FilterParams = Omit<SuggestQueryParamsValues, "offset">
 
 function useSuggestedProfiles (filters: FilterParams, enabled = true) {
     const {data, serverError, isLoading, hasMore, loadMore} = usePagination({
+        queryKey: "suggested-profiles",
         filters,
         enabled,
         fetchPage: discoveryApi.getSuggestedProfiles

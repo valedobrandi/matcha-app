@@ -6,6 +6,7 @@ type FilterParams = Omit<BasicQueryParamsValues, "offset">
 
 function useLikesReceived (filters: FilterParams, enabled = true) {
     const {data, serverError, isLoading, hasMore, loadMore} = usePagination({
+        queryKey: "likes-received",
         filters,
         enabled,
         fetchPage: socialApi.getLikesReceivedList

@@ -4,7 +4,7 @@ import { usePublicProfile } from "@/users/usePublicProfile"
 import { useParams } from "react-router-dom"
 import likes from "@/assets/likes.png"
 import vues from "@/assets/vues.png"
-import { API_BASE_URL, ApiError } from "@/api/client"
+import { API_BASE_URL } from "@/api/client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -28,27 +28,23 @@ import { useLikes } from "@/social/useLikes"
 import { useBlock } from "@/social/useBlock"
 import { useState } from "react"
 import type { reportInputValue } from "@/schemas/social"
-import { useAuth } from "@/auth/useAuth"
-import { resolveErrorMessage } from "@/i18n/errors"
-import * as socialApi from "@/api/social"
+import { useReport } from "@/social/useReport"
 import { useVisitTracker } from "@/social/useVisitTracker"
 
 function PublicProfilePage() {
-    const { accessToken, logout}  = useAuth()
     const { userId } = useParams()
-    const {relationship, publicProfile, fetchPublicProfile, profileAvatar, isLoading, serverError} = usePublicProfile(Number(userId))
+    const {relationship, publicProfile, profileAvatar, isLoading, serverError} = usePublicProfile(Number(userId))
     const { visitError } = useVisitTracker(userId ? Number(userId) : null)
     const {like, unlike, serverError: likeError} = useLikes()
     const {block, unblock, serverError: blockError} = useBlock()
     const [reportValue, setReportValue] = useState<reportInputValue | null>(null)
-    const [reportError, setReportError] = useState<string | null>(null)
+    const {report, serverError: reportError} = useReport()
     
     const handleLike = async (targetId: number) => {
         if (relationship?.liked_by_me || relationship?.connected)
             await unlike(targetId)
         else
             await like(targetId)
-        await fetchPublicProfile(targetId)
     }
 
     const handleBlock = async (targetId: number) => {
@@ -57,27 +53,12 @@ function PublicProfilePage() {
             await block(targetId)
         else if (relationship?.blocked_by_me && !relationship?.blocked_you)
             await unblock(targetId)
-        await fetchPublicProfile(targetId)
     }
 
     const handleSubmitReport = async (targetId: number, payload: reportInputValue | null) => {
-        if (!accessToken) return
         if (!payload) return
-        setReportError(null)
-        try {
-            const res = await socialApi.postReport(accessToken, targetId, payload)
-            if (!res.ok)
-                throw Error("Report failed")
+        if (await report(targetId, payload))
             setReportValue(null)
-        } catch (err) {
-            if (err instanceof ApiError) {
-                setReportError(resolveErrorMessage(err.code, err.message))
-                if (err.code == "USER_NOT_FOUND")
-                    logout()
-            } else {
-                setReportError("Report failed, please try it later")
-            }
-        }
     }
 
     return (

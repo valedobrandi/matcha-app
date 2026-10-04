@@ -2,90 +2,78 @@ import { ApiError } from "@/api/client"
 import { getTags } from "@/api/tags"
 import { deleteProfileTags, postProfileTags, getMyTags } from "@/api/users"
 import { useAuth } from "@/auth/useAuth"
-import { resolveErrorMessage } from "@/i18n/errors"
-import type { Tag } from "@/types/user"
-import { useCallback, useEffect, useState } from "react"
+import { toServerMessage } from "@/hooks/useServerError"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useState } from "react"
 
 function useProfileTags() {
     const { accessToken } = useAuth()
+    const queryClient = useQueryClient()
     const [ inputValue, setInputValue ] = useState<string>("")
-    const [ tagsSearchList, setTagsSearchList] = useState<Tag[]>([])
-    const [ tagsList, setTagsList ] = useState<Tag[]>([])
-    const [ serverError, setServerError ] = useState<string | null>(null)
+    const [ actionError, setActionError ] = useState<string | null>(null)
 
-    const handleMyTags = useCallback(async () => {
-        try {
-            const myTags = await getMyTags(accessToken!)
-            setTagsList(myTags)
-        } catch (err) {
-            if (err instanceof ApiError)
-                setServerError(resolveErrorMessage(err.code, err.message))           
-        }
+    const myTags = useQuery({
+        queryKey: ["my-tags", accessToken],
+        queryFn: () => getMyTags(accessToken!),
+        enabled: !!accessToken,
+    })
+    const invalidateMyTags = () => queryClient.invalidateQueries({ queryKey: ["my-tags"] })
 
-    }, [accessToken])
+    const search = useMutation({
+        mutationFn: (value: string) => getTags(accessToken!, value),
+        onError: (err) => {
+            setActionError(toServerMessage(err))
+            if (err instanceof ApiError && err.code == "TAG_CONTENT_PROFANITY")
+                setInputValue("")
+        },
+    })
+    const add = useMutation({
+        mutationFn: (name: string) => postProfileTags(accessToken!, {name}),
+        onSuccess: () => {
+            search.reset()
+            return invalidateMyTags()
+        },
+        onError: (err) => setActionError(toServerMessage(err)),
+        onSettled: () => setInputValue(""),
+    })
+    const remove = useMutation({
+        mutationFn: (tag_id: number) => deleteProfileTags(accessToken!, tag_id),
+        onSuccess: invalidateMyTags,
+        onError: (err) => setActionError(toServerMessage(err)),
+    })
 
-    useEffect(()=>{
-        void handleMyTags()
-    }, [handleMyTags])
+    const tagsList = myTags.data ?? []
 
-    const handleInput = async (value: string) => {
-        setServerError(null)
+    const handleInput = (value: string) => {
+        setActionError(null)
         setInputValue(value)
-        try {
-           const searchRes = await getTags(accessToken!, value)
-           setTagsSearchList(searchRes)
-        } catch (err) {
-            if (err instanceof ApiError) {
-                setServerError(resolveErrorMessage(err.code, err.message))
-                if (err.code == "TAG_CONTENT_PROFANITY")
-                    setInputValue("")
-            }
-        }
+        search.mutate(value)
     }
 
-    const handleAddTag = async (tag_name: string) => {
+    const handleAddTag = (tag_name: string) => {
         if (!tag_name)
             return
         const trimTag = tag_name.trim()
         if (trimTag.length == 0)
             return
         if (tagsList.find(t=>t.name.toLowerCase() === trimTag.toLowerCase())) {
-            setServerError("You have already added the same tag")
+            setActionError("You have already added the same tag")
             return
         }
-        setServerError(null)
-        try {
-            const newTag: Tag = await postProfileTags(accessToken!, {name: trimTag})
-            setTagsList(prev=>([
-                ...prev,
-                newTag
-            ]))
-            setTagsSearchList([])
-        } catch (err) {
-            if (err instanceof ApiError)
-                setServerError(resolveErrorMessage(err.code, err.message))
-        } finally {
-            setInputValue("")
-        }
+        setActionError(null)
+        add.mutate(trimTag)
     }
 
-    const handleDeleteTag = async (tag_id: number) => {
-        setServerError(null)
-        try {
-            await deleteProfileTags(accessToken!, tag_id)
-            setTagsList(prev=>prev.filter((t)=>t.id !== tag_id))
-        }catch (err) {
-            if (err instanceof ApiError)
-                setServerError(resolveErrorMessage(err.code, err.message))
-        }
+    const handleDeleteTag = (tag_id: number) => {
+        setActionError(null)
+        remove.mutate(tag_id)
     }
 
     return {
         inputValue,
-        tagsSearchList,
+        tagsSearchList: search.data ?? [],
         tagsList,
-        serverError,
-        handleMyTags,
+        serverError: actionError ?? toServerMessage(myTags.error),
         handleInput,
         handleAddTag,
         handleDeleteTag,

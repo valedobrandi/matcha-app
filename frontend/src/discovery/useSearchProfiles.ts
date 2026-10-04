@@ -6,6 +6,7 @@ type FilterParams = Omit<SearchQueryParamsValues, "offset">
 
 function useSearchProfiles(filters: FilterParams, enabled = true) {
     const {data, serverError, isLoading, hasMore, loadMore} = usePagination({
+        queryKey: "search-profiles",
         filters,
         enabled,
         fetchPage: discoveryApi.getSearchProfiles

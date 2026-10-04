@@ -9,10 +9,10 @@ import { useRef, useState } from "react"
 type PhotosFormProps = {
     photoList: Photo[],
     serverError: string | null,
-    handleAddPhoto: (photo_input: File)=>Promise<void>,
-    handleAsAvatar: (photo_id: number)=>Promise<void>,
-    handlePatchPhoto: (photo_id: number, photo_input: File)=>Promise<void>,
-    handleDeletePhoto: (photo_id: number)=>Promise<void>
+    handleAddPhoto: (photo_input: File)=>void,
+    handleAsAvatar: (photo_id: number)=>void,
+    handlePatchPhoto: (photo_id: number, photo_input: File)=>void,
+    handleDeletePhoto: (photo_id: number)=>void
     onFinish?: ()=>void,
     showFinish: boolean
 }

@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../api/client'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { authWrapper, makeAuthValue } from './renderWithAuth'
 import { AuthContext } from '@/auth/AuthContext'
+import { QueryWrapper } from './QueryWrapper'
 import { useVisitTracker } from '../social/useVisitTracker'
 
 const VISIT_URL = `${API_BASE_URL}/social/visits/:id`
@@ -51,7 +52,9 @@ describe('useVisitTracker', ()=>{
         }
         let current: keyof typeof authByToken = 'first'
         const Wrapper = ({ children }: { children: ReactNode }) => (
-            <AuthContext.Provider value={authByToken[current]}>{children}</AuthContext.Provider>
+            <QueryWrapper>
+                <AuthContext.Provider value={authByToken[current]}>{children}</AuthContext.Provider>
+            </QueryWrapper>
         )
 
         const { result, rerender } = renderHook(() => useVisitTracker(5), { wrapper: Wrapper })

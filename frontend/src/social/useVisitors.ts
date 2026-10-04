@@ -6,6 +6,7 @@ type FilterParams = Omit<BasicQueryParamsValues, "offset">
 
 function useVisitors (filters: FilterParams, enabled = true) {
     const {data, serverError, isLoading, hasMore, loadMore} = usePagination({
+        queryKey: "visitors",
         filters,
         enabled,
         fetchPage: socialApi.getVisitorsList

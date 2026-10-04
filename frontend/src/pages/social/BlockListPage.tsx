@@ -15,20 +15,6 @@ export function BlockListPage() {
     const { blockList, serverError, isLoading, hasMore, loadMore} = useBlockList(filter, true)
     const {unblock, serverError: blockError} = useBlock()
     const sentinelRef = useInfiniteScroll(loadMore)
-    const [removeIds, setRemoveIds] = useState<Set<number>>(new Set())
-
-    const displayedBlockList = blockList.filter(block => !removeIds.has(block.id))
-
-    const handleUnblock = async(targetId: number)=>{
-        const success = await unblock(targetId)
-        if (success) {
-            setRemoveIds(prev=>{
-                const next = new Set(prev)
-                next.add(targetId)
-                return next
-            })
-        }
-    }
 
     return (
         <>
@@ -44,7 +30,7 @@ export function BlockListPage() {
             <div className="m-8 grid gap-8 justify-items-center
                 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
                 <div className="flex w-full flex-col gap-2 text-sm">
-                {displayedBlockList.map((block) => {
+                {blockList.map((block) => {
                     const rawDate = block.blocked_at
                                     ? (block.blocked_at.endsWith('Z') ? block.blocked_at : block.blocked_at + 'Z') : null
                     const formattedDate = rawDate ? new Date(rawDate).toLocaleString('en-US', {
@@ -62,7 +48,7 @@ export function BlockListPage() {
                                 className="flex flex-wrap gap-2 items-center justify-between">
                                 <dt>{block.first_name} {block.last_name}</dt>
                                 <dd className="text-muted-foreground">Blocked at {formattedDate}</dd>
-                                <Button variant="ghost" onClick={()=>handleUnblock(block.id)}>Unblock</Button>
+                                <Button variant="ghost" onClick={()=>unblock(block.id)}>Unblock</Button>
                             </dl>
                             <Separator />
                     </div>

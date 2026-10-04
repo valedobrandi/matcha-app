@@ -1,39 +1,32 @@
 import { useAuth } from "@/auth/useAuth"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
+import { useMutation } from "@tanstack/react-query"
 import * as socialApi from "@/api/social"
-import { ApiError } from "@/api/client"
-import { resolveErrorMessage } from "@/i18n/errors"
+import { useServerError } from "@/hooks/useServerError"
 
 export function useVisitTracker(targetId: number | null) {
-    const { accessToken, logout}  = useAuth()
-    const [visitError, setVisitError] = useState<string | null>(null)
+    const { accessToken }  = useAuth()
     const visitedRef = useRef<number | null>(null)
 
-    const postSingleVisit = useCallback(async(id: number)=>{
-        if (!accessToken) return
-        visitedRef.current = id
-        setVisitError(null)
-        try {
-            const res = await socialApi.postVisit(accessToken, id)
+    const { mutate, error } = useMutation({
+        mutationFn: async (id: number) => {
+            const res = await socialApi.postVisit(accessToken!, id)
             if (!res.ok)
                 throw Error("Post visit failed")
-        } catch (err) {
+        },
+        onError: () => {
             visitedRef.current = null
-            if (err instanceof ApiError) {
-                setVisitError(resolveErrorMessage(err.code, err.message))
-                if (err.code == "USER_NOT_FOUND")
-                    logout()
-            } else {
-                setVisitError("Could not record the visit, please try it later")
-            }
-        }
-    }, [accessToken, logout])
-    
+        },
+    })
+    const apiError = useServerError(error)
+    const visitError = apiError ?? (error ? "Could not record the visit, please try it later" : null)
+
     useEffect(()=>{
-        if (!targetId) return
+        if (!targetId || !accessToken) return
         if (visitedRef.current === Number(targetId)) return
-        postSingleVisit(targetId)
-    }, [targetId, postSingleVisit])
+        visitedRef.current = targetId
+        mutate(targetId)
+    }, [targetId, accessToken, mutate])
 
     return {visitError}
 }

@@ -1,48 +1,35 @@
 import { useAuth } from "@/auth/useAuth";
-import { useState } from "react";
 import * as socialApi from "@/api/social"
-import { type BlockStateResponse } from "@/types/social";
-import { ApiError } from "@/api/client";
-import { resolveErrorMessage } from "@/i18n/errors";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerError } from "@/hooks/useServerError";
+
+type BlockAction = { targetId: number, blocked: boolean }
 
 export function useBlock() {
-    const { accessToken, logout } = useAuth()
-    const [ serverError, setServerError ] = useState<string | null>(null)
-    const [ blockState, setBlockState ] = useState<BlockStateResponse | null>(null)
+    const { accessToken } = useAuth()
+    const queryClient = useQueryClient()
 
-    const block = async (targetId: number) => {
+    const mutation = useMutation({
+        mutationFn: ({ targetId, blocked }: BlockAction) => blocked
+            ? socialApi.postBlock(accessToken!, targetId)
+            : socialApi.deleteBlock(accessToken!, targetId),
+        onSuccess: () => Promise.all(
+            ["relationship", "public-profile", "blocks", "suggested-profiles", "search-profiles"].map(
+                queryKey => queryClient.invalidateQueries({ queryKey: [queryKey] })
+            )
+        ),
+    })
+    const serverError = useServerError(mutation.error)
+
+    const send = async (action: BlockAction) => {
         if (!accessToken) return
-        setServerError(null)
-        try {
-            const blocked = await socialApi.postBlock(accessToken, targetId)
-            setBlockState(blocked)
-            return true
-        } catch (err) {
-            if (err instanceof ApiError) {
-                setServerError(resolveErrorMessage(err.code, err.message))
-                if (err.code == "USER_NOT_FOUND")
-                    logout()
-            }
-            return false
-        }
+        return mutation.mutateAsync(action).then(()=>true, ()=>false)
     }
 
-    const unblock = async (targetId: number) => {
-        if (!accessToken) return
-        setServerError(null)
-        try {
-            const blocked = await socialApi.deleteBlock(accessToken, targetId)
-            setBlockState(blocked)
-            return true
-        } catch (err) {
-            if (err instanceof ApiError) {
-                setServerError(resolveErrorMessage(err.code, err.message))
-                if (err.code == "USER_NOT_FOUND")
-                    logout()
-            }
-            return false
-        }
+    return {
+        block: (targetId: number) => send({ targetId, blocked: true }),
+        unblock: (targetId: number) => send({ targetId, blocked: false }),
+        blockState: mutation.data ?? null,
+        serverError,
     }
-
-    return {block, unblock, blockState, serverError}
 }

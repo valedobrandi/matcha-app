@@ -54,3 +54,47 @@ describe('PublicProfilePage report', () => {
         expect(screen.getByLabelText('Reason')).toHaveValue('spam account')
     })
 })
+
+describe('PublicProfilePage like', () => {
+    function serveRelationship(initial: boolean) {
+        let likedByMe = initial
+        let relationshipRequests = 0
+        server.use(
+            http.get(`${API_BASE_URL}/social/relationship/:id`, () => {
+                relationshipRequests++
+                return HttpResponse.json({ ...RELATIONSHIP, liked_by_me: likedByMe })
+            }),
+            http.get(`${API_BASE_URL}/users/:id`, () => HttpResponse.json(PROFILE)),
+            http.post(`${API_BASE_URL}/social/visits/:id`, () => HttpResponse.json({ ok: true })),
+            http.post(`${API_BASE_URL}/social/likes/:id`, () => {
+                likedByMe = true
+                return HttpResponse.json({ liked: true })
+            }),
+            http.delete(`${API_BASE_URL}/social/likes/:id`, () => {
+                likedByMe = false
+                return HttpResponse.json({ liked: false })
+            }),
+        )
+        return () => relationshipRequests
+    }
+
+    it('does refetch the relationship when a like is sent', async () => {
+        const requests = serveRelationship(false)
+        renderPage()
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Like him' }))
+
+        expect(await screen.findByRole('button', { name: 'Liked by me' })).toBeInTheDocument()
+        expect(requests()).toBe(2)
+    })
+
+    it('does refetch the relationship when a like is removed', async () => {
+        const requests = serveRelationship(true)
+        renderPage()
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Liked by me' }))
+
+        expect(await screen.findByRole('button', { name: 'Like him' })).toBeInTheDocument()
+        expect(requests()).toBe(2)
+    })
+})

@@ -89,4 +89,20 @@ describe('usePagination', () => {
 
         await waitFor(() => expect(offsets).toEqual(['0', '0', '3']))
     })
+
+    it('does expose serverError and keep hasMore true when the first page fails', async () => {
+        server.use(
+            http.get(SUGGEST_URL, () =>
+                HttpResponse.json({ detail: 'boom', code: 'SERVER_ERROR' }, { status: 500 })
+            )
+        )
+
+        const { result } = renderHook(
+            () => useSuggestedProfiles({ limit: 20, sort: undefined, order: undefined }),
+            { wrapper: authWrapper(makeAuthValue()) }
+        )
+
+        await waitFor(() => expect(result.current.serverError).not.toBeNull())
+        expect(result.current.hasMore).toBe(true)
+    })
 })
