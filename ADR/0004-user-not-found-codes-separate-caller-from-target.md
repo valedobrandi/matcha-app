@@ -94,4 +94,3 @@ users service, and only the target lookup in `get_public_profile` changes.
 
 - [ADR-0001](0001-public-profile-is-a-projection-in-the-users-module.md) — the endpoint
   this decision changes.
-- Jev run record: `jev/decisions/ADR-d2-target-not-found-code.md` (local, not tracked).

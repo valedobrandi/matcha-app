@@ -1,0 +1,96 @@
+# ADR-0011: One socket per tab feeds notifications into the query cache
+
+<!-- keywords: ADR, architecture decision record, architectural decision, design decision, technical decision, rationale, trade-off, alternatives considered, superseded -->
+
+| Field | Value |
+|-------|-------|
+| **Status** | Open |
+| **Group** | Backend, Frontend |
+| **Date** | 2026-10-05 |
+| **Supersedes** | — |
+| **Superseded by** | — |
+
+## Issue
+
+Subject IV.7 requires real-time notifications, within 10 seconds, for a like, a profile visit, a
+message, a like back and an unlike from a connected user, with the unread state visible from any
+page ([`docs/fr.subject.md`](../docs/fr.subject.md), lines 208-234). The backend side exists:
+`GET /notifications`, `GET /notifications/unread-count`, `POST /notifications/{id}/read` and
+`POST /notifications/read-all`, and the hub pushes `{type: "notification", payload}`
+([ADR-0003](0003-realtime-delivery-uses-a-fastapi-websocket-hub.md)). The frontend has neither a
+socket nor a notification screen, and three gaps stand in the way:
+
+- A notification carries only `actor_id`.
+  [ADR-0002](0002-chat-and-in-app-notifications-are-separate-modules-fed.md) planned one
+  `GET /users/{id}` per actor to show a name.
+- The hub keeps one socket per user and closes the older one when a new one connects
+  (`backend/core/ws_hub.py`). A second tab silently stops receiving events, and two tabs that
+  reconnect would keep replacing each other.
+- Nothing in the frontend opens or owns a socket.
+
+## Decision
+
+- **Actor names:** `NotificationOut` carries the actor's `username`, `first_name` and
+  `last_name`, read in the same query as the list (as `VisitorOut` does) and sent in the live
+  push.
+- **Every tab:** the hub keeps every open socket of a user and pushes each event to all of them.
+- **One client:** a `RealtimeProvider` in the authenticated layout opens one socket per tab with
+  the access token (`/ws?token=`, ADR-0003). It reconnects with a capped backoff and stops when
+  the server closes with code 1008 (invalid token).
+- **Query cache:** socket events go into the TanStack Query cache. A `notification` event adds
+  the item to the `notifications` list and raises the unread count. After a reconnect, both
+  queries are fetched again, because events may have been missed.
+- **Screens:** the header shows a bell with the unread count on every page. A `/notifications`
+  page lists them ("Bob liked you"). Opening one marks it read and goes to the actor's profile,
+  or to the chat for a message. "Mark all as read" calls `read-all`.
+
+## Status
+
+Open. Recorded on 2026-10-05 at the owner's request. The implementation is not merged yet. The
+status becomes `Decided` when it is.
+
+## Positions
+
+### A — A socket per tab that feeds the query cache (chosen)
+Components keep reading server state through hooks, and the socket only updates the cache.
+
+### B — Poll the unread count every few seconds
+It fits the 10-second budget, but ADR-0003 rules polling out, and it multiplies requests.
+
+### C — One shared socket for all tabs, through a leader tab (BroadcastChannel)
+One connection per user, but electing and handing over the leader adds failure modes for no
+gain at this scale.
+
+### D — Keep one socket per user, and tell the replaced tab not to reconnect
+The older tab then stops receiving events without telling the user.
+
+For actor names, fetching `GET /users/{id}` per actor (ADR-0002) was rejected: it costs one
+request per actor in every list, and a live notification cannot show a name until that request
+returns.
+
+## Argument
+
+The query cache is already where this app keeps server state; mutations such as `useBlock`
+invalidate it. Feeding socket events into it gives every screen the same data with no second
+store. Fan-out in the hub is a few lines and makes all tabs behave the same.
+
+## Implications
+
+- The hub maps each user to a set of sockets; `test_ws_hub.py` covers two sockets for one user
+  and closing one of them.
+- The notification list and unread queries join `users`; regenerate
+  `frontend/src/types/api.d.ts`.
+- Frontend tests intercept the socket with MSW (`ws.link`, msw 2.15): a pushed notification
+  updates the list and the badge, a reconnect refetches, and code 1008 stops reconnecting.
+- Measure delivery against the 10-second budget in the pull request, as ADR-0003 asks.
+- The chat screen ([ADR-0012](0012-chat-lists-connections-and-uses-message-notifications-as-unread.md))
+  uses the same provider for `chat.message` events.
+
+## Related
+
+- [ADR-0002](0002-chat-and-in-app-notifications-are-separate-modules-fed.md) — its "actor_id
+  only, names joined by the client" constraint is replaced here
+- [ADR-0003](0003-realtime-delivery-uses-a-fastapi-websocket-hub.md) — its "one connection per
+  user" becomes one connection per tab
+- [ADR-0005](0005-blocked-users-are-hidden-from-every-list.md) — notifications from a blocked
+  pair are never listed or sent

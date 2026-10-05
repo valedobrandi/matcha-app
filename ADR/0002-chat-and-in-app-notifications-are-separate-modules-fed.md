@@ -59,6 +59,8 @@ Backend.
   it is the one shared-edit surface, so changes there are coordinated.
 - Notification rows store `actor_id` only; display data is joined client-side via
   `GET /users/{id}` ([ADR-0001](0001-public-profile-is-a-projection-in-the-users-module.md)).
+  [ADR-0011](0011-one-socket-per-tab-feeds-notifications-into-the-query-cache.md) (Open)
+  replaces this: the list and the live push carry the actor's name.
 
 ## Positions
 
