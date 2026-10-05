@@ -8,7 +8,6 @@ from modules.social.exceptions import (
     ProfilePhotoRequiredException,
     CannotBlockSelfException,
     CannotReportSelfException,
-    BlockedException,
 )
 
 _EXCEPTION_STATUS = {
@@ -18,7 +17,6 @@ _EXCEPTION_STATUS = {
     ProfilePhotoRequiredException: status.HTTP_403_FORBIDDEN,
     CannotBlockSelfException: status.HTTP_400_BAD_REQUEST,
     CannotReportSelfException: status.HTTP_400_BAD_REQUEST,
-    BlockedException: status.HTTP_403_FORBIDDEN,
 }
 
 def register_social_exception_handlers(app: FastAPI) -> None:

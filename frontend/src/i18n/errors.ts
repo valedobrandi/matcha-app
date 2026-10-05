@@ -17,7 +17,6 @@ const ERROR_MESSAGES: Partial<Record<ErrorCode, string>> = {
   MAX_FIVE_PHOTOS: 'You can upload maximun 5 photos.',
   LOCATION_REQUIRED: 'Your location is required for this discovery query',
   INVALID_FILTER: 'The filters setting is invalid.',
-  BLOCKED: 'The user is blocked by you, profile is currently unavailable',
   TARGET_USER_NOT_FOUND: 'We could not find target account, please try it later',
   CHAT_USER_NOT_FOUND: 'We could not find this user, please try it later',
   NOTIFICATION_NOT_FOUND: 'We could not find this notification.',

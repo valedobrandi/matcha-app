@@ -7,6 +7,16 @@ from modules.social.schemas import (
     BlockedUserOut,
 )
 
+# Hides every user who has an active block with the viewer ($1), in either direction (ADR-0005).
+# Twins _VISIBLE_TO_VIEWER_SQL in discovery and NO_BLOCK_WITH_ACTOR_SQL in notifications.
+_NO_BLOCK_WITH_VIEWER_SQL = """
+              AND NOT EXISTS (
+                SELECT 1 FROM blocks b
+                WHERE b.status = 'active'
+                  AND ((b.from_user_id = $1 AND b.to_user_id = u.id)
+                    OR (b.from_user_id = u.id AND b.to_user_id = $1))
+              )"""
+
 
 @dataclass
 class RelationshipFlags:
@@ -44,11 +54,11 @@ class SocialRepository:
 
     async def list_visitors(self, user_id: int, limit: int, offset: int) -> List[VisitorOut]:
         rows = await self.connection.fetch(
-            """
+            f"""
             SELECT u.id, u.username, u.first_name, u.last_name, v.visited_at
             FROM visits v
             JOIN users u ON u.id = v.viewer_id
-            WHERE v.target_id = $1
+            WHERE v.target_id = $1{_NO_BLOCK_WITH_VIEWER_SQL}
             ORDER BY v.visited_at DESC
             LIMIT $2 OFFSET $3
             """,
@@ -152,12 +162,12 @@ class SocialRepository:
         self, user_id: int, limit: int, offset: int
     ) -> List[LikeReceivedOut]:
         rows = await self.connection.fetch(
-            """
+            f"""
             SELECT u.id, u.username, u.first_name, u.last_name,
                    l.updated_at AS liked_at
             FROM likes l
             JOIN users u ON u.id = l.from_user_id
-            WHERE l.to_user_id = $1 AND l.status = 'active'
+            WHERE l.to_user_id = $1 AND l.status = 'active'{_NO_BLOCK_WITH_VIEWER_SQL}
             ORDER BY l.updated_at DESC, l.id DESC
             LIMIT $2 OFFSET $3
             """,

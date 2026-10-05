@@ -9,7 +9,6 @@ from modules.social.exceptions import (
     ProfilePhotoRequiredException,
     CannotBlockSelfException,
     CannotReportSelfException,
-    BlockedException,
 )
 from modules.social.schemas import (
     SocialOkResponse,
@@ -42,7 +41,7 @@ class SocialService:
 
     async def _ensure_not_blocked(self, a: int, b: int) -> None:
         if await self.social_repo.is_blocked_either_way(a, b):
-            raise BlockedException()
+            raise SocialUserNotFoundException()
 
     async def _emit(
         self,
@@ -155,13 +154,14 @@ class SocialService:
         if not await self.social_repo.user_exists(target_id):
             raise SocialUserNotFoundException()
         flags = await self.social_repo.get_relationship_flags(me, target_id)
+        if flags.blocked_you:
+            raise SocialUserNotFoundException()
         last_connection = await self.users_repo.get_last_connection(target_id)
         return RelationshipResponse(
             liked_by_me=flags.liked_by_me,
             liked_you=flags.liked_you,
             connected=flags.liked_by_me and flags.liked_you,
             blocked_by_me=flags.blocked_by_me,
-            blocked_you=flags.blocked_you,
             last_connection=last_connection,
             is_online=self._is_online(last_connection),
         )

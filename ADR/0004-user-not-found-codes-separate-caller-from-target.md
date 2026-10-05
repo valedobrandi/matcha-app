@@ -33,6 +33,10 @@ called the relationship endpoint first, which already returned a target code.
 A new module that reports a missing target adds a code to this table instead of reusing
 `USER_NOT_FOUND`.
 
+[ADR-0007](0007-the-blocked-user-is-never-told.md) adds one rule: a user who is blocked, in
+either direction, gets the same `TARGET_USER_NOT_FOUND` (or `CHAT_USER_NOT_FOUND`) as for a
+missing target. The `BLOCKED` and `CHAT_BLOCKED` codes were removed.
+
 ## Amendment (2026-10-04)
 
 A session whose user no longer exists is an authentication failure, so `USER_NOT_FOUND` now

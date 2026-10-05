@@ -17,7 +17,6 @@ function makeRelationship(overrides: Partial<RelationshipResponse> = {}): Relati
         liked_you: false,
         connected: false,
         blocked_by_me: false,
-        blocked_you: false,
         last_connection: '2026-01-01T00:00:00Z',
         is_online: false,
         ...overrides,

@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Open |
+| **Status** | Decided |
 | **Group** | Backend |
 | **Date** | 2026-10-04 |
 | **Supersedes** | — |
@@ -31,8 +31,7 @@ clause in `_VISIBLE_TO_VIEWER_SQL` (active block, either direction).
 
 ## Status
 
-Open. The owner decided on 2026-10-04. The implementation is not merged yet. The status becomes
-`Decided` when it is.
+Decided. The owner decided on 2026-10-04 and the implementation is merged.
 
 ## Positions
 

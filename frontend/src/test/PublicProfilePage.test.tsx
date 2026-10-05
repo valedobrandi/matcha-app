@@ -15,7 +15,7 @@ const PROFILE = {
 }
 const RELATIONSHIP = {
     liked_by_me: false, liked_you: false, connected: false,
-    blocked_by_me: false, blocked_you: false, last_connection: null, is_online: false,
+    blocked_by_me: false, last_connection: null, is_online: false,
 }
 
 function renderPage() {
@@ -52,6 +52,20 @@ describe('PublicProfilePage report', () => {
 
         expect(await screen.findByText('Report rejected')).toBeInTheDocument()
         expect(screen.getByLabelText('Reason')).toHaveValue('spam account')
+    })
+})
+
+describe('PublicProfilePage unavailable', () => {
+    it('does show only the unavailable message when the relationship is answered as a missing user', async () => {
+        server.use(
+            http.get(`${API_BASE_URL}/social/relationship/:id`, () =>
+                HttpResponse.json({ detail: 'Target user not found', code: 'TARGET_USER_NOT_FOUND', field: null }, { status: 404 })
+            ),
+        )
+        renderPage()
+
+        expect(await screen.findByText(/could not find target account/)).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: /Block|Unblock|Like/ })).not.toBeInTheDocument()
     })
 })
 

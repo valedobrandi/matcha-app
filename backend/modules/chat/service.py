@@ -4,7 +4,6 @@ from modules.chat.repository import ChatRepository
 from modules.chat.schemas import MessageOut, SendMessageInput
 from modules.chat.exceptions import (
     NotConnectedException,
-    ChatBlockedException,
     ChatUserNotFoundException,
 )
 
@@ -25,10 +24,9 @@ class ChatService:
         self.hub = hub
 
     async def _ensure_can_chat(self, me: int, peer: int) -> None:
-        if not await self.social_repo.user_exists(peer):
+        # A blocked peer is answered exactly like a missing one (ADR-0007).
+        if not await self.social_repo.user_exists(peer) or await self.social_repo.is_blocked_either_way(me, peer):
             raise ChatUserNotFoundException()
-        if await self.social_repo.is_blocked_either_way(me, peer):
-            raise ChatBlockedException()
         if not await self.social_repo.is_connected(me, peer):
             raise NotConnectedException()
 

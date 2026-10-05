@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Open |
+| **Status** | Decided |
 | **Group** | Backend |
 | **Date** | 2026-10-04 |
 | **Supersedes** | — |
@@ -24,8 +24,7 @@ including a connection.
 
 ## Status
 
-Open. The owner decided on 2026-10-04. The implementation is not merged yet. The status becomes
-`Decided` when it is.
+Decided. The owner decided on 2026-10-04 and the implementation is merged.
 
 ## Positions
 
