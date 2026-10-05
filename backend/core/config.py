@@ -24,7 +24,10 @@ class Settings(BaseSettings):
     OUTBOX_BATCH_SIZE: int = 10
     OUTBOX_MAX_ATTEMPTS: int = 5
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # A settings error must not print the values it read: some of them are secrets.
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", hide_input_in_errors=True
+    )
 
     @field_validator("JWT_SECRET")
     @classmethod

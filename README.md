@@ -16,10 +16,10 @@ Migrations run when the backend container starts.
 
 ## Seed demo profiles
 
-With the stack running:
+With the stack running, on a fresh database (the evaluation needs at least 500 profiles):
 
 ```
-docker compose exec backend python -m database.seed --users 20
+docker compose exec backend python -m database.seed --users 500
 ```
 
 ## Tests
