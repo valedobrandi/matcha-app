@@ -411,13 +411,13 @@ async def test_get_public_profile_should_return_projection_without_email():
 
 
 @pytest.mark.asyncio
-async def test_get_public_profile_should_raise_when_blocked():
-    from modules.social.exceptions import BlockedException
+async def test_get_public_profile_should_raise_target_not_found_when_blocked():
+    from modules.users.exceptions import TargetUserNotFoundException
 
     target = _complete_user(id=2)
 
     service = UsersService(FakeRepository(target), social_repo=FakeSocial(blocked=True))
-    with pytest.raises(BlockedException):
+    with pytest.raises(TargetUserNotFoundException):
         await service.get_public_profile(viewer_id=1, target_id=2)
 
 

@@ -34,7 +34,8 @@ import { useVisitTracker } from "@/social/useVisitTracker"
 function PublicProfilePage() {
     const { userId } = useParams()
     const {relationship, publicProfile, profileAvatar, isLoading, serverError} = usePublicProfile(Number(userId))
-    const { visitError } = useVisitTracker(userId ? Number(userId) : null)
+    // A visit is recorded only once the profile is actually shown (subject IV.5).
+    const { visitError } = useVisitTracker(publicProfile?.id ?? null)
     const {like, unlike, serverError: likeError} = useLikes()
     const {block, unblock, serverError: blockError} = useBlock()
     const [reportValue, setReportValue] = useState<reportInputValue | null>(null)
@@ -47,14 +48,6 @@ function PublicProfilePage() {
             await like(targetId)
     }
 
-    const handleBlock = async (targetId: number) => {
-        if (relationship?.blocked_you) return
-        else if (!relationship?.blocked_by_me && !relationship?.blocked_you)
-            await block(targetId)
-        else if (relationship?.blocked_by_me && !relationship?.blocked_you)
-            await unblock(targetId)
-    }
-
     const handleSubmitReport = async (targetId: number, payload: reportInputValue | null) => {
         if (!payload) return
         if (await report(targetId, payload))
@@ -64,7 +57,20 @@ function PublicProfilePage() {
     return (
         <>
             {isLoading && <p>Loading...</p>}
-            {relationship?.blocked_you && serverError && <FieldError className="p-1 m-auto">{serverError}</FieldError>}
+            {serverError && <FieldError className="p-1 m-auto">{serverError}</FieldError>}
+            {relationship?.blocked_by_me && (
+                <div className="flex flex-col items-center gap-2">
+                    <p>You blocked this user.</p>
+                    <Button
+                        variant="outline"
+                        className="cursor-pointer"
+                        onClick={()=>unblock(Number(userId))}
+                    >
+                        Unblock
+                    </Button>
+                    {blockError && <p className="p-1 m-auto">{blockError}</p>}
+                </div>
+            )}
             {publicProfile && (
                 <div className="max-w-2xl mx-auto">
                     <div>
@@ -97,7 +103,6 @@ function PublicProfilePage() {
                                 variant="outline"
                                 className="max-inline-32 cursor-pointer"
                                 onClick={()=>handleLike(publicProfile.id)}
-                                disabled={relationship?.blocked_by_me || relationship?.blocked_you}
                             >
                                 {relationship?.connected? "Connected"
                                     : (relationship?.liked_by_me? "Liked by me"
@@ -107,11 +112,9 @@ function PublicProfilePage() {
                             <Button
                                 variant="outline"
                                 className="max-inline-32 cursor-pointer"
-                                onClick={()=>handleBlock(publicProfile.id)}
+                                onClick={()=>block(publicProfile.id)}
                             >
-                                {relationship?.blocked_by_me? "Unblock"
-                                    : (relationship?.blocked_you? "Blocked you"
-                                    : `Block ${publicProfile.gender === "male" ? "him" : "her"}`)}
+                                {`Block ${publicProfile.gender === "male" ? "him" : "her"}`}
                             </Button>
                             <DropdownMenu>
                                 <DropdownMenuTrigger
@@ -152,45 +155,41 @@ function PublicProfilePage() {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
-                        {!relationship?.blocked_you && serverError && <FieldError className="p-1 m-auto">{serverError}</FieldError>}
-                        {!relationship?.blocked_by_me && !relationship?.blocked_you
-                            && likeError && <p className="p-1 m-auto">{likeError}</p>}
+                        {likeError && <p className="p-1 m-auto">{likeError}</p>}
                         {blockError && <p className="p-1 m-auto">{blockError}</p>}
                         {reportError && <p className="p-1 m-auto">{reportError}</p>}
                         {visitError && <p className="p-1 m-auto">{visitError}</p>}
-                        {!relationship?.blocked_by_me && !relationship?.blocked_you && (
-                            <div className="my-4 mx-8 sm:px-8">
-                                <div>{publicProfile.gender}</div>
-                                <div>{publicProfile.age} years old</div>
-                                <div>Preference: {publicProfile.sexual_preference}</div>
-                                <div>Bio: {publicProfile.bio}</div>
-                                <div>Location: {publicProfile.location_label}</div>
-                                {!publicProfile.is_online && (<div>Last connection: {publicProfile.last_connection?? "Never"}</div>)}
-                                <div>
-                                    <p>Tags:
-                                    {publicProfile.tags?.map(tag=>(
-                                        <Badge
-                                            key={tag.id}
-                                            className="ml-1"
-                                        >{tag.name}</Badge>
+                        <div className="my-4 mx-8 sm:px-8">
+                            <div>{publicProfile.gender}</div>
+                            <div>{publicProfile.age} years old</div>
+                            <div>Preference: {publicProfile.sexual_preference}</div>
+                            <div>Bio: {publicProfile.bio}</div>
+                            <div>Location: {publicProfile.location_label}</div>
+                            {!publicProfile.is_online && (<div>Last connection: {publicProfile.last_connection?? "Never"}</div>)}
+                            <div>
+                                <p>Tags:
+                                {publicProfile.tags?.map(tag=>(
+                                    <Badge
+                                        key={tag.id}
+                                        className="ml-1"
+                                    >{tag.name}</Badge>
+                                ))}
+                                </p>
+                            </div>
+                            <div className="my-4">
+                                <p>Gallery Photos</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                                    {publicProfile.photos?.map(p=>(
+                                        <div key={p.id} className="w-full aspect-square">
+                                        <img
+                                            src={`${API_BASE_URL}${p.url}`}
+                                            className="w-full h-full object-cover rounded cursor-pointer"
+                                            />
+                                        </div>
                                     ))}
-                                    </p>
-                                </div>
-                                <div className="my-4">
-                                    <p>Gallery Photos</p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                                        {publicProfile.photos?.map(p=>(
-                                            <div key={p.id} className="w-full aspect-square">
-                                            <img
-                                                src={`${API_BASE_URL}${p.url}`}
-                                                className="w-full h-full object-cover rounded cursor-pointer"
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
                                 </div>
                             </div>
-                        )}    
+                        </div>
                     </div>
                 </div>
             )}

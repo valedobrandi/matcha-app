@@ -17,14 +17,6 @@ class NotConnectedException(ChatException):
         )
 
 
-class ChatBlockedException(ChatException):
-    def __init__(self):
-        super().__init__(
-            "Cannot chat while blocked",
-            "CHAT_BLOCKED",
-        )
-
-
 class ChatUserNotFoundException(ChatException):
     def __init__(self):
         super().__init__("User not found", "CHAT_USER_NOT_FOUND")

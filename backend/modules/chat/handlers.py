@@ -3,13 +3,11 @@ from fastapi.responses import JSONResponse
 from modules.chat.exceptions import (
     ChatException,
     NotConnectedException,
-    ChatBlockedException,
     ChatUserNotFoundException,
 )
 
 _EXCEPTION_STATUS = {
     NotConnectedException: status.HTTP_403_FORBIDDEN,
-    ChatBlockedException: status.HTTP_403_FORBIDDEN,
     ChatUserNotFoundException: status.HTTP_404_NOT_FOUND,
 }
 

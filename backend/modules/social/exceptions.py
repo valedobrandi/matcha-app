@@ -37,9 +37,3 @@ class CannotReportSelfException(SocialException):
     field = "target_user_id"
     def __init__(self):
         super().__init__("Cannot report yourself")
-
-class BlockedException(SocialException):
-    code = "BLOCKED"
-    field = None
-    def __init__(self):
-        super().__init__("Action not allowed because of a block")

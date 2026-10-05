@@ -15,7 +15,6 @@ from modules.social.exceptions import (
     SocialUserNotFoundException,
     CannotBlockSelfException,
     CannotReportSelfException,
-    BlockedException,
 )
 from modules.social.repository import RelationshipFlags
 
@@ -249,26 +248,26 @@ async def test_block_self_rejected():
 
 
 @pytest.mark.asyncio
-async def test_block_then_like_raises_blocked():
+async def test_should_answer_not_found_to_like_and_visit_when_the_viewer_blocked_the_target():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
     service = SocialService(social, users)
     await service.block(1, 2)
-    with pytest.raises(BlockedException):
+    with pytest.raises(SocialUserNotFoundException):
         await service.like(1, 2)
-    with pytest.raises(BlockedException):
+    with pytest.raises(SocialUserNotFoundException):
         await service.record_visit(1, 2)
 
 
 @pytest.mark.asyncio
-async def test_reverse_block_then_like_raises_blocked():
+async def test_should_answer_not_found_to_like_and_visit_when_the_target_blocked_the_viewer():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
     service = SocialService(social, users)
     await service.block(2, 1)
-    with pytest.raises(BlockedException):
+    with pytest.raises(SocialUserNotFoundException):
         await service.like(1, 2)
-    with pytest.raises(BlockedException):
+    with pytest.raises(SocialUserNotFoundException):
         await service.record_visit(1, 2)
 
 
@@ -281,6 +280,27 @@ async def test_unblock_allows_like_again():
     await service.unblock(1, 2)
     res = await service.like(1, 2)
     assert res.liked is True
+
+
+@pytest.mark.asyncio
+async def test_should_keep_the_likes_and_restore_the_connection_when_the_block_is_lifted():
+    social = FakeSocialRepository()
+    service = SocialService(social, FakeUsersRepository())
+    await service.like(1, 2)
+    await service.like(2, 1)
+    await service.block(1, 2)
+    assert social.likes == {(1, 2): "active", (2, 1): "active"}
+    await service.unblock(1, 2)
+    assert (await service.get_relationship(1, 2)).connected is True
+
+
+@pytest.mark.asyncio
+async def test_should_answer_not_found_to_the_relationship_when_the_target_blocked_the_viewer():
+    social = FakeSocialRepository()
+    service = SocialService(social, FakeUsersRepository())
+    await service.block(2, 1)
+    with pytest.raises(SocialUserNotFoundException):
+        await service.get_relationship(1, 2)
 
 
 @pytest.mark.asyncio
@@ -311,7 +331,7 @@ async def test_relationship_includes_block_and_online_fields():
     await service.block(1, 2)
     flags = await service.get_relationship(1, 2)
     assert flags.blocked_by_me is True
-    assert flags.blocked_you is False
+    assert not hasattr(flags, "blocked_you")
     assert flags.is_online is True
     assert flags.last_connection == recent
 
@@ -390,6 +410,28 @@ async def test_should_emit_unliked_when_unlike():
     assert notifier.events == [{"user_id": 2, "type": "unliked", "actor_id": 1, "entity_id": None}]
     await service.unlike(1, 2)
     assert len(notifier.events) == 1
+
+
+@pytest.mark.asyncio
+async def test_should_answer_not_found_when_unliking_a_missing_user():
+    service = SocialService(FakeSocialRepository(), FakeUsersRepository())
+    with pytest.raises(SocialUserNotFoundException):
+        await service.unlike(1, 99)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("blocker, blocked", [(1, 2), (2, 1)])
+async def test_should_answer_not_found_and_emit_nothing_when_unliking_across_a_block(blocker, blocked):
+    social = FakeSocialRepository()
+    notifier = FakeNotifier()
+    service = SocialService(social, FakeUsersRepository(), notifier=notifier)
+    await service.like(1, 2)
+    await service.block(blocker, blocked)
+    notifier.events.clear()
+    with pytest.raises(SocialUserNotFoundException):
+        await service.unlike(1, 2)
+    assert social.likes[(1, 2)] == "active"
+    assert notifier.events == []
 
 
 @pytest.mark.asyncio

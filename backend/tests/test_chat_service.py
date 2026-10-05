@@ -4,7 +4,6 @@ from modules.chat.service import ChatService
 from modules.chat.schemas import MessageOut, SendMessageInput
 from modules.chat.exceptions import (
     NotConnectedException,
-    ChatBlockedException,
     ChatUserNotFoundException,
 )
 
@@ -83,11 +82,11 @@ async def test_should_forbid_when_not_connected():
 
 
 @pytest.mark.asyncio
-async def test_should_forbid_when_blocked():
+async def test_should_answer_user_not_found_when_blocked():
     service = ChatService(
         FakeChatRepo(), FakeSocial(connected=True, blocked=True)
     )
-    with pytest.raises(ChatBlockedException):
+    with pytest.raises(ChatUserNotFoundException):
         await service.send(1, 2, SendMessageInput(body="hi"))
 
 

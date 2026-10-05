@@ -34,10 +34,14 @@ class InAppNotificationsRepository:
     ) -> List[NotificationOut]:
         rows = await self.connection.fetch(
             """
-            SELECT id, type, actor_id, entity_id, read_at, created_at
-            FROM in_app_notifications
-            WHERE user_id = $1
-            ORDER BY created_at DESC, id DESC
+            SELECT n.id, n.type, n.actor_id, n.entity_id, n.read_at, n.created_at
+            FROM in_app_notifications n
+            WHERE n.user_id = $1
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = n.actor_id
+              )
+            ORDER BY n.created_at DESC, n.id DESC
             LIMIT $2 OFFSET $3
             """,
             user_id,
@@ -78,8 +82,12 @@ class InAppNotificationsRepository:
         value = await self.connection.fetchval(
             """
             SELECT COUNT(*)::int
-            FROM in_app_notifications
-            WHERE user_id = $1 AND read_at IS NULL
+            FROM in_app_notifications n
+            WHERE n.user_id = $1 AND n.read_at IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = n.actor_id
+              )
             """,
             user_id,
         )

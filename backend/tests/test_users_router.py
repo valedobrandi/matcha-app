@@ -349,13 +349,14 @@ class TestGetPublicProfile:
         assert "email" not in body
         assert "is_online" in body
 
-    def test_should_return_403_when_blocked(self, override_service, fake_user):
+    def test_should_return_the_missing_user_answer_when_blocked(self, override_service, fake_user):
         override_service.repository.users[2] = fake_user.model_copy(update={"id": 2})
 
         override_service.social_repo = FakeSocial(blocked=True)
         token = make_token(1)
         response = client.get("/users/2", headers={"Authorization": f"Bearer {token}"})
-        assert response.status_code == 403
+        assert response.status_code == 404
+        assert response.json()["code"] == "TARGET_USER_NOT_FOUND"
 
     def test_should_return_404_when_missing(self, override_service):
         token = make_token(1)

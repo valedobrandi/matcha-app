@@ -106,4 +106,6 @@ not filtered supersets.
 ## Notes
 
 The 403-vs-404 question for blocked viewers was resolved in favour of 403 via the existing
-`BlockedException`, for consistency with the social handlers.
+`BlockedException`, for consistency with the social handlers. Superseded by
+[ADR-0007](0007-the-blocked-user-is-never-told.md): a blocked pair now gets 404
+`TARGET_USER_NOT_FOUND`, and `BlockedException` no longer exists.

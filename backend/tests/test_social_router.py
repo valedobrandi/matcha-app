@@ -21,7 +21,6 @@ from modules.social.exceptions import (
     ProfilePhotoRequiredException,
     SocialUserNotFoundException,
     CannotBlockSelfException,
-    BlockedException,
     CannotReportSelfException,
 )
 from modules.auth.controller import get_auth_service
@@ -57,7 +56,7 @@ class FakeSocialService:
         if target_id not in self.users:
             raise SocialUserNotFoundException()
         if self.blocked:
-            raise BlockedException()
+            raise SocialUserNotFoundException()
         return SocialOkResponse()
 
     async def list_visitors(self, user_id: int, limit: int, offset: int):
@@ -77,7 +76,7 @@ class FakeSocialService:
         if to_user_id not in self.users:
             raise SocialUserNotFoundException()
         if self.blocked:
-            raise BlockedException()
+            raise SocialUserNotFoundException()
         return LikeStateResponse(liked=True, connected=False)
 
     async def unlike(self, from_user_id: int, to_user_id: int) -> LikeStateResponse:
@@ -102,7 +101,6 @@ class FakeSocialService:
             liked_you=False,
             connected=False,
             blocked_by_me=self.blocked,
-            blocked_you=False,
             is_online=True,
             last_connection=datetime.datetime.now(datetime.UTC),
         )
@@ -169,15 +167,15 @@ class TestSocialVisits:
         assert response.status_code == 404
         assert response.json()["code"] == "TARGET_USER_NOT_FOUND"
 
-    def test_visit_blocked(self, override_social):
+    def test_should_answer_a_visit_like_a_missing_user_when_blocked(self, override_social):
         override_social.blocked = True
         token = make_token(1)
         response = client.post(
             "/social/visits/2",
             headers={"Authorization": f"Bearer {token}"},
         )
-        assert response.status_code == 403
-        assert response.json()["code"] == "BLOCKED"
+        assert response.status_code == 404
+        assert response.json()["code"] == "TARGET_USER_NOT_FOUND"
 
 
 class TestSocialLikes:
@@ -257,6 +255,7 @@ class TestSocialRelationship:
         assert body["liked_you"] is False
         assert body["connected"] is False
         assert "blocked_by_me" in body
+        assert "blocked_you" not in body
         assert "is_online" in body
 
     def test_relationship_not_found(self, override_social):

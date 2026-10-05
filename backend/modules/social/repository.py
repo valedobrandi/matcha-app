@@ -49,6 +49,10 @@ class SocialRepository:
             FROM visits v
             JOIN users u ON u.id = v.viewer_id
             WHERE v.target_id = $1
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = v.viewer_id
+              )
             ORDER BY v.visited_at DESC
             LIMIT $2 OFFSET $3
             """,
@@ -158,6 +162,10 @@ class SocialRepository:
             FROM likes l
             JOIN users u ON u.id = l.from_user_id
             WHERE l.to_user_id = $1 AND l.status = 'active'
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = l.from_user_id
+              )
             ORDER BY l.updated_at DESC, l.id DESC
             LIMIT $2 OFFSET $3
             """,
@@ -169,12 +177,8 @@ class SocialRepository:
         row = await self.connection.fetchrow(
             """
             SELECT EXISTS (
-                SELECT 1 FROM blocks
-                WHERE status = 'active'
-                  AND (
-                    (from_user_id = $1 AND to_user_id = $2)
-                    OR (from_user_id = $2 AND to_user_id = $1)
-                  )
+                SELECT 1 FROM blocked_pairs
+                WHERE user_id = $1 AND other_user_id = $2
             ) AS blocked
             """,
             a, b,
@@ -247,8 +251,12 @@ class SocialRepository:
         return await self.connection.fetchval(
             """
             SELECT COUNT(*)
-            FROM likes
-            WHERE to_user_id = $1 AND status = 'active'
+            FROM likes l
+            WHERE l.to_user_id = $1 AND l.status = 'active'
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = l.from_user_id
+              )
             """,
             target_user_id
         )
@@ -259,8 +267,12 @@ class SocialRepository:
         return await self.connection.fetchval(
             """
             SELECT COUNT(*)
-            FROM visits
-            WHERE target_id = $1
+            FROM visits v
+            WHERE v.target_id = $1
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = v.viewer_id
+              )
             """,
             target_user_id
         )

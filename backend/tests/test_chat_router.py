@@ -9,7 +9,7 @@ from core.auth import get_current_user_id
 from core.presence import get_current_user_id_and_touch
 from modules.chat.controller import get_chat_service
 from modules.chat.schemas import MessageOut, SendMessageInput
-from modules.chat.exceptions import NotConnectedException, ChatBlockedException
+from modules.chat.exceptions import NotConnectedException, ChatUserNotFoundException
 
 client = TestClient(app)
 
@@ -35,7 +35,7 @@ class FakeChatService:
 
     async def send(self, me, peer, payload: SendMessageInput):
         if self.blocked:
-            raise ChatBlockedException()
+            raise ChatUserNotFoundException()
         if not self.connected:
             raise NotConnectedException()
         msg = MessageOut(
@@ -50,7 +50,7 @@ class FakeChatService:
 
     async def list_messages(self, me, peer, limit, offset):
         if self.blocked:
-            raise ChatBlockedException()
+            raise ChatUserNotFoundException()
         if not self.connected:
             raise NotConnectedException()
         return self.messages[offset:offset + limit]
@@ -89,14 +89,15 @@ class TestChatRouter:
         )
         assert response.status_code == 403
 
-    def test_should_forbid_when_blocked(self, override_chat):
+    def test_should_answer_user_not_found_when_blocked(self, override_chat):
         override_chat.blocked = True
         token = make_token(1)
         response = client.get(
             "/chat/messages/2",
             headers={"Authorization": f"Bearer {token}"},
         )
-        assert response.status_code == 403
+        assert response.status_code == 404
+        assert response.json()["code"] == "CHAT_USER_NOT_FOUND"
 
     def test_should_list_when_connected(self, override_chat):
         token = make_token(1)

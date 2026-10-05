@@ -21,7 +21,6 @@ class RelationshipResponse(ApiModel):
     liked_you: bool
     connected: bool
     blocked_by_me: bool = False
-    blocked_you: bool = False
     last_connection: Optional[datetime] = None
     is_online: bool = False
 

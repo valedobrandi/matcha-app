@@ -29,3 +29,23 @@ async def add_block(connection, from_user_id, to_user_id, status="active") -> No
         "INSERT INTO blocks (from_user_id, to_user_id, status) VALUES ($1, $2, $3)",
         from_user_id, to_user_id, status,
     )
+
+
+async def add_visit(connection, viewer_id, target_id) -> None:
+    await connection.execute(
+        "INSERT INTO visits (viewer_id, target_id) VALUES ($1, $2)", viewer_id, target_id
+    )
+
+
+async def add_like(connection, from_user_id, to_user_id) -> None:
+    await connection.execute(
+        "INSERT INTO likes (from_user_id, to_user_id, status) VALUES ($1, $2, 'active')",
+        from_user_id, to_user_id,
+    )
+
+
+async def add_notification(connection, user_id, actor_id, type="liked") -> None:
+    await connection.execute(
+        "INSERT INTO in_app_notifications (user_id, type, actor_id) VALUES ($1, $2, $3)",
+        user_id, type, actor_id,
+    )

@@ -20,7 +20,6 @@ from modules.auth.exceptions import (
     NoPasswordSetException,
     AccountNotVerifiedException,
 )
-from modules.social.exceptions import BlockedException
 from modules.tags.schemas import TagInput, TagOut
 from modules.tags.exceptions import TagContentProfanity
 from modules.tags.service import profanity
@@ -69,7 +68,7 @@ class UsersService:
             target_id: int,
     ) -> PublicProfile:
         if await self.social_repo.is_blocked_either_way(viewer_id, target_id):
-            raise BlockedException()
+            raise TargetUserNotFoundException()
         target = await self.repository.get_user_by_id(target_id)
         if not target:
             raise TargetUserNotFoundException()
