@@ -24,6 +24,10 @@ notification and chat events in the envelope
 `{ "type": "notification" | "chat.message", "payload": { ... } }`. Anonymous sockets are
 never accepted. The email outbox remains a separate channel and is unchanged.
 
+[ADR-0011](0011-one-socket-per-tab-feeds-notifications-into-the-query-cache.md) (Open) changes
+"one connection per user" to one connection per open tab: the hub pushes each event to all of a
+user's sockets.
+
 ## Status
 
 Decided — locked in the bde ticket. Moves to Approved on team sign-off.
