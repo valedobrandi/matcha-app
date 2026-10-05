@@ -2,8 +2,7 @@
 
 Same setup as test_discovery_visibility_integration.py (`pytest -m integration`). A user
 with an active block, in either direction, must not appear in the visitors, likes-received
-or notification lists. Unblocking brings the history back, and the unread count follows the
-list.
+or notification lists. Unblocking brings the history back, and every count follows its list.
 """
 import pytest
 
@@ -89,3 +88,38 @@ async def test_should_bring_the_history_back_when_the_block_is_inactive(connecti
     assert await liker_ids(connection, me) == [visitor]
     assert await notification_actor_ids(connection, me) == [visitor]
     assert await InAppNotificationsRepository(connection).unread_count(me) == 1
+    assert await SocialRepository(connection).count_likes_received(me) == 1
+    assert await SocialRepository(connection).count_visitors(me) == 1
+
+
+async def test_should_count_only_the_listed_users_when_a_block_is_active_either_way(
+    connection, token
+):
+    me = await add_user(connection, token, "me")
+    blocked_by_me = await add_user(connection, token, "blockedbyme")
+    blocking_me = await add_user(connection, token, "blockingme")
+    other = await add_user(connection, token, "other")
+    for user in (blocked_by_me, blocking_me, other):
+        await add_like(connection, user, me)
+        await add_visit(connection, user, me)
+    await add_block(connection, me, blocked_by_me)
+    await add_block(connection, blocking_me, me)
+    social = SocialRepository(connection)
+
+    assert await social.count_likes_received(me) == len(await liker_ids(connection, me)) == 1
+    assert await social.count_visitors(me) == len(await visitor_ids(connection, me)) == 1
+
+
+async def test_should_see_a_block_from_both_sides_only_while_it_is_active(connection, token):
+    blocker = await add_user(connection, token, "blocker")
+    blocked = await add_user(connection, token, "blocked")
+    stranger = await add_user(connection, token, "stranger")
+    unblocked = await add_user(connection, token, "unblocked")
+    await add_block(connection, blocker, blocked)
+    await add_block(connection, blocker, unblocked, status="inactive")
+    social = SocialRepository(connection)
+
+    assert await social.is_blocked_either_way(blocker, blocked)
+    assert await social.is_blocked_either_way(blocked, blocker)
+    assert not await social.is_blocked_either_way(blocker, stranger)
+    assert not await social.is_blocked_either_way(blocker, unblocked)

@@ -18,8 +18,8 @@ under each task **are** the definition of done — no separate outcomes list.
 - [ ] `PublicProfile` schema in `backend/modules/users/schemas.py` — no email/password/tokens (ADR-0001)
 - [ ] `UsersService.get_public_profile(viewer_id, target_id)`; block check via existing `SocialRepository`
 - [ ] Route `GET /users/{user_id}`, registered after all `/me/*` routes; auth required
-- [ ] Failures: `401` unauthenticated, `403` blocked (`BlockedException`), `404` missing
-- [ ] Tests: projection excludes email; blocked → 403; missing → 404 (service + router)
+- [ ] Failures: `401` unauthenticated, `404` missing or blocked either way, answered alike (`TARGET_USER_NOT_FOUND`, ADR-0007)
+- [ ] Tests: projection excludes email; blocked → 404; missing → 404 (service + router)
 
 **Response fields:** `id`, `username`, `first_name`, `last_name` (required) ·
 `gender`, `sexual_preference`, `age`, `bio`, `location_label` (optional) ·

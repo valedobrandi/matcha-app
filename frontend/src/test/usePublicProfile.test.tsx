@@ -4,7 +4,7 @@ import type { PublicProfile} from '../types/user'
 import { describe, it, expect, vi } from 'vitest'
 import { server } from './server'
 import { http, HttpResponse } from 'msw'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { authWrapper, makeAuthValue } from './renderWithAuth'
 import { usePublicProfile } from '../users/usePublicProfile'
 
@@ -142,6 +142,74 @@ describe('usePublicProfile without a profile photo', ()=>{
         await waitFor(()=> expect(result.current.isLoading).toBe(false))
         expect(result.current.publicProfile?.username).toBe('bob')
         expect(result.current.profileAvatar).toBeNull()
+        expect(result.current.serverError).toBeNull()
+    })
+})
+
+const NOT_FOUND = { detail: 'Target user not found', code: 'TARGET_USER_NOT_FOUND', field: null }
+
+// What the browser does when the user comes back to the tab: active queries refetch.
+function returnToTab() {
+    act(() => { window.dispatchEvent(new Event('visibilitychange')) })
+}
+
+describe('usePublicProfile when a block hides the profile', ()=>{
+    it('does drop the cached relationship and profile when a refetch answers the target as missing', async ()=> {
+        let blockedByTarget = false
+        server.use(
+            http.get(RELATIONSHIP_URL, ()=> blockedByTarget
+                ? HttpResponse.json(NOT_FOUND, { status: 404 })
+                : HttpResponse.json(makeRelationship())),
+            http.get(PUBLIC_PROFILE_URL, ()=> blockedByTarget
+                ? HttpResponse.json(NOT_FOUND, { status: 404 })
+                : HttpResponse.json(makePublicProfile())),
+        )
+        const { result } = renderHook(()=>usePublicProfile(5), {wrapper: authWrapper(makeAuthValue())})
+        await waitFor(()=> expect(result.current.publicProfile?.id).toBe(5))
+
+        blockedByTarget = true
+        returnToTab()
+
+        await waitFor(()=> expect(result.current.relationship).toBeNull())
+        expect(result.current.publicProfile).toBeNull()
+        expect(result.current.serverError).toMatch(/could not find target account/)
+    })
+
+    it('does not request the profile when the viewer blocked the target', async ()=> {
+        let profileRequests = 0
+        server.use(
+            http.get(RELATIONSHIP_URL, ()=>HttpResponse.json(makeRelationship({ blocked_by_me: true }))),
+            http.get(PUBLIC_PROFILE_URL, ()=> {
+                profileRequests++
+                return HttpResponse.json(NOT_FOUND, { status: 404 })
+            }),
+        )
+        const { result } = renderHook(()=>usePublicProfile(5), {wrapper: authWrapper(makeAuthValue())})
+
+        await waitFor(()=> expect(result.current.isLoading).toBe(false))
+        expect(result.current.relationship?.blocked_by_me).toBe(true)
+        expect(result.current.publicProfile).toBeNull()
+        expect(result.current.serverError).toBeNull()
+        expect(profileRequests).toBe(0)
+    })
+
+    it('does drop the profile without an error when a refetch shows the viewer blocked the target', async ()=> {
+        let blockedByMe = false
+        server.use(
+            http.get(RELATIONSHIP_URL, ()=>HttpResponse.json(makeRelationship({ blocked_by_me: blockedByMe }))),
+            http.get(PUBLIC_PROFILE_URL, ()=> blockedByMe
+                ? HttpResponse.json(NOT_FOUND, { status: 404 })
+                : HttpResponse.json(makePublicProfile())),
+        )
+        const { result } = renderHook(()=>usePublicProfile(5), {wrapper: authWrapper(makeAuthValue())})
+        await waitFor(()=> expect(result.current.publicProfile?.id).toBe(5))
+
+        blockedByMe = true
+        returnToTab()
+
+        await waitFor(()=> expect(result.current.relationship?.blocked_by_me).toBe(true))
+        await waitFor(()=> expect(result.current.isLoading).toBe(false))
+        expect(result.current.publicProfile).toBeNull()
         expect(result.current.serverError).toBeNull()
     })
 })

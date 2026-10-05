@@ -167,7 +167,7 @@ class TestSocialVisits:
         assert response.status_code == 404
         assert response.json()["code"] == "TARGET_USER_NOT_FOUND"
 
-    def test_visit_blocked_looks_like_a_missing_user(self, override_social):
+    def test_should_answer_a_visit_like_a_missing_user_when_blocked(self, override_social):
         override_social.blocked = True
         token = make_token(1)
         response = client.post(

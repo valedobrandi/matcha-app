@@ -19,8 +19,8 @@ _SORT_SQL = {
 
 # Who a viewer ($1) may see as "u": not self, profile completed, no active block
 # either way. Shared by every discovery query so visibility cannot drift.
-# Profile completion is owned by the profile_completeness view (migration 0012).
-# Block exclusion twins SocialRepository.is_blocked_either_way.
+# Profile completion is owned by the profile_completeness view (migration 0012),
+# blocks by the blocked_pairs view (migration 0013).
 _VISIBLE_TO_VIEWER_SQL = """
                 u.id <> $1
                 AND EXISTS (
@@ -28,12 +28,8 @@ _VISIBLE_TO_VIEWER_SQL = """
                   WHERE pc.user_id = u.id AND pc.is_completed
                 )
                 AND NOT EXISTS (
-                  SELECT 1 FROM blocks
-                  WHERE status = 'active'
-                    AND (
-                      (from_user_id = $1 AND to_user_id = u.id)
-                      OR (from_user_id = u.id AND to_user_id = $1)
-                    )
+                  SELECT 1 FROM blocked_pairs bp
+                  WHERE bp.user_id = $1 AND bp.other_user_id = u.id
                 )"""
 
 
@@ -57,8 +53,8 @@ class DiscoveryRepository:
     async def list_profiles(self, query: DiscoveryQuery) -> List[DiscoveryProfileCard]:
         """Single suggest/search list path — do not fork a second SQL string.
 
-        Profile completion comes from the profile_completeness view.
-        Block exclusion twins SocialRepository.is_blocked_either_way.
+        Profile completion comes from the profile_completeness view, block
+        exclusion from the blocked_pairs view.
         """
         sort_expr = _SORT_SQL.get(query.sort, "fame_rating")
         order = "ASC" if query.order.lower() == "asc" else "DESC"

@@ -2,16 +2,6 @@ from typing import List, Optional
 import asyncpg
 from modules.notifications.schemas import NotificationOut, NotificationType
 
-# Hides notifications whose actor has an active block with the recipient ($1), either way (ADR-0005).
-# Twins _NO_BLOCK_WITH_VIEWER_SQL in social. List and unread count share it so they always agree.
-NO_BLOCK_WITH_ACTOR_SQL = """
-              AND NOT EXISTS (
-                SELECT 1 FROM blocks b
-                WHERE b.status = 'active'
-                  AND ((b.from_user_id = $1 AND b.to_user_id = n.actor_id)
-                    OR (b.from_user_id = n.actor_id AND b.to_user_id = $1))
-              )"""
-
 
 class InAppNotificationsRepository:
     """Persistence for in-app notifications. Does not touch email_outbox."""
@@ -43,10 +33,14 @@ class InAppNotificationsRepository:
         self, user_id: int, limit: int, offset: int
     ) -> List[NotificationOut]:
         rows = await self.connection.fetch(
-            f"""
+            """
             SELECT n.id, n.type, n.actor_id, n.entity_id, n.read_at, n.created_at
             FROM in_app_notifications n
-            WHERE n.user_id = $1{NO_BLOCK_WITH_ACTOR_SQL}
+            WHERE n.user_id = $1
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = n.actor_id
+              )
             ORDER BY n.created_at DESC, n.id DESC
             LIMIT $2 OFFSET $3
             """,
@@ -86,10 +80,14 @@ class InAppNotificationsRepository:
 
     async def unread_count(self, user_id: int) -> int:
         value = await self.connection.fetchval(
-            f"""
+            """
             SELECT COUNT(*)::int
             FROM in_app_notifications n
-            WHERE n.user_id = $1 AND n.read_at IS NULL{NO_BLOCK_WITH_ACTOR_SQL}
+            WHERE n.user_id = $1 AND n.read_at IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = n.actor_id
+              )
             """,
             user_id,
         )

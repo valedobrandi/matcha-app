@@ -25,3 +25,4 @@ Status vocabulary: `Open` · `Pending` · `Decided` · `Approved` · `Superseded
 | [0005](0005-blocked-users-are-hidden-from-every-list.md) | Blocked users are hidden from the visitors, likes-received and notification lists | Decided | Backend | 2026-10-04 |
 | [0006](0006-a-block-does-not-change-existing-likes.md) | A block does not change existing likes or connections | Decided | Backend | 2026-10-04 |
 | [0007](0007-the-blocked-user-is-never-told.md) | The blocked user is never told about the block | Decided | Backend, Frontend | 2026-10-04 |
+| [0008](0008-the-blocked-pairs-view-owns-the-block-rule.md) | The `blocked_pairs` view is the only definition of an active block | Decided | Backend | 2026-10-05 |

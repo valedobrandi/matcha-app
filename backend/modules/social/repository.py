@@ -7,16 +7,6 @@ from modules.social.schemas import (
     BlockedUserOut,
 )
 
-# Hides every user who has an active block with the viewer ($1), in either direction (ADR-0005).
-# Twins _VISIBLE_TO_VIEWER_SQL in discovery and NO_BLOCK_WITH_ACTOR_SQL in notifications.
-_NO_BLOCK_WITH_VIEWER_SQL = """
-              AND NOT EXISTS (
-                SELECT 1 FROM blocks b
-                WHERE b.status = 'active'
-                  AND ((b.from_user_id = $1 AND b.to_user_id = u.id)
-                    OR (b.from_user_id = u.id AND b.to_user_id = $1))
-              )"""
-
 
 @dataclass
 class RelationshipFlags:
@@ -54,11 +44,15 @@ class SocialRepository:
 
     async def list_visitors(self, user_id: int, limit: int, offset: int) -> List[VisitorOut]:
         rows = await self.connection.fetch(
-            f"""
+            """
             SELECT u.id, u.username, u.first_name, u.last_name, v.visited_at
             FROM visits v
             JOIN users u ON u.id = v.viewer_id
-            WHERE v.target_id = $1{_NO_BLOCK_WITH_VIEWER_SQL}
+            WHERE v.target_id = $1
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = v.viewer_id
+              )
             ORDER BY v.visited_at DESC
             LIMIT $2 OFFSET $3
             """,
@@ -162,12 +156,16 @@ class SocialRepository:
         self, user_id: int, limit: int, offset: int
     ) -> List[LikeReceivedOut]:
         rows = await self.connection.fetch(
-            f"""
+            """
             SELECT u.id, u.username, u.first_name, u.last_name,
                    l.updated_at AS liked_at
             FROM likes l
             JOIN users u ON u.id = l.from_user_id
-            WHERE l.to_user_id = $1 AND l.status = 'active'{_NO_BLOCK_WITH_VIEWER_SQL}
+            WHERE l.to_user_id = $1 AND l.status = 'active'
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = l.from_user_id
+              )
             ORDER BY l.updated_at DESC, l.id DESC
             LIMIT $2 OFFSET $3
             """,
@@ -179,12 +177,8 @@ class SocialRepository:
         row = await self.connection.fetchrow(
             """
             SELECT EXISTS (
-                SELECT 1 FROM blocks
-                WHERE status = 'active'
-                  AND (
-                    (from_user_id = $1 AND to_user_id = $2)
-                    OR (from_user_id = $2 AND to_user_id = $1)
-                  )
+                SELECT 1 FROM blocked_pairs
+                WHERE user_id = $1 AND other_user_id = $2
             ) AS blocked
             """,
             a, b,
@@ -257,8 +251,12 @@ class SocialRepository:
         return await self.connection.fetchval(
             """
             SELECT COUNT(*)
-            FROM likes
-            WHERE to_user_id = $1 AND status = 'active'
+            FROM likes l
+            WHERE l.to_user_id = $1 AND l.status = 'active'
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = l.from_user_id
+              )
             """,
             target_user_id
         )
@@ -269,8 +267,12 @@ class SocialRepository:
         return await self.connection.fetchval(
             """
             SELECT COUNT(*)
-            FROM visits
-            WHERE target_id = $1
+            FROM visits v
+            WHERE v.target_id = $1
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = v.viewer_id
+              )
             """,
             target_user_id
         )

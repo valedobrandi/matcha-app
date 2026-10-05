@@ -23,11 +23,18 @@ The blocked user sees only "profile unavailable". The API answers the blocked us
 answers for a user that does not exist:
 
 - every endpoint that returns `BLOCKED` today returns 404 `TARGET_USER_NOT_FOUND`
+- unlike (`DELETE /social/likes/{id}`) answers the same 404, for a missing user and for a blocked
+  pair, so it cannot create an `unliked` notification across a block
 - chat returns `CHAT_USER_NOT_FOUND` instead of `CHAT_BLOCKED`
 - the relationship response no longer has a `blocked_you` field
 
+Report and block are the exception. They stay available to the blocked user and answer as for
+any existing user, because a blocked user must still be able to report the blocker or block them
+back.
+
 The blocker keeps full knowledge: `blocked_by_me`, the blocked list and the unblock action are
-unchanged.
+unchanged. The profile is hidden from both sides, so the blocker's profile page shows "You
+blocked this user" with an Unblock button.
 
 ## Status
 
@@ -39,7 +46,10 @@ Decided. The owner decided on 2026-10-04 and the implementation is merged.
 Rejected. A visible block invites retaliation.
 
 ### B — Neutral "unavailable" (chosen)
-The blocked user cannot tell a block from a missing profile.
+No response, field, message or notification tells the blocked user about the block. This does not
+make a block impossible to guess: there is no account deletion, so a profile that disappears can
+only mean a block, and report and block still answer for the blocker. The promise is that the app
+never tells, not that the block cannot be inferred.
 
 ### C — Fake success for the blocked user
 Rejected. It is deceptive, stores data that goes nowhere and is hard to test.
@@ -57,6 +67,8 @@ changes one field of the contract.
   test and ADR-0004 when the code lands.
 - The two cases need a test each: the blocked user and a missing user get identical responses,
   and the blocker still sees `blocked_by_me`.
+- The profile page must never show data cached before a block: a refetch that answers 404 drops
+  the cached relationship and profile.
 
 ## Related
 

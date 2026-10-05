@@ -51,11 +51,11 @@ When `GET /users/{id}` reaches `main`: regenerate `frontend/src/types/api.d.ts` 
 - [ ] `PublicProfilePage`: names, bio, tags, photos, fame, location_label, online / last seen; badges liked-you + connected; **no email, ever**
 - [ ] Actions: like/unlike (`POST`/`DELETE /social/likes/{id}`), block/unblock (`POST`/`DELETE /social/blocks/{id}`), report (`POST /social/reports/{id}`, optional reason)
 - [ ] Surface the BE rule "like requires a profile photo" as a readable error
-- [ ] `403` from the profile GET (blocked) → clear "profile unavailable" state, not a generic 404
+- [ ] `404` from the relationship or profile GET (a missing user, or one who blocked you) → "profile unavailable"; `blocked_by_me` → "You blocked this user" with Unblock (ADR-0007)
 - [ ] MSW test for the public profile hook (fetch + single visit)
 
 `RelationshipResponse` (existing BE contract): `liked_by_me`, `liked_you`, `connected`,
-`blocked_by_me`, `blocked_you`, `last_connection`, `is_online`.
+`blocked_by_me`, `last_connection`, `is_online`.
 
 ---
 

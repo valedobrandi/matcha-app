@@ -112,6 +112,9 @@ class SocialService:
         return LikeStateResponse(liked=True, connected=connected)
 
     async def unlike(self, from_user_id: int, to_user_id: int) -> LikeStateResponse:
+        if not await self.social_repo.user_exists(to_user_id):
+            raise SocialUserNotFoundException()
+        await self._ensure_not_blocked(from_user_id, to_user_id)
         deactivated = await self.social_repo.soft_unlike(from_user_id, to_user_id)
         connected = await self.social_repo.is_connected(from_user_id, to_user_id)
         if deactivated:

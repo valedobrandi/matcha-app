@@ -248,7 +248,7 @@ async def test_block_self_rejected():
 
 
 @pytest.mark.asyncio
-async def test_block_then_like_raises_not_found_so_the_block_is_not_revealed():
+async def test_should_answer_not_found_to_like_and_visit_when_the_viewer_blocked_the_target():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
     service = SocialService(social, users)
@@ -260,7 +260,7 @@ async def test_block_then_like_raises_not_found_so_the_block_is_not_revealed():
 
 
 @pytest.mark.asyncio
-async def test_reverse_block_then_like_raises_not_found_so_the_block_is_not_revealed():
+async def test_should_answer_not_found_to_like_and_visit_when_the_target_blocked_the_viewer():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
     service = SocialService(social, users)
@@ -283,7 +283,7 @@ async def test_unblock_allows_like_again():
 
 
 @pytest.mark.asyncio
-async def test_block_keeps_the_connection_and_unblock_restores_it():
+async def test_should_keep_the_likes_and_restore_the_connection_when_the_block_is_lifted():
     social = FakeSocialRepository()
     service = SocialService(social, FakeUsersRepository())
     await service.like(1, 2)
@@ -295,7 +295,7 @@ async def test_block_keeps_the_connection_and_unblock_restores_it():
 
 
 @pytest.mark.asyncio
-async def test_relationship_raises_not_found_when_the_target_blocked_the_viewer():
+async def test_should_answer_not_found_to_the_relationship_when_the_target_blocked_the_viewer():
     social = FakeSocialRepository()
     service = SocialService(social, FakeUsersRepository())
     await service.block(2, 1)
@@ -410,6 +410,28 @@ async def test_should_emit_unliked_when_unlike():
     assert notifier.events == [{"user_id": 2, "type": "unliked", "actor_id": 1, "entity_id": None}]
     await service.unlike(1, 2)
     assert len(notifier.events) == 1
+
+
+@pytest.mark.asyncio
+async def test_should_answer_not_found_when_unliking_a_missing_user():
+    service = SocialService(FakeSocialRepository(), FakeUsersRepository())
+    with pytest.raises(SocialUserNotFoundException):
+        await service.unlike(1, 99)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("blocker, blocked", [(1, 2), (2, 1)])
+async def test_should_answer_not_found_and_emit_nothing_when_unliking_across_a_block(blocker, blocked):
+    social = FakeSocialRepository()
+    notifier = FakeNotifier()
+    service = SocialService(social, FakeUsersRepository(), notifier=notifier)
+    await service.like(1, 2)
+    await service.block(blocker, blocked)
+    notifier.events.clear()
+    with pytest.raises(SocialUserNotFoundException):
+        await service.unlike(1, 2)
+    assert social.likes[(1, 2)] == "active"
+    assert notifier.events == []
 
 
 @pytest.mark.asyncio

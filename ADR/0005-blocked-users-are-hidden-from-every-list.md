@@ -25,9 +25,12 @@ both directions. This covers:
 - `GET /social/visitors`
 - `GET /social/likes/received`
 - `GET /notifications`, and `GET /notifications/unread-count`, which must match the list
+- `likes_received_count` and `visitors_count` on `GET /users/me` and `GET /users/{id}`, which must
+  match the owner's lists
 
-The filter is a read-time condition in each repository query. It uses the same rule as the block
-clause in `_VISIBLE_TO_VIEWER_SQL` (active block, either direction).
+The filter is a read-time condition in each repository query. Each query reads the
+`blocked_pairs` view, the only definition of an active block in either direction
+([ADR-0008](0008-the-blocked-pairs-view-owns-the-block-rule.md)).
 
 ## Status
 
@@ -47,17 +50,21 @@ Rejected: it breaks the subject's intent and the owner's rule "do not show a blo
 ## Argument
 
 Read-time filtering is reversible and changes no write path. One rule applies everywhere, and
-new events were already refused by the like and visit rules.
+no new event can be created between a blocked pair: like, unlike, visit and chat answer it as a
+missing user ([ADR-0007](0007-the-blocked-user-is-never-told.md)).
 
 ## Implications
 
-- Three queries and the unread count get the block condition. Each gets an integration test on
-  real Postgres, as the discovery queries have.
-- The block condition now appears in more places. If a fourth query needs it, move it into one
-  SQL view or function and record that in a new ADR.
-- `likes_received_count` and `visitors_count` on a profile stay totals. They are not
-  personalized. Popularity is unchanged.
+- The three lists, the unread count and the two profile counts get the block condition. Each
+  gets an integration test on real Postgres, as the discovery queries have.
+- The block condition lives in the `blocked_pairs` view
+  ([ADR-0008](0008-the-blocked-pairs-view-owns-the-block-rule.md)).
+- A count is the size of the owner's list, so the number on a profile never disagrees with the
+  list it summarizes. It does not depend on who views the profile. A first draft kept the counts
+  as totals: a total beside a filtered list showed the blocked user that someone was hidden.
+- `fame_rating` is a stored score. A block does not change it.
+- A new kind of event must refuse a blocked pair, as like, unlike and visit do.
 
 ## Related
 
-- [ADR-0006](0006-a-block-does-not-change-existing-likes.md), [ADR-0007](0007-the-blocked-user-is-never-told.md)
+- [ADR-0006](0006-a-block-does-not-change-existing-likes.md), [ADR-0007](0007-the-blocked-user-is-never-told.md), [ADR-0008](0008-the-blocked-pairs-view-owns-the-block-rule.md)
