@@ -74,8 +74,8 @@ function MyProfilePage() {
                 </div>
                 <div className="flex flex-row justify-center gap-3">
                     <div className="flex flex-row items-center gap-1">
-                        <p>10</p>
-                        <p>Popularity</p>
+                      <p>{profile.fame_rating}</p>
+                      <p>Popularity</p>
                     </div>
                 </div>
                 <div className="m-auto mt-1">
