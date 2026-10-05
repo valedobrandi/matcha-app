@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Open |
+| **Status** | Decided |
 | **Group** | Backend, Frontend |
 | **Date** | 2026-10-05 |
 | **Supersedes** | — |
@@ -34,8 +34,8 @@ unspecified:
 
 ## Status
 
-Open. Recorded on 2026-10-05 at the owner's request. The implementation is not merged yet. The
-status becomes `Decided` when it is.
+Decided on 2026-10-05: migration 0014, discovery reading `matching_preference`, an optional
+orientation in the API, and "Not specified" in both profile forms.
 
 ## Positions
 

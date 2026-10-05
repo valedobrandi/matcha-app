@@ -40,7 +40,7 @@ class DiscoveryRepository:
     async def get_viewer_context(self, user_id: int) -> Optional[ViewerContext]:
         row = await self.connection.fetchrow(
             """
-            SELECT id, gender, sexual_preference, latitude, longitude
+            SELECT id, gender, matching_preference AS sexual_preference, latitude, longitude
             FROM users
             WHERE id = $1
             """,
@@ -115,7 +115,7 @@ class DiscoveryRepository:
               FROM users u
               WHERE {_VISIBLE_TO_VIEWER_SQL}
                 AND u.gender = ANY($4::text[])
-                AND u.sexual_preference = ANY($5::text[])
+                AND u.matching_preference = ANY($5::text[])
                 AND ($6::int IS NULL OR u.age >= $6)
                 AND ($7::int IS NULL OR u.age <= $7)
                 AND ($8::int IS NULL OR COALESCE(u.fame_rating, 0) >= $8)

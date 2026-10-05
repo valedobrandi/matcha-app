@@ -731,11 +731,8 @@ export interface components {
             location_label?: string | null;
             /** Longitude */
             longitude: number;
-            /**
-             * Sexual Preference
-             * @enum {string}
-             */
-            sexual_preference: "man" | "woman" | "bisexual";
+            /** Sexual Preference */
+            sexual_preference?: ("man" | "woman" | "bisexual") | null;
         };
         /**
          * ErrorCode
@@ -1117,11 +1114,8 @@ export interface components {
              * @enum {string}
              */
             gender: "male" | "female" | "other";
-            /**
-             * Sexual Preference
-             * @enum {string}
-             */
-            sexual_preference: "man" | "woman" | "bisexual";
+            /** Sexual Preference */
+            sexual_preference?: ("man" | "woman" | "bisexual") | null;
         };
         /** UserRegisterInput */
         UserRegisterInput: {

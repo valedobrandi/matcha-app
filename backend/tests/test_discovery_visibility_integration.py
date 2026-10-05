@@ -105,3 +105,28 @@ async def test_should_apply_the_same_visibility_rules_to_suggest_and_search_when
     cards = await DiscoveryRepository(connection).list_profiles(query)
 
     assert [card.id for card in cards] == [visible]
+
+async def test_should_match_a_user_without_an_orientation_as_bisexual_when_listing_profiles(
+    connection, token, tag_id
+):
+    viewer = await add_user(connection, token, "viewer", tag_ids=[tag_id], gender="male", sexual_preference="woman")
+    unspecified = await add_user(connection, token, "unspecified", tag_ids=[tag_id], sexual_preference=None)
+    await add_user(connection, token, "likeswomen", tag_ids=[tag_id], sexual_preference="woman")
+    query = DiscoveryQuery(
+        viewer_id=viewer, viewer_lat=None, viewer_lon=None,
+        candidate_genders=["female"], interested_in_viewer_prefs=["man", "bisexual"],
+        tag_ids=[tag_id], sort="fame", order="desc", limit=MANY, offset=0,
+    )
+
+    cards = await DiscoveryRepository(connection).list_profiles(query)
+
+    assert [card.id for card in cards] == [unspecified]
+
+async def test_should_give_the_viewer_the_bisexual_default_when_the_orientation_is_not_specified(
+    connection, token
+):
+    viewer = await add_user(connection, token, "viewer", sexual_preference=None)
+
+    context = await DiscoveryRepository(connection).get_viewer_context(viewer)
+
+    assert context.sexual_preference == "bisexual"

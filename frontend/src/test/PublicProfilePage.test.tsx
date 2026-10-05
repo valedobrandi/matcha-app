@@ -205,3 +205,16 @@ describe('PublicProfilePage like', () => {
         expect(requests()).toBe(2)
     })
 })
+
+describe('PublicProfilePage orientation', () => {
+    it('does show Not specified when the user gave no orientation', async () => {
+        server.use(
+            http.get(`${API_BASE_URL}/social/relationship/:id`, () => HttpResponse.json(RELATIONSHIP)),
+            http.get(`${API_BASE_URL}/users/:id`, () => HttpResponse.json({ ...PROFILE, sexual_preference: null })),
+            http.post(`${API_BASE_URL}/social/visits/:id`, () => HttpResponse.json({ ok: true })),
+        )
+        renderPage()
+
+        expect(await screen.findByText('Preference: Not specified')).toBeInTheDocument()
+    })
+})
