@@ -4,7 +4,11 @@ Every test runs in a transaction that is rolled back: nothing is committed and n
 deleted. The fixtures fail (they do not skip) when Postgres is unreachable, so a missing
 database cannot hide a broken query.
 """
+import os
 import uuid
+
+# Settings refuses to load without a JWT_SECRET; tests need a throwaway one before any import.
+os.environ.setdefault("JWT_SECRET", "test-only-secret-not-for-use-0123456789")
 
 import asyncpg
 import pytest

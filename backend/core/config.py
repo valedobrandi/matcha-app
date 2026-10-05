@@ -1,12 +1,12 @@
 from dotenv import load_dotenv
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/matcha"
-    JWT_SECRET: SecretStr = SecretStr("super_secret_key")
+    JWT_SECRET: SecretStr  # required, no default: a known key lets anyone forge a token
     JWT_ALGORITHM: str = "HS256"
     
     FT_CLIENT_ID: str = "ft_client_id"
@@ -25,5 +25,13 @@ class Settings(BaseSettings):
     OUTBOX_MAX_ATTEMPTS: int = 5
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    @field_validator("JWT_SECRET")
+    @classmethod
+    def _jwt_secret_is_long_enough(cls, value: SecretStr) -> SecretStr:
+        # HS256 needs a key of at least 32 bytes (RFC 7518 section 3.2).
+        if len(value.get_secret_value().encode()) < 32:
+            raise ValueError("JWT_SECRET must be at least 32 bytes long")
+        return value
 
 settings = Settings()

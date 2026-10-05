@@ -19,8 +19,8 @@ from modules.users.exceptions import (
     EmailAlreadyTakenException,
 )
 from modules.notifications.outbox_repository import OutboxRepository
+from modules.users.image_type import detect_image_type
 from core.config import settings
-import imghdr
 import uuid
 from pathlib import Path
 from modules.notifications.outbox_repository import OutboxRepository
@@ -278,7 +278,7 @@ class UsersRepository:
         content = await file.read()
         if len(content) > MAX_SIZE:
             raise FileTooLargeException()
-        image_type = imghdr.what(None, content)
+        image_type = detect_image_type(content)
         if image_type not in ALLOWED_IMAGE_TYPES:
             raise InvalidPhotoTypeException()
         
@@ -371,7 +371,7 @@ class UsersRepository:
         content = await file.read()
         if len(content) > MAX_SIZE:
             raise FileTooLargeException()
-        image_type = imghdr.what(None, content)
+        image_type = detect_image_type(content)
         if image_type not in ALLOWED_IMAGE_TYPES:
             raise InvalidPhotoTypeException()
         
