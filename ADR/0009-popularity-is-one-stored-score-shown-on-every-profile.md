@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Open |
+| **Status** | Decided |
 | **Group** | Backend, Frontend |
 | **Date** | 2026-10-05 |
 | **Supersedes** | — |
@@ -34,8 +34,8 @@ Every profile shows this one number, your own included. `GET /users/me` already 
 
 ## Status
 
-Open. Recorded on 2026-10-05 at the owner's request. The definition is already implemented; the
-own profile page is not fixed yet. The status becomes `Decided` when it is.
+Decided on 2026-10-05. The definition was already in the code, and the own profile page now
+shows the score from `GET /users/me`.
 
 ## Positions
 
