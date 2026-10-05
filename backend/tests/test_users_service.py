@@ -107,7 +107,7 @@ async def test_change_password_success(monkeypatch):
 
     fake_repo = FakeUserRepo()
     service = UsersService(fake_repo, FakeSocial())
-    
+
     passwords = PasswordChangeInput(
         current_password="OldPwd123!",
         new_password="Xk9#mQvzTr4!!",
@@ -431,3 +431,10 @@ async def test_get_public_profile_should_raise_when_missing():
 def test_target_user_not_found_should_not_share_the_caller_account_code():
     assert TargetUserNotFoundException.code == "TARGET_USER_NOT_FOUND"
     assert TargetUserNotFoundException.code != UserNotFoundException.code
+
+def test_should_accept_a_profile_without_an_orientation_when_none_is_given():
+    from modules.users.schemas import UserProfileInput
+
+    profile = UserProfileInput(gender="male", age=25, bio="hello")
+
+    assert profile.sexual_preference is None

@@ -40,7 +40,7 @@ function PublicProfilePage() {
     const {block, unblock, serverError: blockError} = useBlock()
     const [reportValue, setReportValue] = useState<reportInputValue | null>(null)
     const {report, serverError: reportError} = useReport()
-    
+
     const handleLike = async (targetId: number) => {
         if (relationship?.liked_by_me || relationship?.connected)
             await unlike(targetId)
@@ -162,7 +162,7 @@ function PublicProfilePage() {
                         <div className="my-4 mx-8 sm:px-8">
                             <div>{publicProfile.gender}</div>
                             <div>{publicProfile.age} years old</div>
-                            <div>Preference: {publicProfile.sexual_preference}</div>
+                            <div>Preference: {publicProfile.sexual_preference ?? "Not specified"}</div>
                             <div>Bio: {publicProfile.bio}</div>
                             <div>Location: {publicProfile.location_label}</div>
                             {!publicProfile.is_online && (<div>Last connection: {publicProfile.last_connection?? "Never"}</div>)}

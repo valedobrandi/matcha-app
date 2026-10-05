@@ -26,19 +26,20 @@ function ProfileForm({
     return (
         <>
             <form onSubmit={onSubmit} className="flex flex-col gap-4 w-full">
-                <Controller 
+                <Controller
                     name="gender"
                     control={control}
                     render={({ field, fieldState })=>(
                         <>
                             <RadioGroup
-                                value={field.value?? ""} onValueChange={field.onChange}>
+                                value={field.value ?? "unspecified"}
+                                onValueChange={v => field.onChange(v == "unspecified" ? undefined : v)}>
                                 <div className="flex flex-row flex-wrap min-[600px]:flex-nowrap justify-between items-center gap-4 w-full">
                                     <p>Please select your gender: </p>
                                     <div className="flex flex-row items-center gap-2">
                                         <RadioGroupItem value="male" id="male" />
                                         <Label htmlFor="male">Male</Label>
-                                    </div>      
+                                    </div>
                                     <div className="flex flex-row items-center gap-2">
                                         <RadioGroupItem value="female" id="female" />
                                         <Label htmlFor="female">Female</Label>
@@ -53,7 +54,7 @@ function ProfileForm({
                         </>
                     )}
                 />
-                <Controller 
+                <Controller
                     name="sexual_preference"
                     control={control}
                     render={({field, fieldState})=>(
@@ -65,15 +66,15 @@ function ProfileForm({
                                         <div className="flex flex-row items-center gap-2">
                                             <RadioGroupItem value="man" id="man" />
                                             <Label htmlFor="man">Man</Label>
-                                        </div>        
+                                        </div>
                                         <div className="flex flex-row items-center gap-2">
                                             <RadioGroupItem value="woman" id="woman" />
                                             <Label htmlFor="woman">Woman</Label>
-                                        </div>        
+                                        </div>
                                         <div className="flex flex-row items-center gap-2">
                                             <RadioGroupItem value="bisexual" id="bisexual" />
                                             <Label htmlFor="bisexual">Bisexual</Label>
-                                        </div>        
+                                        </div>
                                     </div>
                             </RadioGroup>
                             <FieldError errors={[fieldState.error]} />

@@ -8,9 +8,9 @@ from modules.tags.schemas import TagOut
 class UserProfile(ApiModel):
     id: int
     email: EmailStr
-    username: str 
-    first_name: str 
-    last_name: str 
+    username: str
+    first_name: str
+    last_name: str
     is_verified: bool
     created_at: datetime
     gender: Optional[Literal["male", "female", "other"]] = None
@@ -29,7 +29,7 @@ class UserProfile(ApiModel):
 
 class UserProfileInput(BaseModel):
     gender: Literal["male", "female", "other"]
-    sexual_preference: Literal["man", "woman", "bisexual"]
+    sexual_preference: Optional[Literal["man", "woman", "bisexual"]] = None
     age: int = Field(..., ge=18, le=100)
     bio: str = Field(..., min_length=1)
 
@@ -44,7 +44,7 @@ class UserAccountInput(BaseModel):
     first_name: str = Field(..., min_length=1)
     last_name: str = Field(..., min_length=1)
     email: EmailStr
-    
+
 class PhotoOut(ApiModel):
     id: int
     url: str

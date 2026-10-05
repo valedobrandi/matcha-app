@@ -4,7 +4,7 @@ import { passwordSchema } from './auth'
 export const profileSchema = z.object({
     age: z.number().min(18, "You must be at least 18").max(100),
     gender: z.enum(["male", "female", "other"]),
-    sexual_preference: z.enum(["man", "woman", "bisexual"]),
+    sexual_preference: z.enum(["man", "woman", "bisexual"]).optional(),
     bio: z.string().trim().min(1, "Bio is required"),
 })
 
@@ -14,8 +14,8 @@ export const editProfileSchema = profileSchema.extend({
     location_label: z.string().nullable(),
     location_consent: z.boolean()
 }).refine(
-    (data) => 
-        data.latitude !== null && 
+    (data) =>
+        data.latitude !== null &&
         data.longitude !== null &&
         !!data.location_label &&
         data.location_label.trim().length > 0,

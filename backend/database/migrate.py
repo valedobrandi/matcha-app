@@ -36,6 +36,7 @@ EFFECTS: dict[str, tuple[str, str]] = {
     "0011_create_chat_messages": ("table", "chat_messages"),
     "0012_create_profile_completeness_view": ("view", "profile_completeness"),
     "0013_create_blocked_pairs_view": ("view", "blocked_pairs"),
+    "0014_add_matching_preference": ("column", "users.matching_preference"),
 }
 
 

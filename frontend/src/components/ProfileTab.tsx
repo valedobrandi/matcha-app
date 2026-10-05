@@ -45,7 +45,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
         defaultValues: {
             age: profile.age!,
             gender: profile.gender as "male" | "female" | "other",
-            sexual_preference: profile.sexual_preference as "man" | "woman" | "bisexual",
+            sexual_preference: profile.sexual_preference ?? undefined,
             bio: profile.bio!,
             latitude: profile.latitude,
             longitude: profile.longitude,
@@ -69,7 +69,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
         serverError: tagsError,
         handleInput,
         handleAddTag,
-        handleDeleteTag, 
+        handleDeleteTag,
     } = useProfileTags()
 
     const {
@@ -133,7 +133,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                             <FieldError errors={[errors.age]}/>
                         </div>
                     </Field>
-                    <Controller 
+                    <Controller
                         name="gender"
                         control={control}
                         render={({ field, fieldState })=>(
@@ -145,11 +145,11 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                                         <div className="flex flex-row items-center gap-2">
                                             <RadioGroupItem value="male" id="male" />
                                             <Label htmlFor="male">Male</Label>
-                                        </div>        
+                                        </div>
                                         <div className="flex flex-row items-center gap-2">
                                             <RadioGroupItem value="female" id="female" />
                                             <Label htmlFor="female">Female</Label>
-                                        </div>        
+                                        </div>
                                         <div className="flex flex-row items-center gap-2">
                                             <RadioGroupItem value="other" id="other" />
                                             <Label htmlFor="other">Other</Label>
@@ -164,21 +164,24 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                         control={control}
                         render={({field, fieldState})=>(
                         <Field>
-                            <RadioGroup value={ field.value } onValueChange={field.onChange} disabled={!editing}>
-                                <div className="flex flex-row flex-wrap min-[600px]:flex-nowrap justify-between w-full items-center gap-6">   
+                            <RadioGroup
+                              value={field.value ?? "unspecified"}
+                              onValueChange={v => field.onChange(v == "unspecified" ? undefined : v)}
+                              disabled={!editing}>
+                                <div className="flex flex-row flex-wrap min-[600px]:flex-nowrap justify-between w-full items-center gap-6">
                                     <p>Sexual_preference</p>
                                     <div className="flex flex-row items-center gap-2">
                                         <RadioGroupItem value="man" id="man" />
                                         <Label htmlFor="man">Man</Label>
-                                    </div>        
+                                    </div>
                                     <div className="flex flex-row items-center gap-2">
                                         <RadioGroupItem value="woman" id="woman" />
                                         <Label htmlFor="woman">Woman</Label>
-                                    </div>        
+                                    </div>
                                     <div className="flex flex-row items-center gap-2">
                                         <RadioGroupItem value="bisexual" id="bisexual" />
                                         <Label htmlFor="bisexual">Bisexual</Label>
-                                    </div>     
+                                    </div>
                                 </div>
                             </RadioGroup>
                             <FieldError errors={[fieldState.error]} />
