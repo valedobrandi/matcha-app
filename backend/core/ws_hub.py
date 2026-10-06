@@ -10,6 +10,7 @@ Acceptable for local eval; prefer a first-message auth handshake before producti
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any, Dict, Optional, Set
 
@@ -59,9 +60,15 @@ class ConnectionHub:
             del self._connections[user_id]
 
     async def push(self, user_id: int, envelope: dict[str, Any]) -> None:
+        # Serialized once, outside the per-socket try: an envelope that is not JSON raises to the
+        # caller instead of unregistering every tab. Same arguments as Starlette's send_json.
+        text = json.dumps(envelope, separators=(",", ":"), ensure_ascii=False)
         for websocket in tuple(self._connections.get(user_id, ())):
+            # A tab that closed while an earlier send in this loop awaited has left the hub.
+            if websocket not in self._connections.get(user_id, ()):
+                continue
             try:
-                await websocket.send_json(envelope)
+                await websocket.send_text(text)
             except WebSocketDisconnect:
                 logger.debug("Dropped closed socket of user %s", user_id)
                 self.disconnect(user_id, websocket)

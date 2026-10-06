@@ -1,22 +1,28 @@
+import json
 import logging
 import pytest
+from fastapi import WebSocketDisconnect
 from core.ws_hub import ConnectionHub, decode_user_id_from_token
-from starlette.websockets import WebSocketDisconnect
 from core.config import settings
 import jwt
 import datetime
 import time
 
+
 class FakeWebSocket:
     def __init__(self):
         self.accepted = False
-        self.sent = []
+        self.texts = []
+
+    @property
+    def sent(self):
+        return [json.loads(text) for text in self.texts]
 
     async def accept(self):
         self.accepted = True
 
-    async def send_json(self, data):
-        self.sent.append(data)
+    async def send_text(self, data):
+        self.texts.append(data)
 
 
 class ClosedWebSocket(FakeWebSocket):
@@ -26,7 +32,7 @@ class ClosedWebSocket(FakeWebSocket):
         super().__init__()
         self.send_attempts = 0
 
-    async def send_json(self, data):
+    async def send_text(self, data):
         self.send_attempts += 1
         raise WebSocketDisconnect(code=1006)
 
@@ -34,8 +40,29 @@ class ClosedWebSocket(FakeWebSocket):
 class BrokenWebSocket(FakeWebSocket):
     """A socket whose send fails for a reason other than a closed tab."""
 
-    async def send_json(self, data):
+    async def send_text(self, data):
         raise RuntimeError("unexpected send failure")
+
+
+class TabThatClosesTheOther(FakeWebSocket):
+    """While a send to this tab awaits, the user's other tab closes and leaves the hub.
+
+    A send to a closed tab raises what uvicorn's legacy implementation raises.
+    """
+
+    def __init__(self, hub):
+        super().__init__()
+        self.hub = hub
+        self.other = None
+        self.closed = False
+
+    async def send_text(self, data):
+        if self.closed:
+            raise RuntimeError("Unexpected ASGI message 'websocket.send', after sending 'websocket.close'")
+        await super().send_text(data)
+        self.other.closed = True
+        self.hub.disconnect(1, self.other)
+
 
 def _token(user_id: int) -> str:
     now = datetime.datetime.now(datetime.UTC)
@@ -69,6 +96,7 @@ def test_should_reject_invalid_token():
     assert decode_user_id_from_token("not-a-jwt") is None
     assert decode_user_id_from_token("") is None
 
+
 @pytest.mark.asyncio
 async def test_should_push_to_every_tab_when_user_has_two_sockets():
     hub = ConnectionHub()
@@ -78,6 +106,7 @@ async def test_should_push_to_every_tab_when_user_has_two_sockets():
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
     assert first_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
     assert second_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
+
 
 @pytest.mark.asyncio
 async def test_should_keep_pushing_to_other_tab_when_one_tab_disconnects():
@@ -120,3 +149,37 @@ async def test_should_log_an_error_when_a_send_fails_unexpectedly(caplog):
     await hub.connect(1, BrokenWebSocket())
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
     assert [record.levelname for record in caplog.records] == ["ERROR"]
+
+
+@pytest.mark.asyncio
+async def test_should_skip_a_tab_that_closed_during_the_same_push(caplog):
+    hub = ConnectionHub()
+    first_tab, second_tab = TabThatClosesTheOther(hub), TabThatClosesTheOther(hub)
+    first_tab.other, second_tab.other = second_tab, first_tab
+    await hub.connect(1, first_tab)
+    await hub.connect(1, second_tab)
+    await hub.push(1, {"type": "notification", "payload": {"id": 1}})
+    assert len(first_tab.sent) + len(second_tab.sent) == 1
+    assert [record for record in caplog.records if record.levelno >= logging.WARNING] == []
+
+
+@pytest.mark.asyncio
+async def test_should_raise_and_keep_every_tab_when_the_envelope_is_not_json():
+    hub = ConnectionHub()
+    first_tab, second_tab = FakeWebSocket(), FakeWebSocket()
+    await hub.connect(1, first_tab)
+    await hub.connect(1, second_tab)
+    with pytest.raises(TypeError):
+        await hub.push(1, {"type": "notification", "payload": object()})
+    await hub.push(1, {"type": "notification", "payload": {"id": 1}})
+    assert first_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
+    assert second_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
+
+
+@pytest.mark.asyncio
+async def test_should_send_the_same_text_as_starlette_send_json():
+    hub = ConnectionHub()
+    tab = FakeWebSocket()
+    await hub.connect(1, tab)
+    await hub.push(1, {"type": "notification", "payload": {"first_name": "Zoë"}})
+    assert tab.texts == ['{"type":"notification","payload":{"first_name":"Zoë"}}']
