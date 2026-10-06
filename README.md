@@ -16,11 +16,14 @@ Migrations run when the backend container starts.
 
 ## Seed demo profiles
 
-With the stack running, on a fresh database (the evaluation needs at least 500 profiles):
+Download the synthetic face pool once (about 210 MB, kept out of git in `backend/seed_assets/`), then seed with the stack running, on a fresh database (the evaluation needs at least 500 profiles):
 
 ```
+python3 backend/scripts/download_seed_faces.py
 docker compose exec backend python -m database.seed --users 500
 ```
+
+Every seeded user gets 2 photos, the first as the profile photo, and the pool holds enough faces for up to 895 users. The faces are the [StyleGAN3 Synthetic Face Image Dataset](https://zenodo.org/records/18177207) (CC BY-NC 4.0, non-commercial use only), minus the faces listed in `backend/scripts/seed_faces_excluded.txt`, which look like minors.
 
 Log in as `SEED_USERNAME` with `SEED_PASSWORD`, both from `.env`; every seeded account shares that
 password.

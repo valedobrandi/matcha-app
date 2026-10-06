@@ -30,7 +30,14 @@ them before you merge a change to the discovery SQL.
 For discovery/search demos you need enough profiles (≥500 for subject eval).
 
 1. Start a migrated Postgres (`docker compose up`, or run the migration runner — see above).
-2. From `backend/` with the venv active and `DATABASE_URL` set:
+2. From `backend/`, download the synthetic face pool once (about 210 MB into `seed_assets/`, ignored by git):
+
+```bash
+python scripts/download_seed_faces.py
+```
+
+   The seed gives each user 2 photos from it and stops before inserting anything if the pool is missing or too small (1,790 faces, so up to 895 users). The faces are the [StyleGAN3 Synthetic Face Image Dataset](https://zenodo.org/records/18177207), CC BY-NC 4.0 (non-commercial use only), minus the faces listed in `scripts/seed_faces_excluded.txt`.
+3. From `backend/` with the venv active and `DATABASE_URL` set:
 
 ```bash
 python -m database.seed --users 500
