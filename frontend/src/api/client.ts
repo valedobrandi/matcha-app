@@ -3,6 +3,7 @@ import type { components } from '@/types/api'
 export type ErrorCode = components['schemas']['ErrorCode']
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+export const WS_URL = `${API_BASE_URL.replace(/^http/, 'ws')}/ws`
 
 let onUnauthorized: (() => void) | null = null
 

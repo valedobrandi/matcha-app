@@ -37,8 +37,9 @@ socket nor a notification screen, and three gaps stand in the way:
 - **One client:** a `RealtimeProvider` in the authenticated layout opens one socket per tab with
   the access token (`/ws?token=`, ADR-0003). It reconnects with a capped backoff and stops when
   the server closes with code 1008 (invalid token).
-- **Query cache:** socket events go into the TanStack Query cache. A `notification` event adds
-  the item to the `notifications` list and raises the unread count. After a reconnect, both
+- **Query cache:** socket events go into the TanStack Query cache. A `notification` event raises
+  the cached unread count at once and marks the `notifications` list stale, so an open list
+  fetches again; the cache never depends on how the list is paged. After a reconnect, both
   queries are fetched again, because events may have been missed.
 - **Screens:** the header shows a bell with the unread count on every page. A `/notifications`
   page lists them ("Bob liked you"). Opening one marks it read and goes to the actor's profile,
@@ -80,11 +81,15 @@ store. Fan-out in the hub is a few lines and makes all tabs behave the same.
 
 - The hub maps each user to a set of sockets; `test_ws_hub.py` covers two sockets for one user
   and closing one of them.
+- Open: sockets per user are not capped. A dead socket stays in the hub until uvicorn's
+  keepalive ping times out (20 s interval, 20 s timeout by default). Revisit in the security
+  review.
 - The notification list query and the insert join `users`; `test_notifications_integration.py`
   checks both on a real Postgres. `frontend/src/types/api.d.ts` is regenerated.
 - Frontend tests intercept the socket with MSW (`ws.link`, msw 2.15): a pushed notification
   updates the list and the badge, a reconnect refetches, and code 1008 stops reconnecting.
-- Measure delivery against the 10-second budget in the pull request, as ADR-0003 asks.
+- Delivery against the 10-second budget (ADR-0003): 13 ms from a visit to the frame in the tab,
+  measured locally in headless Chrome on 2026-10-06.
 - The chat screen ([ADR-0012](0012-chat-lists-connections-and-uses-message-notifications-as-unread.md))
   uses the same provider for `chat.message` events.
 
