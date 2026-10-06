@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
 
 // Calls the latest loadMore when the returned sentinel scrolls near the viewport.
-export function useInfiniteScroll(loadMore: () => void) {
+export function useInfiniteScroll(loadMore: () => void, isLoading: boolean) {
     const sentinelRef = useRef<HTMLDivElement>(null)
     const loadMoreRef = useRef(loadMore)
 
@@ -11,7 +11,7 @@ export function useInfiniteScroll(loadMore: () => void) {
 
     useEffect(()=>{
         const el = sentinelRef.current
-        if (!el) return
+        if (!el || isLoading) return
         const observer = new IntersectionObserver(
             (entries) => {
                 if (entries[0].isIntersecting)
@@ -21,7 +21,7 @@ export function useInfiniteScroll(loadMore: () => void) {
         )
         observer.observe(el)
         return ()=>observer.disconnect()
-    }, [])
+    }, [isLoading])
 
     return sentinelRef
 }

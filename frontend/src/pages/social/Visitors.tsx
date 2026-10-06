@@ -16,7 +16,7 @@ function Visitors() {
 
     const {visitorsList, serverError, isLoading, hasMore, loadMore} = useVisitors(filter, true)
 
-    const sentinelRef = useInfiniteScroll(loadMore)
+    const sentinelRef = useInfiniteScroll(loadMore, isLoading)
 
     return (
         <>

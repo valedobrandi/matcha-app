@@ -14,7 +14,7 @@ export function BlockListPage() {
     }),[limit])
     const { blockList, serverError, isLoading, hasMore, loadMore} = useBlockList(filter, true)
     const {unblock, serverError: blockError} = useBlock()
-    const sentinelRef = useInfiniteScroll(loadMore)
+    const sentinelRef = useInfiniteScroll(loadMore, isLoading)
 
     return (
         <>
