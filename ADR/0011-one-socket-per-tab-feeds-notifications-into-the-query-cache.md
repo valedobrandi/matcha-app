@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Open |
+| **Status** | Decided |
 | **Group** | Backend, Frontend |
 | **Date** | 2026-10-05 |
 | **Supersedes** | — |
@@ -54,8 +54,10 @@ socket nor a notification screen, and three gaps stand in the way:
 
 ## Status
 
-Open. Recorded on 2026-10-05 at the owner's request. The implementation is not merged yet. The
-status becomes `Decided` when it is.
+Decided on 2026-10-06: the hub pushes to every tab, notifications carry their actor,
+`RealtimeProvider` feeds the query cache and checks the socket with a heartbeat, and the header
+bell and the `/notifications` page read that cache. Recorded on 2026-10-05 at the owner's
+request.
 
 ## Positions
 
@@ -104,7 +106,10 @@ store. Fan-out in the hub is a few lines and makes all tabs behave the same.
   mark the cached count and list stale, the backoff grows to 5 s and resets after a stable
   connection, code 1008 logs out, an unanswered ping (25 s, or at once when the tab becomes
   visible) reconnects, and an answered one keeps the socket. `test_ws_router.py` checks that
-  the server answers a ping. No screen reads these queries until the bell and the list exist.
+  the server answers a ping. `NotificationBell.test.tsx` checks that a pushed notification
+  raises the bell's count through the real provider; `NotificationsPage.test.tsx` checks the
+  sentences, that opening one marks it read and shows the actor's profile, and that "Mark all
+  as read" clears the bell.
 - Delivery against the 10-second budget (ADR-0003): 13 ms from a visit request to the frame
   arriving in the tab (not a rendered badge), measured locally in headless Chrome on 2026-10-06.
   After an outage, the next attempt comes at most 5 s after the server is back, so the refetch
@@ -115,7 +120,8 @@ store. Fan-out in the hub is a few lines and makes all tabs behave the same.
   next ping, 5 s for the pong), or within 5 s of the tab becoming visible, and then replaced
   through the usual reconnect: 1 s after a connection that stayed up, so about 6 s after waking.
 - The chat screen ([ADR-0012](0012-chat-lists-connections-and-uses-message-notifications-as-unread.md))
-  uses the same provider for `chat.message` events.
+  uses the same provider for `chat.message` events. Until it exists, opening a message
+  notification shows the sender's profile instead of the chat.
 
 ## Related
 

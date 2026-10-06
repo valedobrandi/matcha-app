@@ -10,6 +10,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { SearchForm } from "@/components/ui/search-form"
 import { RealtimeProvider } from '@/realtime/RealtimeProvider'
+import { NotificationBell } from '@/components/NotificationBell'
 
 export function RootLayout() {
   const { logout } = useAuth()
@@ -29,7 +30,8 @@ export function RootLayout() {
               Matcha
             </Link>
             <SearchForm />
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-1">
+              <NotificationBell />
               <Button variant="ghost" size="sm" type="button" onClick={logout}>
                 Logout
               </Button>
