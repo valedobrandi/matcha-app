@@ -36,8 +36,9 @@ For discovery/search demos you need enough profiles (≥500 for subject eval).
 python -m database.seed --users 500
 ```
 
-Default `--users` is already `500`. Every seeded user shares password
-`Password123!` (printed again when the script finishes). Prefer a fresh
+Default `--users` is already `500`. The first seeded user is `SEED_USERNAME`
+and every seeded user's password is `SEED_PASSWORD`, both read from the
+environment (`.env`); the script stops without them. Prefer a fresh
 database; re-running against a populated DB may fail unique email/username
 constraints.
 

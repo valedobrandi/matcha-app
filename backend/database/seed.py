@@ -12,12 +12,13 @@ Usage
     python -m database.seed
     python -m database.seed --users 500
 
-All seeded accounts share the same password (``SEED_PASSWORD``). The script
-prints the user count and that password when it finishes — enough for Hong to
-log in and exercise discovery with volume.
+The first seeded account is ``SEED_USERNAME`` and every account's password is
+``SEED_PASSWORD``, both read from the environment (``.env``); the script stops
+without them. It prints the user count and that login name when it finishes.
 """
 import argparse
 import asyncio
+import os
 import random
 
 import asyncpg
@@ -26,7 +27,6 @@ from faker import Faker
 
 from core.config import settings
 
-SEED_PASSWORD = "Password123!"
 GENDERS = ["male", "female", "other"]
 PREFERENCES = ["man", "woman", "bisexual"]
 TAGS = [
@@ -46,15 +46,20 @@ CITIES = [
 
 
 async def seed(user_count: int) -> None:
+    username = os.environ.get("SEED_USERNAME")
+    password = os.environ.get("SEED_PASSWORD")
+    if not username or not password:
+        raise SystemExit("Set SEED_USERNAME and SEED_PASSWORD in .env (see .env.example).")
+
     fake = Faker()
     Faker.seed(42)
     random.seed(42)
 
-    password_hash = bcrypt.hashpw(SEED_PASSWORD.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    password_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
     conn = await asyncpg.connect(dsn=settings.DATABASE_URL)
     try:
-        user_ids = await _seed_users(conn, fake, user_count, password_hash)
+        user_ids = await _seed_users(conn, fake, user_count, username, password_hash)
         tag_ids = await _seed_tags(conn)
         await _seed_user_tags(conn, user_ids, tag_ids)
         await _seed_user_photos(conn, user_ids)
@@ -64,16 +69,18 @@ async def seed(user_count: int) -> None:
     finally:
         await conn.close()
 
-    print(f"Seeded {len(user_ids)} users (login password for all: {SEED_PASSWORD!r}).")
+    print(f"Seeded {len(user_ids)} users; log in as {username!r} with SEED_PASSWORD.")
 
 
-async def _seed_users(conn, fake, count, password_hash) -> list[int]:
+async def _seed_users(conn, fake, count, first_username, password_hash) -> list[int]:
     rows = []
-    for _ in range(count):
+    for index in range(count):
         label, lat, lon = random.choice(CITIES)
+        email = fake.unique.email()
+        generated_username = fake.unique.user_name()
         rows.append((
-            fake.unique.email(),
-            fake.unique.user_name(),
+            email,
+            first_username if index == 0 else generated_username,
             fake.first_name(),
             fake.last_name(),
             password_hash,
