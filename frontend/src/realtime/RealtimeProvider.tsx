@@ -10,8 +10,8 @@ const FIRST_RECONNECT_DELAY_MS = 1000
 const MAX_RECONNECT_DELAY_MS = 5000
 const STABLE_CONNECTION_MS = 10_000
 const PING = JSON.stringify({ type: "ping", payload: null })
-const PING_INTERVAL_MS = 25_000
-const PONG_TIMEOUT_MS = 5000
+const PING_INTERVAL_MS = 5000
+const PONG_TIMEOUT_MS = 3000
 
 function reconnectDelay(attempt: number): number {
     return Math.min(FIRST_RECONNECT_DELAY_MS * 2 ** attempt, MAX_RECONNECT_DELAY_MS)
@@ -95,12 +95,14 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         }
         connect()
         document.addEventListener("visibilitychange", pingWhenVisible)
+        window.addEventListener("online", ping)
 
         return () => {
             stopped = true
             clearTimeout(retryTimer)
             stopPinging()
             document.removeEventListener("visibilitychange", pingWhenVisible)
+            window.removeEventListener("online", ping)
             // Closing a socket that is still connecting makes the browser log a warning.
             if (socket.readyState === WebSocket.CONNECTING) socket.onopen = () => socket.close()
             else socket.close()
