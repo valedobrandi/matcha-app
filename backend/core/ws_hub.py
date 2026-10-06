@@ -2,7 +2,7 @@
 
 Auth for ``/ws``: JWT via query param ``?token=<jwt>`` using the same secret and
 algorithm as HTTP Bearer auth in ``core.auth``. Anonymous sockets are rejected.
-One registry entry per user id (latest connection wins if the client reconnects).
+Every open socket of a user is kept, one per tab, and each push goes to all of them.
 
 Security note: query-string JWTs can appear in access logs and Referer headers.
 Acceptable for local eval; prefer a first-message auth handshake before production.
@@ -11,9 +11,9 @@ Acceptable for local eval; prefer a first-message auth handshake before producti
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
 import jwt
 
 from core.config import settings
@@ -44,35 +44,30 @@ def decode_user_id_from_token(token: str) -> Optional[int]:
 
 class ConnectionHub:
     def __init__(self) -> None:
-        self._connections: Dict[int, WebSocket] = {}
+        self._connections: Dict[int, Set[WebSocket]] = {}
 
     async def connect(self, user_id: int, websocket: WebSocket) -> None:
         await websocket.accept()
-        previous = self._connections.get(user_id)
-        self._connections[user_id] = websocket
-        if previous is not None and previous is not websocket:
-            try:
-                await previous.close()
-            except Exception:
-                logger.debug("Failed closing previous socket for user %s", user_id)
+        self._connections.setdefault(user_id, set()).add(websocket)
 
     def disconnect(self, user_id: int, websocket: WebSocket) -> None:
-        current = self._connections.get(user_id)
-        if current is websocket:
-            self._connections.pop(user_id, None)
+        sockets = self._connections.get(user_id)
+        if sockets is None:
+            return
+        sockets.discard(websocket)
+        if not sockets:
+            del self._connections[user_id]
 
     async def push(self, user_id: int, envelope: dict[str, Any]) -> None:
-        websocket = self._connections.get(user_id)
-        if websocket is None:
-            return
-        try:
-            await websocket.send_json(envelope)
-        except Exception:
-            logger.exception("Failed WS push to user %s", user_id)
-            self._connections.pop(user_id, None)
-
-    def is_connected(self, user_id: int) -> bool:
-        return user_id in self._connections
+        for websocket in tuple(self._connections.get(user_id, ())):
+            try:
+                await websocket.send_json(envelope)
+            except WebSocketDisconnect:
+                logger.debug("Dropped closed socket of user %s", user_id)
+                self.disconnect(user_id, websocket)
+            except Exception:
+                logger.exception("Failed WS push to user %s", user_id)
+                self.disconnect(user_id, websocket)
 
 
 hub = ConnectionHub()
