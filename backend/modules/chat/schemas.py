@@ -13,3 +13,7 @@ class MessageOut(ApiModel):
     to_user_id: int
     body: str
     created_at: datetime
+
+
+class ChatOkResponse(ApiModel):
+    ok: bool = True

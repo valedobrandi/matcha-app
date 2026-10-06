@@ -26,6 +26,7 @@ class NotificationOut(ApiModel):
 
 class UnreadCountOut(ApiModel):
     unread_count: int = Field(..., ge=0)
+    unread_messages: int = Field(..., ge=0)
 
 
 class NotificationOkResponse(ApiModel):

@@ -140,6 +140,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/chat/conversations/{peer_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Conversation Read */
+        post: operations["mark_conversation_read_chat_conversations__peer_id__read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/chat/messages/{peer_id}": {
         parameters: {
             query?: never;
@@ -324,6 +341,23 @@ export interface paths {
         post: operations["create_block_social_blocks__target_user_id__post"];
         /** Delete Block */
         delete: operations["delete_block_social_blocks__target_user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/social/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Connections */
+        get: operations["list_connections_social_connections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -658,6 +692,30 @@ export interface components {
         Body_upload_photo_users_me_photos_post: {
             /** File */
             file: string;
+        };
+        /** ChatOkResponse */
+        ChatOkResponse: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
+        };
+        /** ConnectionOut */
+        ConnectionOut: {
+            /**
+             * Connected At
+             * Format: date-time
+             */
+            connected_at: string;
+            /** First Name */
+            first_name: string;
+            /** Id */
+            id: number;
+            /** Last Name */
+            last_name: string;
+            /** Username */
+            username: string;
         };
         /** CurrentUserResponse */
         CurrentUserResponse: {
@@ -1026,6 +1084,8 @@ export interface components {
         UnreadCountOut: {
             /** Unread Count */
             unread_count: number;
+            /** Unread Messages */
+            unread_messages: number;
         };
         /** UserAccountInput */
         UserAccountInput: {
@@ -1515,11 +1575,53 @@ export interface operations {
             };
         };
     };
+    mark_conversation_read_chat_conversations__peer_id__read_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                peer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatOkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     list_messages_chat_messages__peer_id__get: {
         parameters: {
             query?: {
                 limit?: number;
-                offset?: number;
+                before?: number | null;
             };
             header?: {
                 authorization?: string | null;
@@ -2052,6 +2154,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BlockStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_connections_social_connections_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionOut"][];
                 };
             };
             /** @description Validation Error */

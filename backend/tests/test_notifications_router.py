@@ -49,7 +49,7 @@ class FakeNotificationsService:
         return self.rows[offset:offset + limit]
 
     async def unread_count(self, user_id):
-        return UnreadCountOut(unread_count=1)
+        return UnreadCountOut(unread_count=3, unread_messages=1)
 
     async def mark_read(self, user_id, notification_id):
         if notification_id != 1:
@@ -89,14 +89,14 @@ class TestNotificationsRouter:
         }
         assert "user_id" not in body[0]
 
-    def test_should_return_unread_count(self, override_notifications):
+    def test_should_return_the_unread_count_and_the_unread_messages(self, override_notifications):
         token = make_token(1)
         response = client.get(
             "/notifications/unread-count",
             headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == 200
-        assert response.json()["unread_count"] == 1
+        assert response.json() == {"unread_count": 3, "unread_messages": 1}
 
     def test_should_mark_read(self, override_notifications):
         token = make_token(1)
