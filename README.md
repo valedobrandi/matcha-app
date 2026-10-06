@@ -16,7 +16,7 @@ Migrations run when the backend container starts.
 
 ## Seed demo profiles
 
-Download the synthetic face pool once (about 210 MB, kept out of git in `backend/seed_assets/`), then seed with the stack running, on a fresh database (the evaluation needs at least 500 profiles):
+To see real faces locally, download the synthetic face pool once (about 210 MB, kept out of git in `backend/seed_assets/`); without it the photos are empty placeholders. Then seed with the stack running, on a fresh database (the evaluation needs at least 500 profiles):
 
 ```
 python3 backend/scripts/download_seed_faces.py

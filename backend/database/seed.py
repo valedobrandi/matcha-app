@@ -34,6 +34,7 @@ from modules.users.repository import UPLOAD_DIR
 FACES_DIR = Path(__file__).resolve().parent.parent / "seed_assets" / "faces"
 FACE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 PHOTOS_PER_USER = 2
+MISSING_FACE_URL = "/uploads/seed-face-missing.png"
 
 GENDERS = ["male", "female", "other"]
 PREFERENCES = ["man", "woman", "bisexual"]
@@ -152,10 +153,12 @@ def _load_faces(user_count: int) -> list[Path]:
     faces = sorted(path for path in FACES_DIR.glob("*") if path.suffix.lower() in FACE_SUFFIXES)
     needed = user_count * PHOTOS_PER_USER
     if len(faces) < needed:
-        raise SystemExit(
-            f"Need {needed} face images in {FACES_DIR}, found {len(faces)}. "
+        print(
+            f"WARNING: need {needed} face images in {FACES_DIR}, found {len(faces)}. "
+            f"Photo rows will point at {MISSING_FACE_URL}, which has no image. "
             "Run: python scripts/download_seed_faces.py"
         )
+        return []
     return faces
 
 
@@ -165,10 +168,13 @@ async def _seed_user_photos(conn, user_ids, faces) -> None:
     rows = []
     for user_index, user_id in enumerate(user_ids):
         for position in range(PHOTOS_PER_USER):
-            face = faces[user_index * PHOTOS_PER_USER + position]
-            file_name = f"{uuid.uuid4()}{face.suffix.lower()}"
-            shutil.copyfile(face, UPLOAD_DIR / file_name)
-            rows.append((user_id, f"/uploads/{file_name}", position == 0))
+            url = MISSING_FACE_URL
+            if faces:
+                face = faces[user_index * PHOTOS_PER_USER + position]
+                file_name = f"{uuid.uuid4()}{face.suffix.lower()}"
+                shutil.copyfile(face, UPLOAD_DIR / file_name)
+                url = f"/uploads/{file_name}"
+            rows.append((user_id, url, position == 0))
     await conn.executemany(
         "INSERT INTO user_photos (user_id, url, is_profile_photo) VALUES ($1, $2, $3)",
         rows,
