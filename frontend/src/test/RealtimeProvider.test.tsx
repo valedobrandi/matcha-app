@@ -10,6 +10,8 @@ import { server } from './server'
 import { makeAuthValue } from './renderWithAuth'
 
 const realtime = ws.link(WS_URL)
+const PING = '{"type":"ping","payload":null}'
+const PONG = '{"type":"pong","payload":null}'
 
 type RealtimeClient = WebSocketHandlerConnection['client']
 
@@ -127,5 +129,54 @@ describe('RealtimeProvider', () => {
         await vi.advanceTimersByTimeAsync(60_000)
 
         expect(connections).toBe(1)
+    })
+
+    it('does reconnect when the server stops answering pings', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        let connections = 0
+        server.use(realtime.addEventListener('connection', () => {
+            connections += 1
+        }))
+
+        renderProvider()
+        await waitFor(() => expect(connections).toBe(1))
+
+        await vi.advanceTimersByTimeAsync(31_000)
+
+        await waitFor(() => expect(connections).toBe(2))
+    })
+
+    it('does keep the connection while the server answers pings', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        let connections = 0
+        server.use(realtime.addEventListener('connection', ({ client }) => {
+            connections += 1
+            client.addEventListener('message', event => {
+                if (event.data === PING) client.send(PONG)
+            })
+        }))
+
+        renderProvider()
+        await waitFor(() => expect(connections).toBe(1))
+
+        await vi.advanceTimersByTimeAsync(60_000)
+
+        expect(connections).toBe(1)
+    })
+
+    it('does check the connection at once when the tab becomes visible', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        let connections = 0
+        server.use(realtime.addEventListener('connection', () => {
+            connections += 1
+        }))
+
+        const queryClient = renderProvider()
+        await expectNotificationsRefetched(queryClient)
+        document.dispatchEvent(new Event('visibilitychange'))
+
+        await vi.advanceTimersByTimeAsync(6000)
+
+        await waitFor(() => expect(connections).toBe(2))
     })
 })

@@ -3,6 +3,9 @@ from core.ws_hub import hub, decode_user_id_from_token
 
 realtime_router = APIRouter(tags=["realtime"])
 
+PING = '{"type":"ping","payload":null}'
+PONG = '{"type":"pong","payload":null}'
+
 
 @realtime_router.websocket("/ws")
 async def websocket_endpoint(
@@ -17,8 +20,8 @@ async def websocket_endpoint(
     await hub.connect(user_id, websocket)
     try:
         while True:
-            # Keepalive / ignore client payloads — server pushes events.
-            await websocket.receive_text()
+            if await websocket.receive_text() == PING:
+                await websocket.send_text(PONG)
     except WebSocketDisconnect:
         hub.disconnect(user_id, websocket)
     except Exception:

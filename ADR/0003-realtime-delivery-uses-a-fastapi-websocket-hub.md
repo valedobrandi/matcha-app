@@ -27,6 +27,9 @@ never accepted. The email outbox remains a separate channel and is unchanged.
 [ADR-0011](0011-one-socket-per-tab-feeds-notifications-into-the-query-cache.md) (Open) changes
 "one connection per user" to one connection per open tab: the hub pushes each event to all of a
 user's sockets.
+It also adds the only message a client sends: `{"type":"ping","payload":null}`, which the
+server answers with `{"type":"pong","payload":null}` on the same socket, so a tab can tell a
+dead socket from a quiet one.
 
 ## Status
 
