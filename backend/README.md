@@ -36,7 +36,7 @@ For discovery/search demos you need enough profiles (≥500 for subject eval).
 python scripts/download_seed_faces.py
 ```
 
-   The seed gives each user 2 photos from it (1,790 faces, so up to 895 users). If the pool is missing or too small it still inserts the photo rows, so profiles count as complete, but prints a warning and points them at `/uploads/seed-face-missing.png`, which has no image. CI relies on this and does not download the pool. The faces are the [StyleGAN3 Synthetic Face Image Dataset](https://zenodo.org/records/18177207), CC BY-NC 4.0 (non-commercial use only), minus the faces listed in `scripts/seed_faces_excluded.txt`.
+   The seed gives each user 2 photos from it (1,790 faces, so up to 895 users without repeats). Without the pool it uses the 55 faces committed in `database/seed_faces/` (resized JPEGs), so faces repeat across users and the seed prints a warning. CI relies on this and downloads nothing. The faces are the [StyleGAN3 Synthetic Face Image Dataset](https://zenodo.org/records/18177207), CC BY-NC 4.0 (non-commercial use only), minus the faces listed in `scripts/seed_faces_excluded.txt`. The committed faces are a resized JPEG subset of the same dataset, shared under the same licence.
 3. From `backend/` with the venv active and `DATABASE_URL` set:
 
 ```bash
