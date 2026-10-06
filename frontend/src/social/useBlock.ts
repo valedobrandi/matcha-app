@@ -2,6 +2,7 @@ import { useAuth } from "@/auth/useAuth";
 import * as socialApi from "@/api/social"
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toServerMessage } from "@/hooks/toServerMessage";
+import { NOTIFICATIONS_KEY, UNREAD_COUNT_KEY } from "@/notifications/queryKeys";
 
 type BlockAction = { targetId: number, blocked: boolean }
 
@@ -19,7 +20,7 @@ export function useBlock() {
         onSuccess: () => Promise.all(
             [
                 "relationship", "blocks", "suggested-profiles", "search-profiles", "search-list",
-                "visitors", "likes-received", "me",
+                "visitors", "likes-received", "me", NOTIFICATIONS_KEY, UNREAD_COUNT_KEY,
             ].map(
                 queryKey => queryClient.invalidateQueries({ queryKey: [queryKey] })
             )
