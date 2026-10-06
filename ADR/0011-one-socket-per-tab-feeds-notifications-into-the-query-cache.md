@@ -38,6 +38,10 @@ socket nor a notification screen, and three gaps stand in the way:
   the access token (`/ws?token=`, ADR-0003). It reconnects with a backoff from 1 s capped at 5 s,
   which resets only once a connection has stayed up for 10 s. When the server closes with code
   1008 (invalid or expired token), it logs out, as an HTTP 401 does.
+- **Heartbeat:** the client sends `{"type":"ping","payload":null}` every 25 s, and at once when
+  the tab becomes visible; the server answers `{"type":"pong","payload":null}` on the same
+  socket. Any message proves the socket is alive. If none arrives within 5 s of a ping, the
+  client drops the socket without waiting for the close handshake and reconnects.
 - **Query cache:** socket events go into the TanStack Query cache. A `notification` event marks
   the unread count and the `notifications` list stale, so a mounted badge or list fetches them
   again. The server stores the notification before it pushes it, so that fetch includes it, and
@@ -74,6 +78,13 @@ returns. Flat fields (`actor_username`, ...) were rejected too: the actor is one
 shows and links to (`/users/{id}`), and a nested object keeps the field names of the other user
 cards.
 
+For the heartbeat, the client pings and the server answers, as Phoenix does. Having the server
+ping each socket on a timer and the client watch for silence, as Socket.IO does, was rejected:
+the tab is the side that needs to know the socket is alive, and the server stays a stateless
+echo with no timer per socket. Accepting the gap was rejected too: after a sleep or a network
+switch, a socket can stay open in the tab while no event reaches it, and the client never finds
+out.
+
 ## Argument
 
 The query cache is already where this app keeps server state; mutations such as `useBlock`
@@ -91,17 +102,18 @@ store. Fan-out in the hub is a few lines and makes all tabs behave the same.
   checks both on a real Postgres. `frontend/src/types/api.d.ts` is regenerated.
 - Frontend tests intercept the socket with MSW (`ws.link`): a pushed notification and every open
   mark the cached count and list stale, the backoff grows to 5 s and resets after a stable
-  connection, and code 1008 logs out. No screen reads these queries until the bell and the list
-  exist.
+  connection, code 1008 logs out, an unanswered ping (25 s, or at once when the tab becomes
+  visible) reconnects, and an answered one keeps the socket. `test_ws_router.py` checks that
+  the server answers a ping. No screen reads these queries until the bell and the list exist.
 - Delivery against the 10-second budget (ADR-0003): 13 ms from a visit request to the frame
   arriving in the tab (not a rendered badge), measured locally in headless Chrome on 2026-10-06.
   After an outage, the next attempt comes at most 5 s after the server is back, so the refetch
   lands within the budget.
 - The hub lives in process memory, so the backend runs one uvicorn worker (`backend/Dockerfile`,
   `docker-compose.yml`). With more workers, a push would reach only the sockets of its worker.
-- Open: a half-open socket (after a sleep or a network switch) is not detected, because the client
-  never sends. TanStack's refetch on window focus and on reconnect, left on in
-  `createQueryClient`, refresh the data but not the socket.
+- A half-open socket (after a sleep or a network switch) is detected within 30 s (25 s to the
+  next ping, 5 s for the pong), or within 5 s of the tab becoming visible, and then replaced
+  through the usual reconnect: 1 s after a connection that stayed up, so about 6 s after waking.
 - The chat screen ([ADR-0012](0012-chat-lists-connections-and-uses-message-notifications-as-unread.md))
   uses the same provider for `chat.message` events.
 

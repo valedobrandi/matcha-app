@@ -9,6 +9,9 @@ const INVALID_TOKEN_CLOSE_CODE = 1008
 const FIRST_RECONNECT_DELAY_MS = 1000
 const MAX_RECONNECT_DELAY_MS = 5000
 const STABLE_CONNECTION_MS = 10_000
+const PING = JSON.stringify({ type: "ping", payload: null })
+const PING_INTERVAL_MS = 25_000
+const PONG_TIMEOUT_MS = 5000
 
 function reconnectDelay(attempt: number): number {
     return Math.min(FIRST_RECONNECT_DELAY_MS * 2 ** attempt, MAX_RECONNECT_DELAY_MS)
@@ -30,36 +33,74 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         if (!accessToken) return
         let socket: WebSocket
         let attempt = 0
+        let openedAt: number | undefined
         let retryTimer: ReturnType<typeof setTimeout> | undefined
+        let pingTimer: ReturnType<typeof setInterval> | undefined
+        let pongTimer: ReturnType<typeof setTimeout> | undefined
         let stopped = false
 
+        const stopPinging = () => {
+            clearInterval(pingTimer)
+            clearTimeout(pongTimer)
+            pongTimer = undefined
+        }
+
+        const scheduleReconnect = () => {
+            if (openedAt !== undefined && Date.now() - openedAt >= STABLE_CONNECTION_MS) attempt = 0
+            retryTimer = setTimeout(connect, reconnectDelay(attempt))
+            attempt += 1
+        }
+
+        const abandonSocket = () => {
+            stopPinging()
+            socket.onmessage = null
+            socket.onclose = null
+            socket.close()
+            scheduleReconnect()
+        }
+
+        const ping = () => {
+            if (socket.readyState !== WebSocket.OPEN || pongTimer !== undefined) return
+            socket.send(PING)
+            pongTimer = setTimeout(abandonSocket, PONG_TIMEOUT_MS)
+        }
+
+        const pingWhenVisible = () => {
+            if (document.visibilityState === "visible") ping()
+        }
+
         const connect = () => {
-            let openedAt: number | undefined
+            openedAt = undefined
             socket = new WebSocket(`${WS_URL}?token=${encodeURIComponent(accessToken)}`)
             socket.onopen = () => {
                 openedAt = Date.now()
+                pingTimer = setInterval(ping, PING_INTERVAL_MS)
                 refetchNotifications(queryClient)
             }
             socket.onmessage = message => {
+                clearTimeout(pongTimer)
+                pongTimer = undefined
                 const event = JSON.parse(message.data) as { type: string }
                 if (event.type === "notification") refetchNotifications(queryClient)
             }
             socket.onclose = event => {
+                stopPinging()
                 if (stopped) return
                 if (event.code === INVALID_TOKEN_CLOSE_CODE) {
                     logout()
                     return
                 }
-                if (openedAt !== undefined && Date.now() - openedAt >= STABLE_CONNECTION_MS) attempt = 0
-                retryTimer = setTimeout(connect, reconnectDelay(attempt))
-                attempt += 1
+                scheduleReconnect()
             }
         }
         connect()
+        document.addEventListener("visibilitychange", pingWhenVisible)
 
         return () => {
             stopped = true
             clearTimeout(retryTimer)
+            stopPinging()
+            document.removeEventListener("visibilitychange", pingWhenVisible)
             // Closing a socket that is still connecting makes the browser log a warning.
             if (socket.readyState === WebSocket.CONNECTING) socket.onopen = () => socket.close()
             else socket.close()
