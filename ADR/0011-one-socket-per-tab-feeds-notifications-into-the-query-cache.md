@@ -30,9 +30,9 @@ socket nor a notification screen, and three gaps stand in the way:
 
 ## Decision
 
-- **Actor names:** `NotificationOut` carries the actor's `username`, `first_name` and
-  `last_name`, read in the same query as the list (as `VisitorOut` does) and sent in the live
-  push.
+- **Actor names:** `NotificationOut` carries an `actor` object (`id`, `username`, `first_name`,
+  `last_name`) in place of `actor_id`. The list reads it in the same query (as `VisitorOut`
+  does), and the insert returns it, so the live push carries it too.
 - **Every tab:** the hub keeps every open socket of a user and pushes each event to all of them.
 - **One client:** a `RealtimeProvider` in the authenticated layout opens one socket per tab with
   the access token (`/ws?token=`, ADR-0003). It reconnects with a capped backoff and stops when
@@ -66,7 +66,9 @@ The older tab then stops receiving events without telling the user.
 
 For actor names, fetching `GET /users/{id}` per actor (ADR-0002) was rejected: it costs one
 request per actor in every list, and a live notification cannot show a name until that request
-returns.
+returns. Flat fields (`actor_username`, ...) were rejected too: the actor is one thing the screen
+shows and links to (`/users/{id}`), and a nested object keeps the field names of the other user
+cards.
 
 ## Argument
 
@@ -78,8 +80,8 @@ store. Fan-out in the hub is a few lines and makes all tabs behave the same.
 
 - The hub maps each user to a set of sockets; `test_ws_hub.py` covers two sockets for one user
   and closing one of them.
-- The notification list and unread queries join `users`; regenerate
-  `frontend/src/types/api.d.ts`.
+- The notification list query and the insert join `users`; `test_notifications_integration.py`
+  checks both on a real Postgres. `frontend/src/types/api.d.ts` is regenerated.
 - Frontend tests intercept the socket with MSW (`ws.link`, msw 2.15): a pushed notification
   updates the list and the badge, a reconnect refetches, and code 1008 stops reconnecting.
 - Measure delivery against the 10-second budget in the pull request, as ADR-0003 asks.

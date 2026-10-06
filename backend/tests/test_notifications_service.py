@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, UTC
 from modules.notifications.service import NotificationsService
-from modules.notifications.schemas import NotificationOut
+from modules.notifications.schemas import NotificationActor, NotificationOut
 from modules.notifications.exceptions import NotificationNotFoundException
 
 
@@ -14,7 +14,9 @@ class FakeRepo:
         row = NotificationOut(
             id=self._next_id,
             type=type,
-            actor_id=actor_id,
+            actor=NotificationActor(
+                id=actor_id, username=f"user{actor_id}", first_name="First", last_name="Last"
+            ),
             entity_id=entity_id,
             read_at=None,
             created_at=datetime.now(UTC),
@@ -50,15 +52,39 @@ class FakeRepo:
         )
 
 
+class FakeHub:
+    def __init__(self):
+        self.pushed = []
+
+    async def push(self, user_id, envelope):
+        self.pushed.append((user_id, envelope))
+
+
 @pytest.mark.asyncio
 async def test_should_create_row_when_event():
     repo = FakeRepo()
     service = NotificationsService(repo)
     result = await service.create_event(user_id=2, type="liked", actor_id=1)
     assert result.type == "liked"
-    assert result.actor_id == 1
+    assert result.actor.id == 1
     assert result.read_at is None
     assert len(repo.rows) == 1
+
+
+@pytest.mark.asyncio
+async def test_should_push_the_notification_with_its_actor_when_an_event_is_created():
+    hub = FakeHub()
+    service = NotificationsService(FakeRepo(), hub=hub)
+    await service.create_event(user_id=2, type="liked", actor_id=1)
+    [(user_id, envelope)] = hub.pushed
+    assert user_id == 2
+    assert envelope["type"] == "notification"
+    assert envelope["payload"]["actor"] == {
+        "id": 1,
+        "username": "user1",
+        "first_name": "First",
+        "last_name": "Last",
+    }
 
 
 @pytest.mark.asyncio
