@@ -122,3 +122,7 @@ tools/preview/shots/
 skills-lock.json
 pack-code.sh
 pack-diff.sh
+open-pr.sh
+review-index.md
+file-report.sh
+code-review-report/

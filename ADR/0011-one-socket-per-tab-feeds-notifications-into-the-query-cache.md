@@ -35,12 +35,15 @@ socket nor a notification screen, and three gaps stand in the way:
   does), and the insert returns it, so the live push carries it too.
 - **Every tab:** the hub keeps every open socket of a user and pushes each event to all of them.
 - **One client:** a `RealtimeProvider` in the authenticated layout opens one socket per tab with
-  the access token (`/ws?token=`, ADR-0003). It reconnects with a capped backoff and stops when
-  the server closes with code 1008 (invalid token).
-- **Query cache:** socket events go into the TanStack Query cache. A `notification` event raises
-  the cached unread count at once and marks the `notifications` list stale, so an open list
-  fetches again; the cache never depends on how the list is paged. After a reconnect, both
-  queries are fetched again, because events may have been missed.
+  the access token (`/ws?token=`, ADR-0003). It reconnects with a backoff from 1 s capped at 5 s,
+  which resets only once a connection has stayed up for 10 s. When the server closes with code
+  1008 (invalid or expired token), it logs out, as an HTTP 401 does.
+- **Query cache:** socket events go into the TanStack Query cache. A `notification` event marks
+  the unread count and the `notifications` list stale, so a mounted badge or list fetches them
+  again. The server stores the notification before it pushes it, so that fetch includes it, and
+  the badge always shows the server's count; the cache never depends on how the list is paged.
+  Every time the socket opens, the first time included, both queries are fetched again, because
+  events may have been missed before the socket joined the hub.
 - **Screens:** the header shows a bell with the unread count on every page. A `/notifications`
   page lists them ("Bob liked you"). Opening one marks it read and goes to the actor's profile,
   or to the chat for a message. "Mark all as read" calls `read-all`.
@@ -86,10 +89,19 @@ store. Fan-out in the hub is a few lines and makes all tabs behave the same.
   review.
 - The notification list query and the insert join `users`; `test_notifications_integration.py`
   checks both on a real Postgres. `frontend/src/types/api.d.ts` is regenerated.
-- Frontend tests intercept the socket with MSW (`ws.link`, msw 2.15): a pushed notification
-  updates the list and the badge, a reconnect refetches, and code 1008 stops reconnecting.
-- Delivery against the 10-second budget (ADR-0003): 13 ms from a visit to the frame in the tab,
-  measured locally in headless Chrome on 2026-10-06.
+- Frontend tests intercept the socket with MSW (`ws.link`): a pushed notification and every open
+  mark the cached count and list stale, the backoff grows to 5 s and resets after a stable
+  connection, and code 1008 logs out. No screen reads these queries until the bell and the list
+  exist.
+- Delivery against the 10-second budget (ADR-0003): 13 ms from a visit request to the frame
+  arriving in the tab (not a rendered badge), measured locally in headless Chrome on 2026-10-06.
+  After an outage, the next attempt comes at most 5 s after the server is back, so the refetch
+  lands within the budget.
+- The hub lives in process memory, so the backend runs one uvicorn worker (`backend/Dockerfile`,
+  `docker-compose.yml`). With more workers, a push would reach only the sockets of its worker.
+- Open: a half-open socket (after a sleep or a network switch) is not detected, because the client
+  never sends. TanStack's refetch on window focus and on reconnect, left on in
+  `createQueryClient`, refresh the data but not the socket.
 - The chat screen ([ADR-0012](0012-chat-lists-connections-and-uses-message-notifications-as-unread.md))
   uses the same provider for `chat.message` events.
 
