@@ -169,7 +169,7 @@ class SocialService:
         return RelationshipResponse(
             liked_by_me=flags.liked_by_me,
             liked_you=flags.liked_you,
-            connected=flags.liked_by_me and flags.liked_you,
+            connected=flags.connected,
             blocked_by_me=flags.blocked_by_me,
             last_connection=last_connection,
             is_online=self._is_online(last_connection),

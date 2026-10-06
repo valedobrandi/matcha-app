@@ -92,24 +92,32 @@ class InAppNotificationsRepository:
             return 0
 
     async def mark_read_by_actor(
-        self, user_id: int, actor_id: int, type: NotificationType
+        self, user_id: int, actor_id: int, type: NotificationType, up_to_entity_id: int
     ) -> None:
         await self.connection.execute(
             """
             UPDATE in_app_notifications
             SET read_at = NOW()
-            WHERE user_id = $1 AND actor_id = $2 AND type = $3 AND read_at IS NULL
+            WHERE user_id = $1 AND actor_id = $2 AND type = $3
+              AND entity_id <= $4 AND read_at IS NULL
             """,
             user_id,
             actor_id,
             type,
+            up_to_entity_id,
         )
 
     async def unread_count(self, user_id: int) -> UnreadCountOut:
         row = await self.connection.fetchrow(
             """
             SELECT COUNT(*)::int AS unread_count,
-                   COUNT(*) FILTER (WHERE n.type = 'message')::int AS unread_messages
+                   COUNT(*) FILTER (
+                     WHERE n.type = 'message'
+                       AND EXISTS (
+                         SELECT 1 FROM connections c
+                         WHERE c.user_id = $1 AND c.other_user_id = n.actor_id
+                       )
+                   )::int AS unread_messages
             FROM in_app_notifications n
             WHERE n.user_id = $1 AND n.read_at IS NULL
               AND NOT EXISTS (

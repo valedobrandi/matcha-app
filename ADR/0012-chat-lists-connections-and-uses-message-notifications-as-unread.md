@@ -33,14 +33,23 @@ lacks three things:
   their display names, newest connection first. Social owns "connected"
   ([ADR-0002](0002-chat-and-in-app-notifications-are-separate-modules-fed.md)), and the block
   rule comes from `blocked_pairs` ([ADR-0008](0008-the-blocked-pairs-view-owns-the-block-rule.md)).
+- **One definition of a connection:** the `connections` view (one row per direction of two
+  active likes, with `connected_at`) is the only place that says who is connected. The list, the
+  chat check, the relationship flags and the unread-message count all read it, as every block
+  check reads `blocked_pairs`. A block does not change a connection (ADR-0006); the readers that
+  hide blocked users still apply `blocked_pairs` themselves.
 - **History:** `GET /chat/messages/{peer_id}?before={message_id}&limit=50` returns the latest
   messages older than `before` (or the latest ones without it), newest first. The screen shows
-  them in time order and loads older pages on scroll.
+  them in time order and loads older pages on scroll. An index on the pair and the message id
+  lets each page read only its own rows.
 - **Unread:** the `message` notifications are the unread signal; messages get no read state of
-  their own. Opening a conversation calls `POST /chat/conversations/{peer_id}/read`, which marks
-  that peer's unread `message` notifications read through the notifications service. Chat
-  already makes the same kind of call to create them. `GET /notifications/unread-count` also
-  returns `unread_messages`, so the header can mark the chat link.
+  their own. Opening a conversation calls `POST /chat/conversations/{peer_id}/read` with the id
+  of the newest message the screen shows (`up_to_message_id`). It marks that peer's unread
+  `message` notifications up to that message read, through the notifications service, so a
+  message the screen has not shown yet stays unread. Chat already makes the same kind of call to
+  create them. `GET /notifications/unread-count` also returns `unread_messages`, so the header can
+  mark the chat link. It counts only messages from people you can still chat with (connected,
+  no block): the same people the read request accepts.
 - **Live:** each message is pushed as `chat.message` to both users, so every open tab of either
   user shows it ([ADR-0011](0011-one-socket-per-tab-feeds-notifications-into-the-query-cache.md)).
   The open conversation adds it through the query cache.
@@ -76,13 +85,15 @@ where "connected" is already computed.
 
 ## Implications
 
-- `SocialRepository` lists connections from mutual active likes minus `blocked_pairs`, with an
+- `SocialRepository` lists connections from the `connections` view minus `blocked_pairs`, with an
   integration test on Postgres: a blocked pair is left out, and unblocking brings it back
-  (ADR-0006).
+  (ADR-0006). Another test checks that the list, `is_connected` and the relationship flags agree.
+- Migration 0016 adds the pair and id index. The older pair index on `created_at` no longer
+  serves any query.
 - `ChatRepository.list_messages` pages with `before`, newest first; router and service tests
   follow, and `frontend/src/types/api.d.ts` is regenerated.
-- The notifications module gains "mark read by actor and type" and `unread_messages` in
-  `UnreadCountOut`.
+- The notifications module gains "mark read by actor and type, up to an entity id" and
+  `unread_messages` in `UnreadCountOut`.
 - `ChatService` pushes `chat.message` to the sender as well as the recipient.
 - Frontend tests use MSW for HTTP and the socket: sending, receiving a live message, and
   opening a conversation that marks its message notifications read.

@@ -15,7 +15,7 @@ class ChatService:
         self,
         chat_repo: ChatRepository,
         social_repo: Any,
-        notifier: Any = None,
+        notifier: Any,
         hub: Any = None,
     ):
         self.chat_repo = chat_repo
@@ -35,18 +35,17 @@ class ChatService:
     ) -> MessageOut:
         await self._ensure_can_chat(me, peer)
         message = await self.chat_repo.insert_message(me, peer, payload.body)
-        if self.notifier is not None:
-            try:
-                await self.notifier.create_event(
-                    user_id=peer,
-                    type="message",
-                    actor_id=me,
-                    entity_id=message.id,
-                )
-            except Exception:
-                logger.exception(
-                    "Failed to emit message notification for chat %s", message.id
-                )
+        try:
+            await self.notifier.create_event(
+                user_id=peer,
+                type="message",
+                actor_id=me,
+                entity_id=message.id,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to emit message notification for chat %s", message.id
+            )
         await self._push_chat(peer, message)
         await self._push_chat(me, message)
         return message
@@ -57,9 +56,16 @@ class ChatService:
         await self._ensure_can_chat(me, peer)
         return await self.chat_repo.list_messages(me, peer, limit, before)
 
-    async def mark_conversation_read(self, me: int, peer: int) -> ChatOkResponse:
+    async def mark_conversation_read(
+        self, me: int, peer: int, up_to_message_id: int
+    ) -> ChatOkResponse:
         await self._ensure_can_chat(me, peer)
-        await self.notifier.mark_read_by_actor(user_id=me, actor_id=peer, type="message")
+        await self.notifier.mark_read_by_actor(
+            user_id=me,
+            actor_id=peer,
+            type="message",
+            up_to_entity_id=up_to_message_id,
+        )
         return ChatOkResponse()
 
     async def _push_chat(self, user_id: int, message: MessageOut) -> None:

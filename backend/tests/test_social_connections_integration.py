@@ -73,3 +73,26 @@ async def test_should_bring_a_connection_back_when_the_block_is_lifted(connectio
     await add_block(connection, me, peer, status="inactive")
 
     assert await connection_ids(connection, me) == [peer]
+
+
+async def test_should_agree_on_who_is_connected_in_the_list_the_check_and_the_relationship(
+    connection, token
+):
+    me = await add_user(connection, token, "me")
+    mutual = await add_user(connection, token, "mutual")
+    one_way = await add_user(connection, token, "oneway")
+    lapsed = await add_user(connection, token, "lapsed")
+    await connect(connection, me, mutual)
+    await add_like(connection, me, one_way)
+    await add_like(connection, me, lapsed)
+    await add_like(connection, lapsed, me, status="inactive")
+    social = SocialRepository(connection)
+
+    listed = set(await connection_ids(connection, me))
+    checked = {u for u in (mutual, one_way, lapsed) if await social.is_connected(me, u)}
+    flagged = {
+        u for u in (mutual, one_way, lapsed)
+        if (await social.get_relationship_flags(me, u)).connected
+    }
+
+    assert listed == checked == flagged == {mutual}

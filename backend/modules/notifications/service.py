@@ -53,9 +53,9 @@ class NotificationsService:
         return NotificationOkResponse()
 
     async def mark_read_by_actor(
-        self, user_id: int, actor_id: int, type: NotificationType
+        self, user_id: int, actor_id: int, type: NotificationType, up_to_entity_id: int
     ) -> None:
-        await self.repository.mark_read_by_actor(user_id, actor_id, type)
+        await self.repository.mark_read_by_actor(user_id, actor_id, type, up_to_entity_id)
 
     async def unread_count(self, user_id: int) -> UnreadCountOut:
         return await self.repository.unread_count(user_id)
