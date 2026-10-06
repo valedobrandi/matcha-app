@@ -34,3 +34,4 @@ Status vocabulary: `Open` · `Pending` · `Decided` · `Approved` · `Superseded
 | [0014](0014-frontend-server-state-goes-through-tanstack-query.md) | Frontend server state goes through TanStack Query | Decided | Frontend | 2026-10-04 |
 | [0015](0015-backend-models-are-the-only-source-of-the-api-contract.md) | Backend models are the only source of the API contract | Decided | Backend, Frontend | 2026-10-04 |
 | [0016](0016-one-playwright-journey-checks-the-real-ui.md) | One Playwright journey checks the real UI | Decided | Frontend | 2026-10-04 |
+| [0017](0017-discovery-cards-carry-the-profile-photo-url.md) | Discovery cards carry the profile photo URL | Open | Backend, Frontend | 2026-10-06 |
