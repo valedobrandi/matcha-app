@@ -20,12 +20,21 @@ import argparse
 import asyncio
 import os
 import random
+import shutil
+import uuid
+from pathlib import Path
 
 import asyncpg
 import bcrypt
 from faker import Faker
 
 from core.config import settings
+from modules.users.repository import UPLOAD_DIR
+
+FACES_DIR = Path(__file__).resolve().parent.parent / "seed_assets" / "faces"
+FACE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
+COMMITTED_FACES_DIR = Path(__file__).resolve().parent / "seed_faces"
+PHOTOS_PER_USER = 2
 
 GENDERS = ["male", "female", "other"]
 PREFERENCES = ["man", "woman", "bisexual"]
@@ -55,6 +64,7 @@ async def seed(user_count: int) -> None:
     Faker.seed(42)
     random.seed(42)
 
+    faces = _load_faces(user_count)
     password_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
     conn = await asyncpg.connect(dsn=settings.DATABASE_URL)
@@ -62,7 +72,7 @@ async def seed(user_count: int) -> None:
         user_ids = await _seed_users(conn, fake, user_count, username, password_hash)
         tag_ids = await _seed_tags(conn)
         await _seed_user_tags(conn, user_ids, tag_ids)
-        await _seed_user_photos(conn, user_ids)
+        await _seed_user_photos(conn, user_ids, faces)
         await _seed_likes(conn, user_ids)
         await _seed_visits(conn, user_ids)
         await _seed_blocks_and_reports(conn, user_ids, fake)
@@ -139,16 +149,31 @@ async def _seed_user_tags(conn, user_ids, tag_ids) -> None:
     )
 
 
-async def _seed_user_photos(conn, user_ids) -> None:
+def _list_faces(directory: Path) -> list[Path]:
+    return sorted(path for path in directory.glob("*") if path.suffix.lower() in FACE_SUFFIXES)
+
+
+def _load_faces(user_count: int) -> list[Path]:
+    faces = _list_faces(FACES_DIR) or _list_faces(COMMITTED_FACES_DIR)
+    needed = user_count * PHOTOS_PER_USER
+    if len(faces) < needed:
+        print(
+            f"WARNING: {len(faces)} faces for {needed} photos, so faces repeat across users. "
+            "python scripts/download_seed_faces.py downloads 1,790 distinct faces."
+        )
+    return faces
+
+
+async def _seed_user_photos(conn, user_ids, faces) -> None:
+    random.shuffle(faces)
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     rows = []
-    for user_id in user_ids:
-        photo_count = random.randint(1, 5)
-        for i in range(photo_count):
-            rows.append((
-                user_id,
-                f"https://picsum.photos/seed/matcha-{user_id}-{i}/500/500",
-                i == 0,
-            ))
+    for user_index, user_id in enumerate(user_ids):
+        for position in range(PHOTOS_PER_USER):
+            face = faces[(user_index * PHOTOS_PER_USER + position) % len(faces)]
+            file_name = f"{uuid.uuid4()}{face.suffix.lower()}"
+            shutil.copyfile(face, UPLOAD_DIR / file_name)
+            rows.append((user_id, f"/uploads/{file_name}", position == 0))
     await conn.executemany(
         "INSERT INTO user_photos (user_id, url, is_profile_photo) VALUES ($1, $2, $3)",
         rows,
