@@ -88,8 +88,8 @@ where "connected" is already computed.
 - `SocialRepository` lists connections from the `connections` view minus `blocked_pairs`, with an
   integration test on Postgres: a blocked pair is left out, and unblocking brings it back
   (ADR-0006). Another test checks that the list, `is_connected` and the relationship flags agree.
-- Migration 0016 adds the pair and id index. The older pair index on `created_at` no longer
-  serves any query.
+- Migration 0016 replaces the pair index on `created_at`, which no query used any more, with one
+  on the pair and the message id.
 - `ChatRepository.list_messages` pages with `before`, newest first; router and service tests
   follow, and `frontend/src/types/api.d.ts` is regenerated.
 - The notifications module gains "mark read by actor and type, up to an entity id" and
