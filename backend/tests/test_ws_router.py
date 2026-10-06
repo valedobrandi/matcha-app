@@ -5,7 +5,6 @@ from starlette.websockets import WebSocketDisconnect
 import time
 import jwt
 from core.config import settings
-from modules.realtime.controller import PING, PONG
 
 client = TestClient(app)
 
@@ -50,5 +49,5 @@ def test_should_accept_websocket_with_valid_token():
 def test_should_answer_pong_when_client_sends_ping():
     token = make_token(1)
     with client.websocket_connect(f"/ws?token={token}") as websocket:
-        websocket.send_text(PING)
-        assert websocket.receive_text() == PONG
+        websocket.send_text('{"type":"ping","payload":null}')
+        assert websocket.receive_text() == '{"type":"pong","payload":null}'

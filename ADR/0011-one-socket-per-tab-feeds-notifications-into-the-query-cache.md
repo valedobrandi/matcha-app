@@ -38,10 +38,13 @@ socket nor a notification screen, and three gaps stand in the way:
   the access token (`/ws?token=`, ADR-0003). It reconnects with a backoff from 1 s capped at 5 s,
   which resets only once a connection has stayed up for 10 s. When the server closes with code
   1008 (invalid or expired token), it logs out, as an HTTP 401 does.
-- **Heartbeat:** the client sends `{"type":"ping","payload":null}` every 25 s, and at once when
-  the tab becomes visible; the server answers `{"type":"pong","payload":null}` on the same
-  socket. Any message proves the socket is alive. If none arrives within 5 s of a ping, the
-  client drops the socket without waiting for the close handshake and reconnects.
+- **Heartbeat:** the client sends `{"type":"ping","payload":null}` every 5 s, and at once when
+  the tab becomes visible or the browser comes back online; the server answers
+  `{"type":"pong","payload":null}` on the same socket. Any message proves the socket is alive.
+  If none arrives within 3 s of a ping, the client drops the socket without waiting for the
+  close handshake and reconnects. The timings come from the 10-second budget: 5 s to the next
+  ping, 3 s for the pong and 1 s before the reconnect leave about a second for the refetch.
+  The cost is one small frame each way per tab every 5 s.
 - **Query cache:** socket events go into the TanStack Query cache. A `notification` event marks
   the unread count and the `notifications` list stale, so a mounted badge or list fetches them
   again. The server stores the notification before it pushes it, so that fetch includes it, and
@@ -104,9 +107,10 @@ store. Fan-out in the hub is a few lines and makes all tabs behave the same.
   checks both on a real Postgres. `frontend/src/types/api.d.ts` is regenerated.
 - Frontend tests intercept the socket with MSW (`ws.link`): a pushed notification and every open
   mark the cached count and list stale, the backoff grows to 5 s and resets after a stable
-  connection, code 1008 logs out, an unanswered ping (25 s, or at once when the tab becomes
-  visible) reconnects, and an answered one keeps the socket. `test_ws_router.py` checks that
-  the server answers a ping. `NotificationBell.test.tsx` checks that a pushed notification
+  connection, code 1008 logs out, an unanswered ping is replaced within 9 s even when the old
+  socket never finishes closing, the tab becoming visible or the browser coming back online
+  pings at once, and an answered ping keeps the socket. `test_ws_router.py` checks that the
+  server answers the exact ping text a browser sends. `NotificationBell.test.tsx` checks that a pushed notification
   raises the bell's count through the real provider; `NotificationsPage.test.tsx` checks the
   sentences, that opening one marks it read and shows the actor's profile, and that "Mark all
   as read" clears the bell.
@@ -116,9 +120,10 @@ store. Fan-out in the hub is a few lines and makes all tabs behave the same.
   lands within the budget.
 - The hub lives in process memory, so the backend runs one uvicorn worker (`backend/Dockerfile`,
   `docker-compose.yml`). With more workers, a push would reach only the sockets of its worker.
-- A half-open socket (after a sleep or a network switch) is detected within 30 s (25 s to the
-  next ping, 5 s for the pong), or within 5 s of the tab becoming visible, and then replaced
-  through the usual reconnect: 1 s after a connection that stayed up, so about 6 s after waking.
+- A half-open socket (after a sleep or a network switch) is detected within 8 s (5 s to the
+  next ping, 3 s for the pong) and replaced through the usual reconnect, 1 s later after a
+  connection that stayed up, so a notification it swallowed shows up within about 9 s. When the
+  tab becomes visible or the browser comes back online, the ping goes at once: about 4 s.
 - The chat screen ([ADR-0012](0012-chat-lists-connections-and-uses-message-notifications-as-unread.md))
   uses the same provider for `chat.message` events. Until it exists, opening a message
   notification shows the sender's profile instead of the chat.

@@ -44,6 +44,8 @@ async function expectNotificationsRefetched(queryClient: QueryClient) {
 
 afterEach(() => {
     vi.useRealTimers()
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
 })
 
 describe('RealtimeProvider', () => {
@@ -101,6 +103,9 @@ describe('RealtimeProvider', () => {
         server.use(realtime.addEventListener('connection', ({ client }) => {
             clients.push(client)
             if (clients.length === 1) setTimeout(() => client.close())
+            client.addEventListener('message', event => {
+                if (event.data === PING) client.send(PONG)
+            })
         }))
 
         renderProvider()
@@ -131,8 +136,17 @@ describe('RealtimeProvider', () => {
         expect(connections).toBe(1)
     })
 
-    it('does reconnect when the server stops answering pings', async () => {
+    it('does replace a socket that stops answering pings within 9 s without waiting for it to close', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
+        let created = 0
+        vi.stubGlobal('WebSocket', new Proxy(globalThis.WebSocket, {
+            construct(target, args: ConstructorParameters<typeof WebSocket>) {
+                const socket = new target(...args)
+                created += 1
+                if (created === 1) vi.spyOn(socket, 'close').mockImplementation(() => {})
+                return socket
+            },
+        }))
         let connections = 0
         server.use(realtime.addEventListener('connection', () => {
             connections += 1
@@ -140,8 +154,10 @@ describe('RealtimeProvider', () => {
 
         renderProvider()
         await waitFor(() => expect(connections).toBe(1))
+        await vi.advanceTimersByTimeAsync(8000)
+        expect(connections).toBe(1)
 
-        await vi.advanceTimersByTimeAsync(31_000)
+        await vi.advanceTimersByTimeAsync(1000)
 
         await waitFor(() => expect(connections).toBe(2))
     })
@@ -175,7 +191,23 @@ describe('RealtimeProvider', () => {
         await expectNotificationsRefetched(queryClient)
         document.dispatchEvent(new Event('visibilitychange'))
 
-        await vi.advanceTimersByTimeAsync(6000)
+        await vi.advanceTimersByTimeAsync(4000)
+
+        await waitFor(() => expect(connections).toBe(2))
+    })
+
+    it('does check the connection at once when the browser comes back online', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        let connections = 0
+        server.use(realtime.addEventListener('connection', () => {
+            connections += 1
+        }))
+
+        const queryClient = renderProvider()
+        await expectNotificationsRefetched(queryClient)
+        window.dispatchEvent(new Event('online'))
+
+        await vi.advanceTimersByTimeAsync(4000)
 
         await waitFor(() => expect(connections).toBe(2))
     })
