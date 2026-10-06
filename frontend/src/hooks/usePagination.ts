@@ -27,10 +27,10 @@ export function usePagination<TFilters extends {limit: number}, TData>({
             lastPage.length === filters.limit ? lastOffset + filters.limit : undefined,
         enabled: enabled && !!accessToken,
     })
-    const serverError = toServerMessage(query.error)
+    const serverError = toServerMessage(query.error) ?? (query.error ? "Could not load the list, please try it later" : null)
 
     const loadMore = () => {
-        if (query.hasNextPage && !query.isFetching)
+        if (query.hasNextPage && !query.isFetching && !query.isError)
             void query.fetchNextPage()
     }
 

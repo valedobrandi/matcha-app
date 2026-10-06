@@ -105,4 +105,41 @@ describe('usePagination', () => {
         await waitFor(() => expect(result.current.serverError).not.toBeNull())
         expect(result.current.hasMore).toBe(true)
     })
+
+    it('does report a message when the request fails without an API error', async () => {
+        server.use(http.get(SUGGEST_URL, () => HttpResponse.error()))
+
+        const { result } = renderHook(
+            () => useSuggestedProfiles({ limit: 20, sort: undefined, order: undefined }),
+            { wrapper: authWrapper(makeAuthValue()) }
+        )
+
+        await waitFor(() => expect(result.current.serverError).toBe('Could not load the list, please try it later'))
+        expect(result.current.hasMore).toBe(true)
+    })
+
+    it('does not request a failed next page again on its own', async () => {
+        const offsets: string[] = []
+        server.use(
+            http.get(SUGGEST_URL, ({ request }) => {
+                const offset = new URL(request.url).searchParams.get('offset') ?? '0'
+                offsets.push(offset)
+                return offset === '0'
+                    ? HttpResponse.json([makeProfile({ id: 1 }), makeProfile({ id: 2, username: 'bob' })])
+                    : HttpResponse.json({ detail: 'bad page', code: 'INVALID_FILTER' }, { status: 422 })
+            })
+        )
+        const { result } = renderHook(
+            () => useSuggestedProfiles({ limit: 2, sort: undefined, order: undefined }),
+            { wrapper: authWrapper(makeAuthValue()) }
+        )
+        await waitFor(() => expect(result.current.suggestedProfiles).toHaveLength(2))
+
+        act(() => result.current.loadMore())
+        await waitFor(() => expect(result.current.serverError).not.toBeNull())
+        act(() => result.current.loadMore())
+        await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)) })
+
+        expect(offsets).toEqual(['0', '2'])
+    })
 })

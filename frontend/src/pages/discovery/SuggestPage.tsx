@@ -58,7 +58,7 @@ function SuggestPage() {
     const search = useSearchProfiles(advanced, advancedSearch)
     const {suggestedProfiles, serverError, isLoading, hasMore, loadMore} = advancedSearch ? search : suggest
 
-    const sentinelRef = useInfiniteScroll(loadMore)
+    const sentinelRef = useInfiniteScroll(loadMore, isLoading)
 
     const {like, unlike, likeState, serverError: likeError} = useLikes()
 

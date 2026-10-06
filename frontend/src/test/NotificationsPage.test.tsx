@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom'
+import { onlineManager } from '@tanstack/react-query'
 import { server } from './server'
 import { authWrapper, makeAuthValue } from './renderWithAuth'
 import { API_BASE_URL } from '@/api/client'
@@ -16,6 +17,13 @@ function notification(id: number, type: string, readAt: string | null = null) {
 
 class NeverIntersectingObserver {
     observe() {}
+    disconnect() {}
+}
+
+class InViewObserver {
+    callback: (entries: Array<{ isIntersecting: boolean }>) => void
+    constructor(callback: (entries: Array<{ isIntersecting: boolean }>) => void) { this.callback = callback }
+    observe() { this.callback([{ isIntersecting: true }]) }
     disconnect() {}
 }
 
@@ -51,6 +59,7 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.unstubAllGlobals()
+    onlineManager.setOnline(true)
 })
 
 describe('NotificationsPage', () => {
@@ -129,5 +138,52 @@ describe('NotificationsPage', () => {
 
         expect(await screen.findByText('Notifications are unavailable')).toBeInTheDocument()
         expect(screen.queryByText('No notifications yet')).not.toBeInTheDocument()
+    })
+
+    it('does show an error instead of the empty state when the server cannot be reached', async () => {
+        server.use(
+            http.get(`${API_BASE_URL}/notifications`, () => HttpResponse.error()),
+            http.get(`${API_BASE_URL}/notifications/unread-count`, () => HttpResponse.json({ unread_count: 0 })),
+        )
+
+        renderPage()
+
+        expect(await screen.findByText('Could not load the list, please try it later')).toBeInTheDocument()
+        expect(screen.queryByText('No notifications yet')).not.toBeInTheDocument()
+    })
+
+    it('does load the next page while the end of the list stays in view', async () => {
+        vi.stubGlobal('IntersectionObserver', InViewObserver)
+        const offsets: string[] = []
+        const page = (firstId: number, count: number) =>
+            Array.from({ length: count }, (_, index) => notification(firstId + index, 'liked'))
+        server.use(
+            http.get(`${API_BASE_URL}/notifications`, ({ request }) => {
+                const offset = new URL(request.url).searchParams.get('offset') ?? '0'
+                offsets.push(offset)
+                return HttpResponse.json(offset === '0' ? page(1, 20) : page(21, 3))
+            }),
+            http.get(`${API_BASE_URL}/notifications/unread-count`, () => HttpResponse.json({ unread_count: 23 })),
+        )
+
+        renderPage()
+
+        expect(await screen.findByText('No older notifications.')).toBeInTheDocument()
+        expect(offsets).toEqual(['0', '20'])
+        expect(screen.getAllByRole('link', { name: /Bob Smith liked you/ })).toHaveLength(23)
+    })
+
+    it('does keep the loading state while the browser is offline and load the list once it is back', async () => {
+        serveNotifications(() => [], () => 0)
+        onlineManager.setOnline(false)
+
+        renderPage()
+
+        expect(await screen.findByText('Loading notifications')).toBeInTheDocument()
+        expect(screen.queryByText('No notifications yet')).not.toBeInTheDocument()
+
+        onlineManager.setOnline(true)
+
+        expect(await screen.findByText('No notifications yet')).toBeInTheDocument()
     })
 })

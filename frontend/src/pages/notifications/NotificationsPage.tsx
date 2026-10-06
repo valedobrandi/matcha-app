@@ -47,10 +47,10 @@ const NOTIFICATION_KINDS: Record<NotificationOut["type"], { icon: LucideIcon, se
 }
 
 export function NotificationsPage() {
-    const { notifications, serverError, isLoading, loadMore } = useNotifications(PAGE_SIZE)
+    const { notifications, serverError, isLoading, hasMore, loadMore } = useNotifications(PAGE_SIZE)
     const unreadCount = useUnreadCount()
     const { markRead, markAllRead, isMarkingAll, serverError: markError } = useMarkNotificationsRead()
-    const sentinelRef = useInfiniteScroll(loadMore)
+    const sentinelRef = useInfiniteScroll(loadMore, isLoading)
     const error = serverError ?? markError
 
     return (
@@ -74,14 +74,14 @@ export function NotificationsPage() {
                 </Alert>
             )}
 
-            {isLoading && notifications.length === 0 && (
+            {notifications.length === 0 && hasMore && !serverError && (
                 <div className="flex flex-col gap-2.5" aria-busy="true">
                     <span className="sr-only">Loading notifications</span>
                     {[0, 1, 2].map(row => <Skeleton key={row} className="h-14 w-full rounded-lg" />)}
                 </div>
             )}
 
-            {!isLoading && !serverError && notifications.length === 0 && (
+            {notifications.length === 0 && !hasMore && (
                 <Empty className="border">
                     <EmptyHeader>
                         <EmptyMedia variant="icon">
@@ -149,6 +149,9 @@ export function NotificationsPage() {
 
             <div ref={sentinelRef} />
             {isLoading && notifications.length > 0 && <Spinner className="mx-auto" />}
+            {notifications.length > 0 && !hasMore && (
+                <p className="text-center text-sm text-muted-foreground">No older notifications.</p>
+            )}
         </div>
     )
 }

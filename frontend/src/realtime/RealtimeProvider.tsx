@@ -1,8 +1,8 @@
 import { useEffect, type ReactNode } from "react"
-import { useQueryClient, type QueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/auth/useAuth"
 import { WS_URL } from "@/api/client"
-import { NOTIFICATIONS_KEY, UNREAD_COUNT_KEY } from "@/notifications/queryKeys"
+import { invalidateNotifications } from "@/notifications/queryKeys"
 
 // The server closes with 1008 when the token is invalid: reconnecting cannot help.
 const INVALID_TOKEN_CLOSE_CODE = 1008
@@ -15,12 +15,6 @@ const PONG_TIMEOUT_MS = 3000
 
 function reconnectDelay(attempt: number): number {
     return Math.min(FIRST_RECONNECT_DELAY_MS * 2 ** attempt, MAX_RECONNECT_DELAY_MS)
-}
-
-// Events missed while the socket was down are only in the database.
-function refetchNotifications(queryClient: QueryClient) {
-    queryClient.invalidateQueries({ queryKey: [UNREAD_COUNT_KEY] })
-    queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] })
 }
 
 // One socket per tab (ADR-0011). Socket events only update the query cache; screens keep
@@ -75,13 +69,13 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
             socket.onopen = () => {
                 openedAt = Date.now()
                 pingTimer = setInterval(ping, PING_INTERVAL_MS)
-                refetchNotifications(queryClient)
+                invalidateNotifications(queryClient)
             }
             socket.onmessage = message => {
                 clearTimeout(pongTimer)
                 pongTimer = undefined
                 const event = JSON.parse(message.data) as { type: string }
-                if (event.type === "notification") refetchNotifications(queryClient)
+                if (event.type === "notification") invalidateNotifications(queryClient)
             }
             socket.onclose = event => {
                 stopPinging()

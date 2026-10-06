@@ -15,7 +15,7 @@ function LikesReceived() {
     }), [limit])
     const {likesReceivedList, serverError, isLoading, hasMore, loadMore} = useLikesReceived(filters, true)
     
-    const sentinelRef = useInfiniteScroll(loadMore)
+    const sentinelRef = useInfiniteScroll(loadMore, isLoading)
 
     return (
         <>
