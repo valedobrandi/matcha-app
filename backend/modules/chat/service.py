@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List
 from modules.chat.repository import ChatRepository
-from modules.chat.schemas import MessageOut, SendMessageInput
+from modules.chat.schemas import ChatOkResponse, MessageOut, SendMessageInput
 from modules.chat.exceptions import (
     NotConnectedException,
     ChatUserNotFoundException,
@@ -48,13 +48,19 @@ class ChatService:
                     "Failed to emit message notification for chat %s", message.id
                 )
         await self._push_chat(peer, message)
+        await self._push_chat(me, message)
         return message
 
     async def list_messages(
-        self, me: int, peer: int, limit: int, offset: int
+        self, me: int, peer: int, limit: int, before: int | None
     ) -> List[MessageOut]:
         await self._ensure_can_chat(me, peer)
-        return await self.chat_repo.list_messages(me, peer, limit, offset)
+        return await self.chat_repo.list_messages(me, peer, limit, before)
+
+    async def mark_conversation_read(self, me: int, peer: int) -> ChatOkResponse:
+        await self._ensure_can_chat(me, peer)
+        await self.notifier.mark_read_by_actor(user_id=me, actor_id=peer, type="message")
+        return ChatOkResponse()
 
     async def _push_chat(self, user_id: int, message: MessageOut) -> None:
         if self.hub is None:

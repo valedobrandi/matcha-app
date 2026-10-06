@@ -52,9 +52,13 @@ class NotificationsService:
         await self.repository.mark_all_read(user_id)
         return NotificationOkResponse()
 
+    async def mark_read_by_actor(
+        self, user_id: int, actor_id: int, type: NotificationType
+    ) -> None:
+        await self.repository.mark_read_by_actor(user_id, actor_id, type)
+
     async def unread_count(self, user_id: int) -> UnreadCountOut:
-        count = await self.repository.unread_count(user_id)
-        return UnreadCountOut(unread_count=count)
+        return await self.repository.unread_count(user_id)
 
     async def _push_notification(
         self, user_id: int, notification: NotificationOut

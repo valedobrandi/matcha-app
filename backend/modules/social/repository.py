@@ -5,6 +5,7 @@ from modules.social.schemas import (
     VisitorOut,
     LikeReceivedOut,
     BlockedUserOut,
+    ConnectionOut,
 )
 
 
@@ -172,6 +173,31 @@ class SocialRepository:
             user_id, limit, offset,
         )
         return [LikeReceivedOut.model_validate(dict(r)) for r in rows]
+
+    async def list_connections(
+        self, user_id: int, limit: int, offset: int
+    ) -> List[ConnectionOut]:
+        rows = await self.connection.fetch(
+            """
+            SELECT u.id, u.username, u.first_name, u.last_name,
+                   GREATEST(mine.updated_at, theirs.updated_at) AS connected_at
+            FROM likes mine
+            JOIN likes theirs
+              ON theirs.from_user_id = mine.to_user_id
+             AND theirs.to_user_id = mine.from_user_id
+             AND theirs.status = 'active'
+            JOIN users u ON u.id = mine.to_user_id
+            WHERE mine.from_user_id = $1 AND mine.status = 'active'
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = mine.to_user_id
+              )
+            ORDER BY connected_at DESC, u.id DESC
+            LIMIT $2 OFFSET $3
+            """,
+            user_id, limit, offset,
+        )
+        return [ConnectionOut.model_validate(dict(r)) for r in rows]
 
     async def is_blocked_either_way(self, a: int, b: int) -> bool:
         row = await self.connection.fetchrow(

@@ -8,7 +8,7 @@ from core.config import settings
 from core.auth import get_current_user_id
 from core.presence import get_current_user_id_and_touch
 from modules.chat.controller import get_chat_service
-from modules.chat.schemas import MessageOut, SendMessageInput
+from modules.chat.schemas import ChatOkResponse, MessageOut, SendMessageInput
 from modules.chat.exceptions import NotConnectedException, ChatUserNotFoundException
 
 client = TestClient(app)
@@ -32,6 +32,8 @@ class FakeChatService:
         self.connected = True
         self.blocked = False
         self.messages = []
+        self.list_calls = []
+        self.read_calls = []
 
     async def send(self, me, peer, payload: SendMessageInput):
         if self.blocked:
@@ -48,12 +50,21 @@ class FakeChatService:
         self.messages.append(msg)
         return msg
 
-    async def list_messages(self, me, peer, limit, offset):
+    async def list_messages(self, me, peer, limit, before):
         if self.blocked:
             raise ChatUserNotFoundException()
         if not self.connected:
             raise NotConnectedException()
-        return self.messages[offset:offset + limit]
+        self.list_calls.append((me, peer, limit, before))
+        return self.messages[:limit]
+
+    async def mark_conversation_read(self, me, peer):
+        if self.blocked:
+            raise ChatUserNotFoundException()
+        if not self.connected:
+            raise NotConnectedException()
+        self.read_calls.append((me, peer))
+        return ChatOkResponse()
 
 
 @pytest.fixture
@@ -112,3 +123,31 @@ class TestChatRouter:
         )
         assert response.status_code == 200
         assert len(response.json()) == 1
+
+    def test_should_pass_the_cursor_and_limit_when_listing_older_messages(self, override_chat):
+        token = make_token(1)
+        response = client.get(
+            "/chat/messages/2?before=10&limit=5",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert override_chat.list_calls == [(1, 2, 5, 10)]
+
+    def test_should_ask_for_the_latest_page_when_no_cursor_is_given(self, override_chat):
+        token = make_token(1)
+        response = client.get(
+            "/chat/messages/2",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert override_chat.list_calls == [(1, 2, 50, None)]
+
+    def test_should_mark_the_conversation_read_when_connected(self, override_chat):
+        token = make_token(1)
+        response = client.post(
+            "/chat/conversations/2/read",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert response.json() == {"ok": True}
+        assert override_chat.read_calls == [(1, 2)]

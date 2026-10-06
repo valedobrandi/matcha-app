@@ -37,10 +37,13 @@ async def add_visit(connection, viewer_id, target_id) -> None:
     )
 
 
-async def add_like(connection, from_user_id, to_user_id) -> None:
+async def add_like(connection, from_user_id, to_user_id, status="active", at=None) -> None:
     await connection.execute(
-        "INSERT INTO likes (from_user_id, to_user_id, status) VALUES ($1, $2, 'active')",
-        from_user_id, to_user_id,
+        """
+        INSERT INTO likes (from_user_id, to_user_id, status, updated_at)
+        VALUES ($1, $2, $3, COALESCE($4::timestamp, NOW()))
+        """,
+        from_user_id, to_user_id, status, at,
     )
 
 

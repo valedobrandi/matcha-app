@@ -17,6 +17,7 @@ from modules.social.schemas import (
     VisitorOut,
     LikeReceivedOut,
     BlockedUserOut,
+    ConnectionOut,
 )
 from typing import List
 
@@ -69,6 +70,15 @@ async def list_likes_received(
     service: SocialService = Depends(get_social_service),
 ) -> List[LikeReceivedOut]:
     return await service.list_likes_received(current_user_id, limit, offset)
+
+@social_router.get("/connections", response_model=List[ConnectionOut])
+async def list_connections(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user_id: int = Depends(get_current_user_id_and_touch),
+    service: SocialService = Depends(get_social_service),
+) -> List[ConnectionOut]:
+    return await service.list_connections(current_user_id, limit, offset)
 
 @social_router.get("/relationship/{target_user_id}", response_model=RelationshipResponse)
 async def get_relationship(

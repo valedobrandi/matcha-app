@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, UTC
 from modules.notifications.service import NotificationsService
-from modules.notifications.schemas import NotificationActor, NotificationOut
+from modules.notifications.schemas import NotificationActor, NotificationOut, UnreadCountOut
 from modules.notifications.exceptions import NotificationNotFoundException
 
 
@@ -45,10 +45,10 @@ class FakeRepo:
         return n
 
     async def unread_count(self, user_id):
-        return sum(
-            1
-            for uid, row in self.rows
-            if uid == user_id and row.read_at is None
+        unread = [row for uid, row in self.rows if uid == user_id and row.read_at is None]
+        return UnreadCountOut(
+            unread_count=len(unread),
+            unread_messages=sum(1 for row in unread if row.type == "message"),
         )
 
 

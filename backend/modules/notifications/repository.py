@@ -1,6 +1,11 @@
 from typing import List, Optional
 import asyncpg
-from modules.notifications.schemas import NotificationActor, NotificationOut, NotificationType
+from modules.notifications.schemas import (
+    NotificationActor,
+    NotificationOut,
+    NotificationType,
+    UnreadCountOut,
+)
 
 
 class InAppNotificationsRepository:
@@ -86,10 +91,25 @@ class InAppNotificationsRepository:
         except (ValueError, IndexError):
             return 0
 
-    async def unread_count(self, user_id: int) -> int:
-        value = await self.connection.fetchval(
+    async def mark_read_by_actor(
+        self, user_id: int, actor_id: int, type: NotificationType
+    ) -> None:
+        await self.connection.execute(
             """
-            SELECT COUNT(*)::int
+            UPDATE in_app_notifications
+            SET read_at = NOW()
+            WHERE user_id = $1 AND actor_id = $2 AND type = $3 AND read_at IS NULL
+            """,
+            user_id,
+            actor_id,
+            type,
+        )
+
+    async def unread_count(self, user_id: int) -> UnreadCountOut:
+        row = await self.connection.fetchrow(
+            """
+            SELECT COUNT(*)::int AS unread_count,
+                   COUNT(*) FILTER (WHERE n.type = 'message')::int AS unread_messages
             FROM in_app_notifications n
             WHERE n.user_id = $1 AND n.read_at IS NULL
               AND NOT EXISTS (
@@ -99,7 +119,10 @@ class InAppNotificationsRepository:
             """,
             user_id,
         )
-        return int(value or 0)
+        return UnreadCountOut(
+            unread_count=row["unread_count"],
+            unread_messages=row["unread_messages"],
+        )
 
     @staticmethod
     def _to_out(row) -> NotificationOut:
