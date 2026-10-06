@@ -5,7 +5,7 @@ Dating app: FastAPI + PostgreSQL backend, React + Vite frontend.
 ## Run
 
 ```
-cp .env.example .env     # then set JWT_SECRET (see the file) and the Mailtrap key
+cp .env.example .env     # then set JWT_SECRET (see the file), the Mailtrap key and the seed login
 docker compose up --build
 ```
 
@@ -21,6 +21,9 @@ With the stack running, on a fresh database (the evaluation needs at least 500 p
 ```
 docker compose exec backend python -m database.seed --users 500
 ```
+
+Log in as `SEED_USERNAME` with `SEED_PASSWORD`, both from `.env`; every seeded account shares that
+password.
 
 ## Tests
 

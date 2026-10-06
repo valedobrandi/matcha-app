@@ -82,13 +82,13 @@ One journey (`e2e/discovery-like.spec.ts`): log in, open `/suggest`, open a prof
 It needs a running stack; nothing is started for you.
 
 1. Postgres migrated and seeded: from `backend/`, `python -m database.migrate && python -m database.seed --users 20`
-   (all seeded users are verified and profile-complete, password `Password123!`).
+   with `SEED_USERNAME` and `SEED_PASSWORD` set (all seeded users are verified and profile-complete,
+   the first one is `SEED_USERNAME`, and all share `SEED_PASSWORD`).
 2. Backend running, with `CORS_ORIGINS` including `http://127.0.0.1:5173`.
 3. Vite dev server: `VITE_API_URL=<backend url> npm run dev -- --host 127.0.0.1 --port 5173`.
 4. Once: `npx playwright install chromium`.
-5. Run with any seeded username (read-only query), e.g.
-   `E2E_USERNAME=$(psql "$DATABASE_URL" -tAc "select username from users order by id limit 1") npm run e2e`.
+5. Run as the seed login: `E2E_USERNAME="$SEED_USERNAME" E2E_PASSWORD="$SEED_PASSWORD" npm run e2e`.
 
 The spec likes one not-yet-liked profile per run, so it can be re-run until the seeded
-profiles are exhausted; re-seed a fresh database to reset. `E2E_BASE_URL` and
-`E2E_PASSWORD` override the defaults.
+profiles are exhausted; re-seed a fresh database to reset. `E2E_BASE_URL` overrides the
+default.
