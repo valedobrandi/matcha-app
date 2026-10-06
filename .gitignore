@@ -120,3 +120,5 @@ tools/preview/shots/
 .agents/
 .claude/
 skills-lock.json
+pack-code.sh
+pack-diff.sh
