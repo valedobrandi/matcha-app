@@ -806,6 +806,20 @@ export interface components {
             /** To User Id */
             to_user_id: number;
         };
+        /**
+         * NotificationActor
+         * @description The user who caused the notification, so the client shows a name without another request.
+         */
+        NotificationActor: {
+            /** First Name */
+            first_name: string;
+            /** Id */
+            id: number;
+            /** Last Name */
+            last_name: string;
+            /** Username */
+            username: string;
+        };
         /** NotificationOkResponse */
         NotificationOkResponse: {
             /**
@@ -816,8 +830,7 @@ export interface components {
         };
         /** NotificationOut */
         NotificationOut: {
-            /** Actor Id */
-            actor_id: number;
+            actor: components["schemas"]["NotificationActor"];
             /**
              * Created At
              * Format: date-time

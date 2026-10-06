@@ -8,7 +8,12 @@ from core.config import settings
 from core.auth import get_current_user_id
 from core.presence import get_current_user_id_and_touch
 from modules.notifications.controller import get_notifications_service
-from modules.notifications.schemas import NotificationOut, UnreadCountOut, NotificationOkResponse
+from modules.notifications.schemas import (
+    NotificationActor,
+    NotificationOut,
+    UnreadCountOut,
+    NotificationOkResponse,
+)
 from modules.notifications.exceptions import NotificationNotFoundException
 
 client = TestClient(app)
@@ -33,7 +38,7 @@ class FakeNotificationsService:
             NotificationOut(
                 id=1,
                 type="liked",
-                actor_id=2,
+                actor=NotificationActor(id=2, username="bob", first_name="Bob", last_name="Smith"),
                 entity_id=None,
                 read_at=None,
                 created_at=datetime.now(UTC),
@@ -76,7 +81,12 @@ class TestNotificationsRouter:
         assert response.status_code == 200
         body = response.json()
         assert body[0]["type"] == "liked"
-        assert body[0]["actor_id"] == 2
+        assert body[0]["actor"] == {
+            "id": 2,
+            "username": "bob",
+            "first_name": "Bob",
+            "last_name": "Smith",
+        }
         assert "user_id" not in body[0]
 
     def test_should_return_unread_count(self, override_notifications):

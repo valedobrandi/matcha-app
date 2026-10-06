@@ -27,7 +27,7 @@ async def liker_ids(connection, viewer_id) -> list[int]:
 
 async def notification_actor_ids(connection, user_id) -> list[int]:
     notifications = await InAppNotificationsRepository(connection).list_for_user(user_id, MANY, 0)
-    return [n.actor_id for n in notifications]
+    return [n.actor.id for n in notifications]
 
 
 async def test_should_hide_blocked_users_from_visitors_when_the_block_is_active_either_way(

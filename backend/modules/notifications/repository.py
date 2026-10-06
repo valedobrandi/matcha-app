@@ -1,6 +1,6 @@
 from typing import List, Optional
 import asyncpg
-from modules.notifications.schemas import NotificationOut, NotificationType
+from modules.notifications.schemas import NotificationActor, NotificationOut, NotificationType
 
 
 class InAppNotificationsRepository:
@@ -18,9 +18,15 @@ class InAppNotificationsRepository:
     ) -> NotificationOut:
         row = await self.connection.fetchrow(
             """
-            INSERT INTO in_app_notifications (user_id, type, actor_id, entity_id)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id, type, actor_id, entity_id, read_at, created_at
+            WITH created AS (
+                INSERT INTO in_app_notifications (user_id, type, actor_id, entity_id)
+                VALUES ($1, $2, $3, $4)
+                RETURNING id, type, actor_id, entity_id, read_at, created_at
+            )
+            SELECT c.id, c.type, c.actor_id, c.entity_id, c.read_at, c.created_at,
+                   u.username, u.first_name, u.last_name
+            FROM created c
+            JOIN users u ON u.id = c.actor_id
             """,
             user_id,
             type,
@@ -34,8 +40,10 @@ class InAppNotificationsRepository:
     ) -> List[NotificationOut]:
         rows = await self.connection.fetch(
             """
-            SELECT n.id, n.type, n.actor_id, n.entity_id, n.read_at, n.created_at
+            SELECT n.id, n.type, n.actor_id, n.entity_id, n.read_at, n.created_at,
+                   u.username, u.first_name, u.last_name
             FROM in_app_notifications n
+            JOIN users u ON u.id = n.actor_id
             WHERE n.user_id = $1
               AND NOT EXISTS (
                 SELECT 1 FROM blocked_pairs bp
@@ -98,7 +106,12 @@ class InAppNotificationsRepository:
         return NotificationOut(
             id=row["id"],
             type=row["type"],
-            actor_id=row["actor_id"],
+            actor=NotificationActor(
+                id=row["actor_id"],
+                username=row["username"],
+                first_name=row["first_name"],
+                last_name=row["last_name"],
+            ),
             entity_id=row["entity_id"],
             read_at=row["read_at"],
             created_at=row["created_at"],
