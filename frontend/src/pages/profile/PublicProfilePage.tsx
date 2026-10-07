@@ -77,7 +77,9 @@ function PublicProfilePage() {
                         <Avatar className="w-16 h-16 mx-auto">
                             <AvatarImage src={profileAvatar ? `${API_BASE_URL}${profileAvatar!}` : undefined} alt={publicProfile?.username} />
                             <AvatarFallback>CN</AvatarFallback>
-                            <AvatarBadge className="bg-green-600 dark:bg-green-800" />
+                            {publicProfile.is_online && (
+                                <AvatarBadge role="img" aria-label="Online" className="bg-green-600 dark:bg-green-800" />
+                            )}
                         </Avatar>
                     </div>
                     <div className="flex flex-col">
@@ -165,7 +167,19 @@ function PublicProfilePage() {
                             <div>Preference: {publicProfile.sexual_preference ?? "Not specified"}</div>
                             <div>Bio: {publicProfile.bio}</div>
                             <div>Location: {publicProfile.location_label}</div>
-                            {!publicProfile.is_online && (<div>Last connection: {publicProfile.last_connection?? "Never"}</div>)}
+                            {!publicProfile.is_online && (
+                                <div>Last connection: {publicProfile.last_connection
+                                    ? new Date(publicProfile.last_connection).toLocaleString('en-US', {
+                                        month: 'short',
+                                        day: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: true
+                                    })
+                                    : "Never"}</div>
+                            )}
                             <div>
                                 <p>Tags:
                                 {publicProfile.tags?.map(tag=>(

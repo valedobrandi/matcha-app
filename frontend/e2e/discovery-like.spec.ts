@@ -11,9 +11,8 @@ test('logs in, opens a suggested profile and likes it', async ({ page }) => {
   await page.getByLabel('Username').fill(username!)
   await page.getByLabel('Password').fill(password!)
   await page.getByRole('button', { name: 'Login', exact: true }).click()
-  await expect(page).toHaveURL('/')
+  await expect(page).toHaveURL('/suggest')
 
-  await page.goto('/suggest')
   const card = page
     .getByTestId('profile-card')
     .filter({ has: page.getByRole('img', { name: 'unlike', exact: true }) })

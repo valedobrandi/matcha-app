@@ -106,7 +106,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                         <img src={edit} alt="vues" className="w-5 h-5 object-cover rounded cursor-pointer"/>
                     </Button>
                 </div>
-                <CardDescription>These informations will be shown to public.</CardDescription>
+                <CardDescription>This information is shown on your public profile.</CardDescription>
             </div>
             {editing && (
                 <div>
@@ -165,7 +165,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                               onValueChange={v => field.onChange(v == "unspecified" ? undefined : v)}
                               disabled={!editing}>
                                 <div className="flex flex-row flex-wrap min-[600px]:flex-nowrap justify-between w-full items-center gap-6">
-                                    <p>Sexual_preference</p>
+                                    <p>Sexual preference</p>
                                     <div className="flex flex-row items-center gap-2">
                                         <RadioGroupItem value="man" id="man" />
                                         <Label htmlFor="man">Man</Label>
@@ -193,9 +193,9 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                     </Field>
                     <Field>
                         <FieldContent>
-                            <FieldLabel htmlFor="switch-position-mode">Share your localisation</FieldLabel>
+                            <FieldLabel htmlFor="switch-position-mode">Share your location</FieldLabel>
                             <FieldDescription>
-                              Share your localisation permisses a good match, otherwise, please entre manually your position.
+                              Sharing your location gives better matches. Otherwise, enter your location manually.
                             </FieldDescription>
                             <Switch
                                 id="switch-position-mode"

@@ -14,7 +14,7 @@ const ERROR_MESSAGES: Partial<Record<ErrorCode, string>> = {
   USER_NOT_FOUND: 'We could not find your account, please log in again.',
   TAG_CONTENT_PROFANITY: 'Your tag contains profanity content.',
   FILE_TOO_LARGE: 'File size allows maximum 5MB.',
-  MAX_FIVE_PHOTOS: 'You can upload maximun 5 photos.',
+  MAX_FIVE_PHOTOS: 'You can upload at most 5 photos.',
   LOCATION_REQUIRED: 'Your location is required for this discovery query',
   INVALID_FILTER: 'The filters setting is invalid.',
   TARGET_USER_NOT_FOUND: 'We could not find target account, please try it later',

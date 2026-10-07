@@ -56,6 +56,36 @@ describe('PublicProfilePage report', () => {
     })
 })
 
+describe('PublicProfilePage presence', () => {
+    function serveProfile(profile: typeof PROFILE | Record<string, unknown>) {
+        server.use(
+            http.get(`${API_BASE_URL}/social/relationship/:id`, () => HttpResponse.json(RELATIONSHIP)),
+            http.get(`${API_BASE_URL}/users/:id`, () => HttpResponse.json(profile)),
+            http.post(`${API_BASE_URL}/social/visits/:id`, () => HttpResponse.json({ ok: true })),
+        )
+    }
+
+    it('does mark the user online and hide the last connection when the user is online', async () => {
+        serveProfile({ ...PROFILE, is_online: true, last_connection: '2026-10-07T09:00:00Z' })
+
+        renderPage()
+
+        await screen.findByText(/Bob B/)
+        expect(screen.getByRole('img', { name: 'Online' })).toBeInTheDocument()
+        expect(screen.queryByText(/Last connection/)).not.toBeInTheDocument()
+    })
+
+    it('does show the date and time of the last connection and no online mark when the user is offline', async () => {
+        serveProfile({ ...PROFILE, is_online: false, last_connection: '2026-10-07T09:00:00Z' })
+
+        renderPage()
+
+        await screen.findByText(/Bob B/)
+        expect(screen.queryByRole('img', { name: 'Online' })).not.toBeInTheDocument()
+        expect(screen.getByText(/^Last connection: Oct \d{2}, 2026, \d{2}:\d{2}:\d{2} [AP]M$/)).toBeInTheDocument()
+    })
+})
+
 describe('PublicProfilePage unavailable', () => {
     it('does show only the unavailable message when the relationship is answered as a missing user', async () => {
         const requests = { profile: 0, visit: 0 }
