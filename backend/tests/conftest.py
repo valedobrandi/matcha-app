@@ -11,6 +11,7 @@ import uuid
 # Settings refuses to load without a JWT_SECRET; tests need a throwaway one before any import.
 # It is random per run, so no key is ever written in the repository.
 os.environ.setdefault("JWT_SECRET", secrets.token_urlsafe(48))
+os.environ.setdefault("MAILTRAP_API_KEY", secrets.token_urlsafe(24))
 
 import asyncpg
 import pytest

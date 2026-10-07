@@ -43,8 +43,10 @@ jobs:
       DATABASE_URL: postgresql://postgres:password@localhost:5432/matcha
     steps:
       - uses: actions/checkout@v4
-      - name: Generate a throwaway JWT secret, never stored in git
-        run: echo "JWT_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Generate throwaway secrets, never stored in git
+        run: |
+          echo "JWT_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "MAILTRAP_API_KEY=$(openssl rand -hex 16)" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -123,6 +125,7 @@ jobs:
       - name: Generate throwaway secrets, never stored in git
         run: |
           echo "JWT_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "MAILTRAP_API_KEY=$(openssl rand -hex 16)" >> "$GITHUB_ENV"
           echo "SEED_PASSWORD=$(openssl rand -hex 16)" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:

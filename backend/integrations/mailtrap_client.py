@@ -88,11 +88,8 @@ class MailtrapClient:
 
 
 def build_mailtrap_client() -> MailtrapClient:
-    token = settings.MAILTRAP_API_KEY.get_secret_value()
-    if not token:
-        raise MailtrapException("MAILTRAP_API_KEY is not set")
     return MailtrapClient(
-        api_key=token,
+        api_key=settings.MAILTRAP_API_KEY.get_secret_value(),
         from_email=settings.MAILTRAP_FROM_EMAIL,
         from_name=settings.MAILTRAP_FROM_NAME,
         verification_url=settings.VERIFICATION_URL_BASE,

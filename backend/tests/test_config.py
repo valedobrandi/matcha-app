@@ -32,3 +32,22 @@ def test_should_keep_other_secrets_out_of_the_error_when_the_jwt_secret_is_missi
     with pytest.raises(ValidationError) as error:
         Settings(_env_file=None)
     assert "must-not-leak" not in str(error.value)
+
+
+def test_should_refuse_to_start_without_a_mailtrap_api_key_when_none_is_configured(monkeypatch):
+    monkeypatch.delenv("MAILTRAP_API_KEY", raising=False)
+    with pytest.raises(ValidationError, match="MAILTRAP_API_KEY"):
+        Settings(_env_file=None, JWT_SECRET="x" * 32)
+
+
+def test_should_refuse_to_start_with_an_empty_mailtrap_api_key_when_settings_load():
+    with pytest.raises(ValidationError, match="MAILTRAP_API_KEY"):
+        Settings(_env_file=None, JWT_SECRET="x" * 32, MAILTRAP_API_KEY="  ")
+
+
+def test_should_keep_the_mailtrap_api_key_out_of_the_error_when_the_jwt_secret_is_missing(monkeypatch):
+    monkeypatch.delenv("JWT_SECRET", raising=False)
+    monkeypatch.setenv("MAILTRAP_API_KEY", "mailtrap-key-that-must-not-leak")
+    with pytest.raises(ValidationError) as error:
+        Settings(_env_file=None)
+    assert "must-not-leak" not in str(error.value)

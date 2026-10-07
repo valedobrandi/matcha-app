@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     FT_CLIENT_SECRET: str = "ft_client_secret"
     FT_REDIRECT_URI: str = "http://localhost:5173/auth/callback/42"
 
-    MAILTRAP_API_KEY: SecretStr = SecretStr("")
+    MAILTRAP_API_KEY: SecretStr
     MAILTRAP_FROM_EMAIL: str = "noreply@matcha.com"
     MAILTRAP_FROM_NAME: str = "Matcha"
     VERIFICATION_URL_BASE: str = "http://localhost:5173/auth/verify"
@@ -35,6 +35,13 @@ class Settings(BaseSettings):
         # HS256 needs a key of at least 32 bytes (RFC 7518 section 3.2).
         if len(value.get_secret_value().encode()) < 32:
             raise ValueError("JWT_SECRET must be at least 32 bytes long")
+        return value
+
+    @field_validator("MAILTRAP_API_KEY")
+    @classmethod
+    def _mailtrap_api_key_is_set(cls, value: SecretStr) -> SecretStr:
+        if not value.get_secret_value().strip():
+            raise ValueError("MAILTRAP_API_KEY must be set: verification and password reset emails need it")
         return value
 
 settings = Settings()

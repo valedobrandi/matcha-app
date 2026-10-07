@@ -12,7 +12,9 @@ docker compose up --build
 - Frontend: http://localhost:5173
 - API: http://localhost:8000 (OpenAPI at `/docs`)
 
-Migrations run when the backend container starts.
+Migrations run when the backend container starts. The backend refuses to start without
+`JWT_SECRET` or `MAILTRAP_API_KEY`, and its error names the missing one
+([ADR-0019](ADR/0019-the-backend-refuses-to-start-without-a-required-setting.md)).
 
 ## Seed demo profiles
 
