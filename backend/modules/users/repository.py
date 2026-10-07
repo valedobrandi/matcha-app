@@ -275,7 +275,7 @@ class UsersRepository:
             current_user_id: int, 
             file: UploadFile
     ) -> Optional[PhotoOut]:
-        content = await file.read()
+        content = await file.read(MAX_SIZE + 1)
         if len(content) > MAX_SIZE:
             raise FileTooLargeException()
         image_type = detect_image_type(content)
@@ -368,7 +368,7 @@ class UsersRepository:
         )
         if not old_row:
             return None
-        content = await file.read()
+        content = await file.read(MAX_SIZE + 1)
         if len(content) > MAX_SIZE:
             raise FileTooLargeException()
         image_type = detect_image_type(content)

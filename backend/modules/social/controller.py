@@ -20,6 +20,7 @@ from modules.social.schemas import (
     ConnectionOut,
 )
 from typing import List
+from core.api_model import RowIdPath, INT4_MAX
 
 social_router = APIRouter(prefix="/social", tags=["social"])
 
@@ -31,7 +32,7 @@ def get_social_service(
 
 @social_router.post("/visits/{target_user_id}", response_model=SocialOkResponse)
 async def create_visit(
-    target_user_id: int,
+    target_user_id: RowIdPath,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
 ) -> SocialOkResponse:
@@ -40,7 +41,7 @@ async def create_visit(
 @social_router.get("/visitors", response_model=List[VisitorOut])
 async def list_visitors(
     limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0, le=INT4_MAX),
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
 ) -> List[VisitorOut]:
@@ -48,7 +49,7 @@ async def list_visitors(
 
 @social_router.post("/likes/{target_user_id}", response_model=LikeStateResponse)
 async def create_like(
-    target_user_id: int,
+    target_user_id: RowIdPath,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
 ) -> LikeStateResponse:
@@ -56,7 +57,7 @@ async def create_like(
 
 @social_router.delete("/likes/{target_user_id}", response_model=LikeStateResponse)
 async def delete_like(
-    target_user_id: int,
+    target_user_id: RowIdPath,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
 ) -> LikeStateResponse:
@@ -65,7 +66,7 @@ async def delete_like(
 @social_router.get("/likes/received", response_model=List[LikeReceivedOut])
 async def list_likes_received(
     limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0, le=INT4_MAX),
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
 ) -> List[LikeReceivedOut]:
@@ -74,7 +75,7 @@ async def list_likes_received(
 @social_router.get("/connections", response_model=List[ConnectionOut])
 async def list_connections(
     limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0, le=INT4_MAX),
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
 ) -> List[ConnectionOut]:
@@ -82,7 +83,7 @@ async def list_connections(
 
 @social_router.get("/relationship/{target_user_id}", response_model=RelationshipResponse)
 async def get_relationship(
-    target_user_id: int,
+    target_user_id: RowIdPath,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
 ) -> RelationshipResponse:
@@ -90,7 +91,7 @@ async def get_relationship(
 
 @social_router.post("/blocks/{target_user_id}", response_model=BlockStateResponse)
 async def create_block(
-    target_user_id: int,
+    target_user_id: RowIdPath,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
 ) -> BlockStateResponse:
@@ -98,7 +99,7 @@ async def create_block(
 
 @social_router.delete("/blocks/{target_user_id}", response_model=BlockStateResponse)
 async def delete_block(
-    target_user_id: int,
+    target_user_id: RowIdPath,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
 ) -> BlockStateResponse:
@@ -107,7 +108,7 @@ async def delete_block(
 @social_router.get("/blocks", response_model=List[BlockedUserOut])
 async def list_blocks(
     limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0, le=INT4_MAX),
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),
 ) -> List[BlockedUserOut]:
@@ -115,7 +116,7 @@ async def list_blocks(
 
 @social_router.post("/reports/{target_user_id}", response_model=SocialOkResponse)
 async def create_report(
-    target_user_id: int,
+    target_user_id: RowIdPath,
     payload: ReportInput,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: SocialService = Depends(get_social_service),

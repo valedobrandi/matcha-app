@@ -79,13 +79,13 @@ class AuthService:
         if not user or not user.password_hash:
             raise InvalidCredentialsException()
 
-        if not user.is_verified:
-            raise AccountNotVerifiedException()
-
         if not bcrypt.checkpw(
             credentials.password.encode("utf-8"), user.password_hash.encode("utf-8")
         ):
             raise InvalidCredentialsException()
+
+        if not user.is_verified:
+            raise AccountNotVerifiedException()
 
         return self.generate_jwt_token(user.id)
 

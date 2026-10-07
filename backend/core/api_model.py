@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, ConfigDict
+from fastapi import Path
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 
 class ApiModel(BaseModel):
@@ -17,3 +18,9 @@ def _in_utc(value: datetime) -> datetime:
 
 
 UtcDatetime = Annotated[datetime, AfterValidator(_in_utc)]
+
+
+INT4_MAX = 2_147_483_647
+
+RowId = Annotated[int, Field(ge=1, le=INT4_MAX)]
+RowIdPath = Annotated[int, Path(ge=1, le=INT4_MAX)]

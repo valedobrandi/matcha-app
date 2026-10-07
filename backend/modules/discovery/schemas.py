@@ -1,4 +1,4 @@
-from core.api_model import ApiModel
+from core.api_model import INT4_MAX, ApiModel, RowId
 from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
 
@@ -22,7 +22,7 @@ class SuggestQueryParams(BaseModel):
     """HTTP suggest params. sort/order validated in service → INVALID_FILTER."""
 
     limit: int = Field(20, ge=1, le=100)
-    offset: int = Field(0, ge=0)
+    offset: int = Field(0, ge=0, le=INT4_MAX)
     sort: Optional[str] = None
     order: Optional[str] = None
 
@@ -35,7 +35,7 @@ class SearchQueryParams(SuggestQueryParams):
     fame_min: Optional[int] = None
     fame_max: Optional[int] = None
     max_distance_km: Optional[float] = None
-    tag_ids: List[int] = Field(default_factory=list)
+    tag_ids: List[RowId] = Field(default_factory=list)
 
 
 class DiscoveryQuery(BaseModel):

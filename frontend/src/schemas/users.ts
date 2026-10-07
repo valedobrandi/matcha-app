@@ -1,17 +1,17 @@
 import { z } from 'zod'
-import { passwordSchema } from './auth'
+import { nameSchema, passwordSchema } from './auth'
 
 export const profileSchema = z.object({
     age: z.number().min(18, "You must be at least 18").max(100),
     gender: z.enum(["male", "female", "other"]),
     sexual_preference: z.enum(["man", "woman", "bisexual"]).optional(),
-    bio: z.string().trim().min(1, "Bio is required"),
+    bio: z.string().trim().min(1, "Bio is required").max(1000, "Bio must be at most 1000 characters"),
 })
 
 export const editProfileSchema = profileSchema.extend({
     latitude: z.number().nullable(),
     longitude: z.number().nullable(),
-    location_label: z.string().nullable(),
+    location_label: z.string().trim().max(100, "Location must be at most 100 characters").nullable(),
     location_consent: z.boolean()
 }).refine(
     (data) =>
@@ -26,10 +26,10 @@ export const editProfileSchema = profileSchema.extend({
 )
 
 export const accountSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.email('Invalid email')
+  username: nameSchema('Username'),
+  first_name: nameSchema('First name'),
+  last_name: nameSchema('Last name'),
+  email: z.email('Invalid email').max(100, 'Email must be at most 100 characters')
 })
 
 export const passwordchangeSchema = z.object({

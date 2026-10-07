@@ -36,6 +36,7 @@ function TagsForm({
                         <Input 
                             id="user_tags"
                             type="text"
+                            maxLength={50}
                             value={inputValue?? ""}
                             onChange={(e)=>handleInput(e.target.value)}
                             />

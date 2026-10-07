@@ -2,6 +2,7 @@ import pytest
 
 from modules.auth.exceptions import (
     AccountNotVerifiedException,
+    InvalidCredentialsException,
     InvalidTokenException,
 )
 from modules.auth.schemas import LoginInput, UserRecord
@@ -53,6 +54,23 @@ async def test_login_user_raises_when_unverified() -> None:
     service = AuthService(FakeRepository(user))
     with pytest.raises(AccountNotVerifiedException):
         await service.login_user(LoginInput(username="alice", password="Password1"))
+
+
+@pytest.mark.asyncio
+async def test_should_reject_the_credentials_without_telling_the_account_is_unverified_when_the_password_is_wrong() -> None:
+    service = AuthService(FakeRepository())
+    user = UserRecord(
+        id=1,
+        email="a@b.com",
+        username="alice",
+        first_name="A",
+        last_name="B",
+        password_hash=service._hash_password("Password1"),
+        is_verified=False,
+    )
+    service = AuthService(FakeRepository(user))
+    with pytest.raises(InvalidCredentialsException):
+        await service.login_user(LoginInput(username="alice", password="Wrong1"))
 
 
 @pytest.mark.asyncio

@@ -17,6 +17,7 @@ from modules.users.schemas import (
 from modules.social.repository import SocialRepository
 from modules.tags.schemas import TagOut, TagInput
 from typing import List
+from core.api_model import RowIdPath
 
 
 users_router = APIRouter(prefix="/users", tags=["users"])
@@ -83,7 +84,7 @@ async def get_my_tags(
 
 @users_router.delete("/me/tags/{tag_id}")
 async def delete_one_tag(
-    tag_id: int,
+    tag_id: RowIdPath,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: UsersService = Depends(get_users_service)
 ) -> None:
@@ -112,7 +113,7 @@ async def upload_photo(
 
 @users_router.delete("/me/photos/{photo_id}")
 async def delete_my_photo(
-    photo_id: int,
+    photo_id: RowIdPath,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: UsersService = Depends(get_users_service)
 ) -> None:
@@ -120,7 +121,7 @@ async def delete_my_photo(
 
 @users_router.patch("/me/photos/{photo_id}")
 async def set_photo_as_avatar(
-    photo_id: int,
+    photo_id: RowIdPath,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: UsersService = Depends(get_users_service)
 ) -> None:
@@ -131,7 +132,7 @@ async def set_photo_as_avatar(
         response_model=PhotoOut
 )
 async def patch_photo_by_new(
-    photo_id: int,
+    photo_id: RowIdPath,
     file: UploadFile = File(...),
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: UsersService = Depends(get_users_service)
@@ -165,7 +166,7 @@ async def change_password(
     response_model=PublicProfile,
 )
 async def get_public_profile(
-    user_id: int,
+    user_id: RowIdPath,
     current_user_id: int = Depends(get_current_user_id_and_touch),
     service: UsersService = Depends(get_users_service),
 ) -> PublicProfile:

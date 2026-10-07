@@ -1,4 +1,4 @@
-from core.api_model import ApiModel, UtcDatetime
+from core.api_model import ApiModel, RowId, UtcDatetime
 from pydantic import BaseModel, Field
 
 
@@ -7,7 +7,7 @@ class SendMessageInput(BaseModel):
 
 
 class ReadConversationInput(BaseModel):
-    up_to_message_id: int = Field(..., ge=1)
+    up_to_message_id: RowId
 
 
 class MessageOut(ApiModel):
