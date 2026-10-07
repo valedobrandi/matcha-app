@@ -1,29 +1,56 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from core.ws_hub import hub, decode_user_id_from_token
+import asyncio
+import json
+import time
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from core.ws_hub import SocketIdentity, hub, decode_socket_identity
 
 realtime_router = APIRouter(tags=["realtime"])
 
 PING = '{"type":"ping","payload":null}'
 PONG = '{"type":"pong","payload":null}'
+READY = '{"type":"ready","payload":null}'
+AUTH_TIMEOUT_SECONDS = 5.0
+INVALID_TOKEN_CLOSE_CODE = 1008
+AUTH_TIMEOUT_CLOSE_CODE = 4408
+
+
+def identity_from_auth_frame(text: str) -> SocketIdentity | None:
+    try:
+        frame = json.loads(text)
+    except ValueError:
+        return None
+    if not isinstance(frame, dict) or frame.get("type") != "auth":
+        return None
+    payload = frame.get("payload")
+    token = payload.get("token") if isinstance(payload, dict) else None
+    return decode_socket_identity(token) if isinstance(token, str) else None
 
 
 @realtime_router.websocket("/ws")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    token: str | None = Query(default=None),
-) -> None:
-    user_id = decode_user_id_from_token(token or "")
-    if user_id is None:
-        await websocket.accept()
-        await websocket.close(code=1008)
-        return
-    await hub.connect(user_id, websocket)
+async def websocket_endpoint(websocket: WebSocket) -> None:
+    await websocket.accept()
     try:
-        while True:
-            if await websocket.receive_text() == PING:
-                await websocket.send_text(PONG)
+        first_frame = await asyncio.wait_for(websocket.receive_text(), AUTH_TIMEOUT_SECONDS)
+    except TimeoutError:
+        await websocket.close(code=AUTH_TIMEOUT_CLOSE_CODE)
+        return
     except WebSocketDisconnect:
-        hub.disconnect(user_id, websocket)
-    except Exception:
-        hub.disconnect(user_id, websocket)
-        raise
+        return
+    identity = identity_from_auth_frame(first_frame)
+    if identity is None:
+        await websocket.close(code=INVALID_TOKEN_CLOSE_CODE)
+        return
+    hub.connect(identity.user_id, websocket)
+    try:
+        await websocket.send_text(READY)
+        while True:
+            frame = await asyncio.wait_for(websocket.receive_text(), identity.expires_at - time.time())
+            if frame == PING:
+                await websocket.send_text(PONG)
+    except TimeoutError:
+        await websocket.close(code=INVALID_TOKEN_CLOSE_CODE)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        hub.disconnect(identity.user_id, websocket)
