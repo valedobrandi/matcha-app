@@ -75,7 +75,9 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
                 clearTimeout(pongTimer)
                 pongTimer = undefined
                 const event = JSON.parse(message.data) as { type: string }
-                if (event.type === "notification") invalidateNotifications(queryClient)
+                if (event.type === "notification" || event.type === "notifications.read") {
+                    invalidateNotifications(queryClient)
+                }
             }
             socket.onclose = event => {
                 stopPinging()
