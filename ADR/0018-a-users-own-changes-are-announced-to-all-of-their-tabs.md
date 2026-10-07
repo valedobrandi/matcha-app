@@ -38,22 +38,34 @@ opened and every time a message arrives in an open one.
   the blocker's own sockets after `POST` or `DELETE /social/blocks/{id}`. It never goes to the
   blocked user, who is never told about a block
   ([ADR-0007](0007-the-blocked-user-is-never-told.md)).
+- **Third event:** `{"type": "likes.changed", "payload": null}`, pushed by `SocialService` to the
+  user's own sockets after every successful `POST` or `DELETE /social/likes/{id}`. The liked user
+  already learns of it through a `liked`, `matched` or `unliked` notification.
 - **Client:** `RealtimeProvider` reloads the unread count and the notifications list on
   `notifications.read`, as it does on `notification`. On `blocks.changed` it reloads every view
-  that hides blocked users, from the same list `useBlock` reloads in the tab that blocked. The
-  tab that made the change still updates itself from its own request, so it does not depend on
-  its socket; the echo it also receives costs one extra reload.
+  that hides blocked users, from the same list `useBlock` reloads in the tab that blocked. On
+  `likes.changed`, and on a `liked`, `matched` or `unliked` notification, it reloads the views
+  that show likes (the relationship, the public profile, the chat list and the open
+  conversation), from the same list `useLikes` reloads in the tab that liked. The tab that made
+  the change still updates itself from its own request, so it does not depend on its socket; the
+  echo it also receives costs one extra reload.
 - **Best effort:** `hub.push` logs and drops what it cannot deliver, including an envelope that
   is not JSON, and never raises, so the services call it without a wrapper and the request still
-  succeeds. The hub is a required dependency of every service that pushes. A tab that missed the
-  event reloads when its socket opens again (ADR-0011).
+  succeeds. The hub is a required dependency of every service that pushes. Every time a tab's
+  socket opens, the first time included, the tab fetches again every query it shows, so an event
+  of any type missed while the socket was closed changes nothing. ADR-0011 did this for the
+  notifications only.
 
 ## Status
 
 Decided on 2026-10-06: `NotificationsService` pushes `notifications.read` after the three
 mark-read requests and `RealtimeProvider` reloads on it. Recorded on 2026-10-06 at the owner's
 request. Extended on 2026-10-07 after the review of #40: `blocks.changed`, and the best-effort
-policy moved into the hub.
+policy moved into the hub. Extended again on 2026-10-07 with `likes.changed`, once the chat list
+([ADR-0012](0012-chat-lists-connections-and-uses-message-notifications-as-unread.md)) showed a
+user's own likes in their other tabs. The same day, the reload when the socket opens grew from
+the notifications to every query on screen: a `blocks.changed` missed while the socket was closed
+was never fetched again.
 
 ## Positions
 
@@ -86,11 +98,17 @@ harmless.
 
 - `test_notifications_service.py` checks the event after each of the three requests and no
   event after a 404. `test_social_service.py` checks that a block and an unblock reach only the
-  blocker, and that a refused block sends nothing. `test_ws_hub.py` checks that an envelope that
-  is not JSON is logged without raising or dropping a tab. `RealtimeProvider.test.tsx` checks that
-  both events mark the cached queries stale.
+  blocker, and that a refused block sends nothing; it checks the same for a like and an unlike.
+  `test_ws_hub.py` checks that an envelope that is not JSON is logged without raising or dropping
+  a tab. `RealtimeProvider.test.tsx` checks that the three events mark the cached queries stale,
+  that a match or an unlike reloads the chat list while a visit does not, and that every query on
+  screen is fetched again each time the socket opens.
 - Each mark-read call costs every open tab of the user two requests (the count and the list). A
   block marks ten queries stale, and each tab fetches again only the ones it shows.
+- Each time a socket opens, its tab fetches every query it shows once more. That happens when the
+  tab loads and after a reconnect, not on every page change, because the socket lives in the
+  layout. Every GET is free of side effects (a visit is recorded by its own `POST`), so the extra
+  fetch only refreshes the screen.
 - New events follow the same rule once a screen shows the changed state. None are added before a
   screen needs them.
 - Event names are strings repeated in `RealtimeProvider`. Generating them from backend models,

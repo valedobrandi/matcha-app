@@ -21,6 +21,8 @@ import Visitors from '@/pages/social/Visitors'
 import PublicProfilePage from '@/pages/profile/PublicProfilePage'
 import { BlockListPage } from '@/pages/social/BlockListPage'
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
+import { ChatListPage } from '@/pages/chat/ChatListPage'
+import { ConversationPage } from '@/pages/chat/ConversationPage'
 
 export function AppRoutes() {
   return (
@@ -38,6 +40,8 @@ export function AppRoutes() {
             <Route path="/visitors" element={<Visitors />} />
             <Route path="/blocks" element={<BlockListPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/chat" element={<ChatListPage />} />
+            <Route path="/chat/:peerId" element={<ConversationPage />} />
             <Route path="/users/:userId" element={<PublicProfilePage />} />
           </Route>
         </Route>

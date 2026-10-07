@@ -19,6 +19,7 @@ const ERROR_MESSAGES: Partial<Record<ErrorCode, string>> = {
   INVALID_FILTER: 'The filters setting is invalid.',
   TARGET_USER_NOT_FOUND: 'We could not find target account, please try it later',
   CHAT_USER_NOT_FOUND: 'We could not find this user, please try it later',
+  CHAT_NOT_CONNECTED: 'You can chat only with people you are connected with.',
   NOTIFICATION_NOT_FOUND: 'We could not find this notification.',
 }
 

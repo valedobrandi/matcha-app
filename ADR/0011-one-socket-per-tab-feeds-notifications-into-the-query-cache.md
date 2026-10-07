@@ -125,8 +125,8 @@ store. Fan-out in the hub is a few lines and makes all tabs behave the same.
   connection that stayed up, so a notification it swallowed shows up within about 9 s. When the
   tab becomes visible or the browser comes back online, the ping goes at once: about 4 s.
 - The chat screen ([ADR-0012](0012-chat-lists-connections-and-uses-message-notifications-as-unread.md))
-  uses the same provider for `chat.message` events. Until it exists, opening a message
-  notification shows the sender's profile instead of the chat.
+  uses the same provider for `chat.message` events, and opening a message notification shows the
+  conversation with its sender.
 
 ## Related
 

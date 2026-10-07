@@ -2,8 +2,11 @@ import { useEffect, type ReactNode } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/auth/useAuth"
 import { WS_URL } from "@/api/client"
+import { addMessageToConversation } from "@/chat/queryKeys"
 import { invalidateNotifications } from "@/notifications/queryKeys"
-import { invalidateBlockedUserViews } from "@/social/queryKeys"
+import { invalidateBlockedUserViews, invalidateLikeViews } from "@/social/queryKeys"
+import type { MessageOut } from "@/types/chat"
+import type { NotificationOut } from "@/types/notifications"
 
 // The server closes with 1008 when the token is invalid: reconnecting cannot help.
 const INVALID_TOKEN_CLOSE_CODE = 1008
@@ -13,6 +16,12 @@ const STABLE_CONNECTION_MS = 10_000
 const PING = JSON.stringify({ type: "ping", payload: null })
 const PING_INTERVAL_MS = 5000
 const PONG_TIMEOUT_MS = 3000
+const LIKE_NOTIFICATIONS = new Set<NotificationOut["type"]>(["liked", "matched", "unliked"])
+
+type RealtimeEvent =
+    | { type: "notification", payload: NotificationOut }
+    | { type: "chat.message", payload: MessageOut }
+    | { type: "notifications.read" | "blocks.changed" | "likes.changed" | "pong", payload: null }
 
 function reconnectDelay(attempt: number): number {
     return Math.min(FIRST_RECONNECT_DELAY_MS * 2 ** attempt, MAX_RECONNECT_DELAY_MS)
@@ -70,16 +79,21 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
             socket.onopen = () => {
                 openedAt = Date.now()
                 pingTimer = setInterval(ping, PING_INTERVAL_MS)
-                invalidateNotifications(queryClient)
+                queryClient.invalidateQueries()
             }
             socket.onmessage = message => {
                 clearTimeout(pongTimer)
                 pongTimer = undefined
-                const event = JSON.parse(message.data) as { type: string }
+                const event = JSON.parse(message.data) as RealtimeEvent
                 if (event.type === "notification" || event.type === "notifications.read") {
                     invalidateNotifications(queryClient)
                 }
+                if (event.type === "notification" && LIKE_NOTIFICATIONS.has(event.payload.type)) {
+                    invalidateLikeViews(queryClient)
+                }
+                if (event.type === "likes.changed") invalidateLikeViews(queryClient)
                 if (event.type === "blocks.changed") invalidateBlockedUserViews(queryClient)
+                if (event.type === "chat.message") addMessageToConversation(queryClient, event.payload)
             }
             socket.onclose = event => {
                 stopPinging()

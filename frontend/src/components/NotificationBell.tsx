@@ -8,7 +8,7 @@ import { useUnreadCount } from "@/notifications/useUnreadCount"
 const MAX_SHOWN_COUNT = 99
 
 export function NotificationBell() {
-    const unreadCount = useUnreadCount()
+    const { unreadCount } = useUnreadCount()
     const label = unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"
 
     return (
