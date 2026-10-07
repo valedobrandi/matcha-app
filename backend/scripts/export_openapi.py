@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # Importing the app loads Settings, which requires a secret. Nothing is signed here, so a
 # random one is enough.
 os.environ.setdefault("JWT_SECRET", secrets.token_urlsafe(48))
+os.environ.setdefault("MAILTRAP_API_KEY", secrets.token_urlsafe(24))
 
 from main import app  # noqa: E402
 

@@ -36,3 +36,4 @@ Status vocabulary: `Open` · `Pending` · `Decided` · `Approved` · `Superseded
 | [0016](0016-one-playwright-journey-checks-the-real-ui.md) | One Playwright journey checks the real UI | Decided | Frontend | 2026-10-04 |
 | [0017](0017-discovery-cards-carry-the-profile-photo-url.md) | Discovery cards carry the profile photo URL | Open | Backend, Frontend | 2026-10-06 |
 | [0018](0018-a-users-own-changes-are-announced-to-all-of-their-tabs.md) | A user's own changes are announced to all of their tabs, which reload what changed | Decided | Backend, Frontend | 2026-10-06 |
+| [0019](0019-the-backend-refuses-to-start-without-a-required-setting.md) | The backend refuses to start without a setting it cannot work without | Decided | Backend | 2026-10-07 |
