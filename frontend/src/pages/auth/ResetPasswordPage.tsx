@@ -1,12 +1,11 @@
-import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ApiError } from '../../api/client'
 import * as authApi from '../../api/auth'
 import { useAuth } from '../../auth/useAuth'
 import { resetPasswordSchema, type ResetPasswordValues } from '../../schemas/auth'
-import { resolveErrorMessage } from '../../i18n/errors'
+import { toServerMessage } from '@/hooks/toServerMessage'
 import {
   MissingResetToken,
   ResetPasswordForm,
@@ -20,26 +19,19 @@ export function ResetPasswordPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
   })
-  const [serverError, setServerError] = useState<string | null>(null)
-
-  const onSubmit = async (values: ResetPasswordValues) => {
-    setServerError(null)
-    try {
-      const response = await authApi.resetPassword({ token, ...values })
+  const passwordReset = useMutation({
+    mutationFn: (values: ResetPasswordValues) => authApi.resetPassword({ token, ...values }),
+    onSuccess: async response => {
       await loginWithToken(response.access_token)
       navigate('/')
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setServerError(resolveErrorMessage(err.code, err.message))
-      } else {
-        setServerError('Reset failed')
-      }
-    }
-  }
+    },
+  })
+  const error = passwordReset.error
+  const serverError = toServerMessage(error) ?? (error ? 'Reset failed' : null)
 
   if (!token) {
     return <MissingResetToken />
@@ -49,9 +41,9 @@ export function ResetPasswordPage() {
     <ResetPasswordForm
       register={register}
       errors={errors}
-      isSubmitting={isSubmitting}
+      isSubmitting={passwordReset.isPending}
       serverError={serverError}
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(values => passwordReset.mutate(values))}
     />
   )
 }

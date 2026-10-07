@@ -30,7 +30,9 @@ callback, recording a visit) or to fill a form once its data has loaded.
 
 Decided and implemented in `35323e6` ("move server state to TanStack Query"). The options were
 first analysed with the Jev decision engine on 2026-10-04, which preferred D by a 0.02 margin;
-the team moved every hook at once.
+the team moved every hook at once. On 2026-10-07 the writes still made by hand in pages and
+components (login, registration, the password and verification emails, the profile and account
+tabs) moved onto `useMutation` as well.
 
 ## Positions
 

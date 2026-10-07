@@ -17,6 +17,7 @@ import type { UserProfile } from "@/types/user"
 import { Controller } from "react-hook-form"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useMutation } from "@tanstack/react-query"
 import { editProfileSchema, type EditProfileValues } from "@/schemas/users"
 import { zodResolver } from "@hookform/resolvers/zod"
 import useProfileTags from "@/users/useProfileTags"
@@ -24,14 +25,12 @@ import useProfilePhotos from "@/users/useProfilePhotos"
 import useLocationInput from "@/users/useLocationInput"
 import { useAuth } from "@/auth/useAuth"
 import * as usersApi from "../api/users"
-import { ApiError } from "@/api/client"
-import { resolveErrorMessage } from "@/i18n/errors"
+import { toServerMessage } from "@/hooks/toServerMessage"
 import edit from "@/assets/edit.png"
 
 function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>void}) {
     const { accessToken } = useAuth()
     const [editing, setEditing] = useState<boolean>(false)
-    const [serverError, setServerError] = useState<string | null>(null)
 
     const {
         register,
@@ -81,21 +80,17 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
         handleDeletePhoto
     } = useProfilePhotos()
 
-    const onSubmit = async (data: EditProfileValues)=> {
-        setServerError(null)
-        try {
-            await usersApi.editUserProfile(accessToken!, data)
+    const profileUpdate = useMutation({
+        mutationFn: (data: EditProfileValues) => usersApi.editUserProfile(accessToken!, data),
+        onSuccess: () => {
             setEditing(false)
             onSaved()
-        } catch (err) {
-            if (err instanceof ApiError) {
-                setServerError(resolveErrorMessage(err.code, err.message))
-            }
-        }
-    }
+        },
+    })
+    const serverError = toServerMessage(profileUpdate.error)
 
     const handleCancel = () => {
-        setServerError(null)
+        profileUpdate.reset()
         reset()
         setEditing(false)
     }
@@ -114,7 +109,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
             </div>
             {editing && (
                 <div>
-                    <Button onClick={handleSubmit(onSubmit)}>Save</Button>
+                    <Button onClick={handleSubmit(data => profileUpdate.mutate(data))}>Save</Button>
                     <Button variant="outline" onClick={handleCancel}>Cancel</Button>
                 </div>
             )}

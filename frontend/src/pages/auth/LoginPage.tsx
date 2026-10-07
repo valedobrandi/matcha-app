@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/useAuth'
 import { loginSchema, type LoginValues } from '../../schemas/auth'
-import { resolveErrorMessage } from '../../i18n/errors'
+import { toServerMessage } from '@/hooks/toServerMessage'
 import { buildFortyTwoAuthorizeUrl } from '../../auth/oauthState'
 import { LoginForm } from '@/components/login-form'
 
@@ -15,39 +15,26 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
   })
-  const [serverError, setServerError] = useState<string | null>(null)
-  const [showResendLink, setShowResendLink] = useState(false)
-
-  const onSubmit = async (values: LoginValues) => {
-    setServerError(null)
-    setShowResendLink(false)
-    try {
-      await login(values)
-      navigate('/')
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setServerError(resolveErrorMessage(err.code, err.message))
-        if (err.code === 'ACCOUNT_NOT_VERIFIED') {
-          setShowResendLink(true)
-        }
-      } else {
-        setServerError('Login failed')
-      }
-    }
-  }
+  const loginRequest = useMutation({
+    mutationFn: login,
+    onSuccess: () => navigate('/'),
+  })
+  const error = loginRequest.error
+  const serverError = toServerMessage(error) ?? (error ? 'Login failed' : null)
+  const showResendLink = error instanceof ApiError && error.code === 'ACCOUNT_NOT_VERIFIED'
 
   return (
     <LoginForm
       register={register}
       errors={errors}
-      isSubmitting={isSubmitting}
+      isSubmitting={loginRequest.isPending}
       serverError={serverError}
       showResendLink={showResendLink}
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(values => loginRequest.mutate(values))}
       onFortyTwoLogin={() => {
         window.location.href = buildFortyTwoAuthorizeUrl()
       }}

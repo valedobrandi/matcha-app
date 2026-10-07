@@ -1,49 +1,36 @@
-import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ApiError } from '../../api/client'
 import * as authApi from '../../api/auth'
 import {
   resendVerificationSchema,
   type ResendVerificationValues,
 } from '../../schemas/auth'
-import { resolveErrorMessage } from '../../i18n/errors'
+import { toServerMessage } from '@/hooks/toServerMessage'
 import { ResendVerificationForm } from '../../components/resend-verification-form'
 
 export function ResendVerificationPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ResendVerificationValues>({
     resolver: zodResolver(resendVerificationSchema),
   })
-  const [message, setMessage] = useState<string | null>(null)
-  const [serverError, setServerError] = useState<string | null>(null)
-
-  const onSubmit = async (values: ResendVerificationValues) => {
-    setServerError(null)
-    setMessage(null)
-    try {
-      const response = await authApi.resendVerification(values.email)
-      setMessage(response.message)
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setServerError(resolveErrorMessage(err.code, err.message))
-      } else {
-        setServerError('Request failed')
-      }
-    }
-  }
+  const resendRequest = useMutation({
+    mutationFn: (values: ResendVerificationValues) => authApi.resendVerification(values.email),
+  })
+  const error = resendRequest.error
+  const serverError = toServerMessage(error) ?? (error ? 'Request failed' : null)
 
   return (
     <ResendVerificationForm
       register={register}
       errors={errors}
-      isSubmitting={isSubmitting}
+      isSubmitting={resendRequest.isPending}
       serverError={serverError}
-      successMessage={message}
-      onSubmit={handleSubmit(onSubmit)}
+      successMessage={resendRequest.data?.message ?? null}
+      onSubmit={handleSubmit(values => resendRequest.mutate(values))}
     />
   )
 }

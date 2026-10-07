@@ -14,10 +14,10 @@ import type { UserProfile } from "@/types/user"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useMutation } from "@tanstack/react-query"
 import edit from "@/assets/edit.png"
 import * as usersApi from "../api/users"
-import { ApiError } from "@/api/client"
-import { resolveErrorMessage } from "@/i18n/errors"
+import { toServerMessage } from "@/hooks/toServerMessage"
 
 function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>void}) {
     const { accessToken, user } = useAuth()
@@ -50,33 +50,25 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
         }
     })
 
-    const onSubmitAccountChange = async (data: AccountValues) => {
-        setServerError(null)
-        try {
-            await usersApi.editUserAccount(accessToken!, data)
+    const accountUpdate = useMutation({
+        mutationFn: (data: AccountValues) => usersApi.editUserAccount(accessToken!, data),
+        onMutate: () => setServerError(null),
+        onSuccess: () => {
             setAccountEditing(false)
             onSaved()
-        } catch (err) {
-            if (err instanceof ApiError) {
-                setServerError(resolveErrorMessage(err.code, err.message))
-            }
-        }
-    }
+        },
+        onError: error => setServerError(toServerMessage(error)),
+    })
 
-    const onSubmitPasswordChange = async (passwords: PasswordChangeValues) => {
-        setServerError(null)
-        try {
-            const response = await usersApi.changePassword(accessToken!, passwords)
+    const passwordChange = useMutation({
+        mutationFn: (passwords: PasswordChangeValues) => usersApi.changePassword(accessToken!, passwords),
+        onMutate: () => setServerError(null),
+        onSuccess: response => {
             setPasswordEditing(false)
             setPasswordChangeCfm(response.message)
-        } catch (err) {
-            if (err instanceof ApiError) {
-                setServerError(resolveErrorMessage(err.code, err.message))
-            } else {
-                setServerError("Request failed")
-            }
-        }
-    }
+        },
+        onError: error => setServerError(toServerMessage(error) ?? "Request failed"),
+    })
     
     const handleCancel = () => {
         setServerError(null)
@@ -103,7 +95,7 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                 </div>
                 {accountEditing && (
                     <div>
-                        <Button onClick={handleSubmit(onSubmitAccountChange)}>Save</Button>
+                        <Button onClick={handleSubmit(data => accountUpdate.mutate(data))}>Save</Button>
                         <Button variant="outline" onClick={handleCancel}>Cancel</Button>
                     </div>
                 )}
@@ -178,7 +170,7 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                                     <FieldError errors={[passwordForm.formState.errors.confirm_password]}/>
                                 </div>
                                 <div>
-                                    <Button onClick={passwordForm.handleSubmit(onSubmitPasswordChange)}>Reset</Button>
+                                    <Button onClick={passwordForm.handleSubmit(passwords => passwordChange.mutate(passwords))}>Reset</Button>
                                     <Button variant="outline" onClick={handleCancel}>Cancel</Button>
                                     {passwordChangeCfm && (<p>{passwordChangeCfm}</p>)}
                                 </div>
