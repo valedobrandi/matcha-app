@@ -31,6 +31,10 @@ It also adds the only message a client sends: `{"type":"ping","payload":null}`, 
 server answers with `{"type":"pong","payload":null}` on the same socket, so a tab can tell a
 dead socket from a quiet one.
 
+[ADR-0018](0018-a-users-own-changes-are-announced-to-all-of-their-tabs.md) adds
+`{"type":"notifications.read","payload":null}`, pushed to all of a user's sockets after they mark
+notifications read, so their other tabs reload.
+
 ## Status
 
 Decided — locked in the bde ticket. Moves to Approved on team sign-off.
