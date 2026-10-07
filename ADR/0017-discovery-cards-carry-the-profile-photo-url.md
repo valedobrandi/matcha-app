@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Open |
+| **Status** | Decided |
 | **Group** | Backend, Frontend |
 | **Date** | 2026-10-06 |
 | **Supersedes** | — |
@@ -24,7 +24,7 @@ card cannot show one:
 - Photos appear only after opening a profile (`PublicProfilePage.tsx:78`) or on your own profile
   (`MyProfilePage.tsx:58`).
 
-Subject IV.3 asks users to like the profile photo of another user
+Subject IV.5 asks users to like the profile photo of another user
 ([`docs/fr.subject.md`](../docs/fr.subject.md), line 188), so the place where people like
 should show it.
 
@@ -45,9 +45,10 @@ should show it.
 
 ## Status
 
-Decided on 2026-10-06, after seeding 500 users and opening the Suggest page: every card showed
-initials. Nothing is implemented yet. This ADR becomes `Decided` when the backend field, the
-regenerated types and the card change are merged.
+Decided on 2026-10-07: `/discovery/suggest` and `/discovery/search` return `profile_photo_url`,
+read with a `LEFT JOIN` on the profile photo, and `ProfileCard` shows the photo or the initials.
+Recorded on 2026-10-06, after seeding 500 users and opening the Suggest page: every card showed
+initials.
 
 ## Positions
 

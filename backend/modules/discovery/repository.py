@@ -111,8 +111,11 @@ class DiscoveryRepository:
                   SELECT 1
                   FROM likes
                   WHERE from_user_id = $1 AND to_user_id = u.id AND status = 'active'
-                ) AS liked_by_me
+                ) AS liked_by_me,
+                profile_photo.url AS profile_photo_url
               FROM users u
+              LEFT JOIN user_photos profile_photo
+                ON profile_photo.user_id = u.id AND profile_photo.is_profile_photo
               WHERE {_VISIBLE_TO_VIEWER_SQL}
                 AND u.gender = ANY($4::text[])
                 AND u.matching_preference = ANY($5::text[])

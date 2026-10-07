@@ -122,6 +122,30 @@ async def test_should_match_a_user_without_an_orientation_as_bisexual_when_listi
 
     assert [card.id for card in cards] == [unspecified]
 
+async def test_should_carry_the_profile_photo_url_once_or_null_when_no_photo_is_the_profile_photo(
+    connection, token, tag_id
+):
+    viewer = await add_user(connection, token, "viewer", tag_ids=[tag_id])
+    chosen = await add_user(connection, token, "chosen", tag_ids=[tag_id])
+    unchosen = await add_user(connection, token, "unchosen", tag_ids=[tag_id], photo=False)
+    for user_id in (chosen, unchosen):
+        await connection.execute(
+            "INSERT INTO user_photos (user_id, url) VALUES ($1, $2)",
+            user_id, f"/uploads/{token}{user_id}-other.jpg",
+        )
+    query = DiscoveryQuery(
+        viewer_id=viewer, viewer_lat=None, viewer_lon=None,
+        candidate_genders=["female"], interested_in_viewer_prefs=["bisexual"],
+        tag_ids=[tag_id], sort="fame", order="desc", limit=MANY, offset=0,
+    )
+
+    cards = await DiscoveryRepository(connection).list_profiles(query)
+
+    assert [(card.id, card.profile_photo_url) for card in cards] == [
+        (chosen, f"/uploads/{token}chosen.jpg"),
+        (unchosen, None),
+    ]
+
 async def test_should_give_the_viewer_the_bisexual_default_when_the_orientation_is_not_specified(
     connection, token
 ):

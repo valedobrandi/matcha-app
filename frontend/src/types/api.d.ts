@@ -767,6 +767,8 @@ export interface components {
             liked_by_me: boolean;
             /** Location Label */
             location_label: string | null;
+            /** Profile Photo Url */
+            profile_photo_url: string | null;
             /** Username */
             username: string;
         };

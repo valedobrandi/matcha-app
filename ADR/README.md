@@ -34,7 +34,7 @@ Status vocabulary: `Open` · `Pending` · `Decided` · `Approved` · `Superseded
 | [0014](0014-frontend-server-state-goes-through-tanstack-query.md) | Frontend server state goes through TanStack Query | Decided | Frontend | 2026-10-04 |
 | [0015](0015-backend-models-are-the-only-source-of-the-api-contract.md) | Backend models are the only source of the API contract | Decided | Backend, Frontend | 2026-10-04 |
 | [0016](0016-one-playwright-journey-checks-the-real-ui.md) | One Playwright journey checks the real UI | Decided | Frontend | 2026-10-04 |
-| [0017](0017-discovery-cards-carry-the-profile-photo-url.md) | Discovery cards carry the profile photo URL | Open | Backend, Frontend | 2026-10-06 |
+| [0017](0017-discovery-cards-carry-the-profile-photo-url.md) | Discovery cards carry the profile photo URL | Decided | Backend, Frontend | 2026-10-06 |
 | [0018](0018-a-users-own-changes-are-announced-to-all-of-their-tabs.md) | A user's own changes are announced to all of their tabs, which reload what changed | Decided | Backend, Frontend | 2026-10-06 |
 | [0019](0019-the-backend-refuses-to-start-without-a-required-setting.md) | The backend refuses to start without a setting it cannot work without | Decided | Backend | 2026-10-07 |
 | [0020](0020-every-timestamp-the-api-sends-is-in-utc-and-says-so.md) | Every timestamp the API sends is in UTC and says so | Decided | Backend, Frontend | 2026-10-07 |
