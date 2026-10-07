@@ -30,16 +30,15 @@ function renderAccountTab(onSaved = vi.fn()) {
             email_verified: true, profile_completed: true, has_password: true,
         },
     }))
-    const { container } = render(<Wrapper><AccountTab profile={PROFILE} onSaved={onSaved} /></Wrapper>)
-    return { onSaved, container }
+    render(<Wrapper><AccountTab profile={PROFILE} onSaved={onSaved} /></Wrapper>)
+    return onSaved
 }
 
-function changePassword(container: HTMLElement) {
+function changePassword() {
     fireEvent.click(screen.getAllByRole('button', { name: 'vues' })[1])
-    const [current, next, confirm] = container.querySelectorAll('input[type="password"]')
-    fireEvent.change(current, { target: { value: 'Secret123' } })
-    fireEvent.change(next, { target: { value: 'Better456' } })
-    fireEvent.change(confirm, { target: { value: 'Better456' } })
+    fireEvent.change(screen.getByLabelText('Current password'), { target: { value: 'Secret123' } })
+    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'Better456' } })
+    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'Better456' } })
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
 }
 
@@ -74,31 +73,63 @@ describe('ProfileTab', () => {
         expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
         expect(onSaved).not.toHaveBeenCalled()
     })
+
+    it('does say the profile could not be saved when the server cannot be reached', async () => {
+        serveMyTagsAndPhotos()
+        server.use(http.patch(`${API_BASE_URL}/users/me/profile`, () => HttpResponse.error()))
+
+        const onSaved = renderProfileTab()
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+        expect(await screen.findByText('Could not save your profile, please try again')).toBeInTheDocument()
+        expect(onSaved).not.toHaveBeenCalled()
+    })
 })
 
 describe('AccountTab', () => {
-    it('does save the account and tell the page', async () => {
-        server.use(http.patch(`${API_BASE_URL}/users/me/account`, () => HttpResponse.json(PROFILE)))
+    it('does save the fields edited through their labels and tell the page', async () => {
+        const sentBodies: unknown[] = []
+        server.use(http.patch(`${API_BASE_URL}/users/me/account`, async ({ request }) => {
+            sentBodies.push(await request.json())
+            return HttpResponse.json(PROFILE)
+        }))
 
-        const { onSaved } = renderAccountTab()
+        const onSaved = renderAccountTab()
         fireEvent.click(screen.getAllByRole('button', { name: 'vues' })[0])
+        fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'newname' } })
+        fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'new@example.com' } })
         fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
         await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1))
         expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+        expect(sentBodies).toEqual([
+            { username: 'newname', first_name: 'Test', last_name: 'User', email: 'new@example.com' },
+        ])
     })
 
-    it('does send the passwords and close the password form when the password is changed', async () => {
+    it('does say the account could not be saved when the server cannot be reached', async () => {
+        server.use(http.patch(`${API_BASE_URL}/users/me/account`, () => HttpResponse.error()))
+
+        const onSaved = renderAccountTab()
+        fireEvent.click(screen.getAllByRole('button', { name: 'vues' })[0])
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+        expect(await screen.findByText('Could not save your account, please try again')).toBeInTheDocument()
+        expect(onSaved).not.toHaveBeenCalled()
+    })
+
+    it('does confirm the change and close the password form when the password is changed', async () => {
         const sentBodies: unknown[] = []
         server.use(http.patch(`${API_BASE_URL}/users/me/password-change`, async ({ request }) => {
             sentBodies.push(await request.json())
             return HttpResponse.json({ message: 'Your password was changed.' })
         }))
 
-        const { container } = renderAccountTab()
-        changePassword(container)
+        renderAccountTab()
+        changePassword()
 
-        await waitFor(() => expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument())
+        expect(await screen.findByText('Your password was changed.')).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument()
         expect(sentBodies).toEqual([
             { current_password: 'Secret123', new_password: 'Better456', confirm_password: 'Better456' },
         ])
@@ -107,8 +138,8 @@ describe('AccountTab', () => {
     it('does say the password change failed when the server cannot be reached', async () => {
         server.use(http.patch(`${API_BASE_URL}/users/me/password-change`, () => HttpResponse.error()))
 
-        const { container } = renderAccountTab()
-        changePassword(container)
+        renderAccountTab()
+        changePassword()
 
         expect(await screen.findByText('Request failed')).toBeInTheDocument()
         expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument()
