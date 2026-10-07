@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse, ws, type WebSocketHandlerConnection } from 'msw'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { focusManager } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { server } from './server'
 import { authWrapper, makeAuthValue } from './renderWithAuth'
@@ -96,6 +97,7 @@ function findMessageBox() {
 }
 
 afterEach(() => {
+    focusManager.setFocused(undefined)
     vi.useRealTimers()
     vi.unstubAllGlobals()
 })
@@ -305,6 +307,32 @@ describe('ConversationPage', () => {
         renderConversation()
         await waitFor(() => expect(failedReads).toBe(1))
         await vi.advanceTimersByTimeAsync(1000)
+
+        await waitFor(() => expect(readUpTo).toEqual([2]))
+    })
+
+    it('does mark the conversation read when the tab regains focus after every attempt failed', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        stubMessagesInView(() => true)
+        const { readUpTo } = serveConversation(() => [chatMessage(2, BOB.id), chatMessage(1, BOB.id)])
+        let serverDown = true
+        let failedReads = 0
+        server.use(http.post(`${API_BASE_URL}/chat/conversations/:peerId/read`, () => {
+            if (!serverDown) return
+            failedReads += 1
+            return HttpResponse.json({ detail: 'Service unavailable' }, { status: 503 })
+        }))
+        connectSocket()
+
+        renderConversation()
+        await waitFor(() => expect(failedReads).toBe(1))
+        await vi.advanceTimersByTimeAsync(4000)
+        await waitFor(() => expect(failedReads).toBe(3))
+        serverDown = false
+        act(() => {
+            focusManager.setFocused(false)
+            focusManager.setFocused(true)
+        })
 
         await waitFor(() => expect(readUpTo).toEqual([2]))
     })

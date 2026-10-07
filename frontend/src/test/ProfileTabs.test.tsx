@@ -16,9 +16,9 @@ function serveMyTagsAndPhotos() {
     )
 }
 
-function renderProfileTab(onSaved = vi.fn()) {
+function renderProfileTab(onSaved = vi.fn(), profile = PROFILE) {
     const Wrapper = authWrapper(makeAuthValue())
-    render(<Wrapper><ProfileTab profile={PROFILE} onSaved={onSaved} /></Wrapper>)
+    render(<Wrapper><ProfileTab profile={profile} onSaved={onSaved} /></Wrapper>)
     fireEvent.click(screen.getByRole('button', { name: 'vues' }))
     return onSaved
 }
@@ -57,6 +57,14 @@ describe('ProfileTab', () => {
         await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1))
         expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
         expect(sentBodies).toEqual([expect.objectContaining({ age: 25, bio: 'hi', location_label: 'Paris' })])
+    })
+
+    it('does name the manual location field when the location is not shared', () => {
+        serveMyTagsAndPhotos()
+
+        renderProfileTab(vi.fn(), { ...PROFILE, location_consent: false })
+
+        expect(screen.getByLabelText('City or neighborhood')).toHaveValue('Paris')
     })
 
     it('does show why the profile could not be saved and stay in edit mode', async () => {

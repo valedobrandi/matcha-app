@@ -204,10 +204,13 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                                 disabled={!editing}/>
                             {isLocating && (<p>Getting your location...</p>)}
                             {!sharePosition && (
-                                <Input id="location_label" type="text" disabled={!editing}
-                                {...register("location_label", {
-                                    onBlur: (e)=>handleManuallyLocationInput(e.target.value)
-                                })} />
+                                <>
+                                    <FieldLabel htmlFor="location_label">City or neighborhood</FieldLabel>
+                                    <Input id="location_label" type="text" disabled={!editing}
+                                    {...register("location_label", {
+                                        onBlur: (e)=>handleManuallyLocationInput(e.target.value)
+                                    })} />
+                                </>
                             )}
                             {locationError && (<FieldError>{locationError}</FieldError>)}
                             <FieldError errors={[errors.location_label]}/>
