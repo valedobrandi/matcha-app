@@ -10,6 +10,7 @@ from modules.notifications.handlers import register_notifications_exception_hand
 from modules.chat.handlers import register_chat_exception_handlers
 from core.database import db_lifespan
 from core.error_codes import ErrorResponse, ValidationErrorResponse
+from core.log_redaction import RedactCredentialsFilter
 from modules.auth.controller import auth_router
 from modules.users.controller import users_router
 from modules.tags.controller import tags_router
@@ -19,7 +20,11 @@ from modules.notifications.controller import notifications_router
 from modules.chat.controller import chat_router
 from modules.realtime.controller import realtime_router
 from modules.users.repository import UPLOAD_DIR
+import logging
 import os
+
+for uvicorn_logger in ("uvicorn.access", "uvicorn.error"):
+    logging.getLogger(uvicorn_logger).addFilter(RedactCredentialsFilter())
 
 origins = os.getenv("CORS_ORIGINS", "http://localhost:5173")
 allow_origins = [origin.strip() for origin in origins.split(',') if origin.strip()]

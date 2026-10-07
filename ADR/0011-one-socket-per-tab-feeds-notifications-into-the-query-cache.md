@@ -103,6 +103,9 @@ store. Fan-out in the hub is a few lines and makes all tabs behave the same.
 - Open: sockets per user are not capped. A dead socket stays in the hub until uvicorn's
   keepalive ping times out (20 s interval, 20 s timeout by default). Revisit in the security
   review.
+- The access token travels in the socket URL, and uvicorn logs that URL. `RedactCredentialsFilter`
+  (`backend/core/log_redaction.py`, installed in `main.py`) masks it in both uvicorn loggers,
+  with the email verification token and the 42 OAuth code; `test_log_redaction.py` checks it.
 - The notification list query and the insert join `users`; `test_notifications_integration.py`
   checks both on a real Postgres. `frontend/src/types/api.d.ts` is regenerated.
 - Frontend tests intercept the socket with MSW (`ws.link`): a pushed notification and every open
