@@ -5,15 +5,17 @@ from modules.social.schemas import (
     VisitorOut,
     LikeReceivedOut,
     BlockedUserOut,
+    ConnectionOut,
 )
 
 
 @dataclass
 class RelationshipFlags:
-    """Raw like/block flags between two users. Response assembly (connected,
-    presence) belongs to the service, not this SQL layer."""
+    """Raw like/block flags and the connection between two users. Response assembly
+    (presence) belongs to the service, not this SQL layer."""
     liked_by_me: bool
     liked_you: bool
+    connected: bool
     blocked_by_me: bool
     blocked_you: bool
 
@@ -106,21 +108,15 @@ class SocialRepository:
             return False
 
     async def is_connected(self, a: int, b: int) -> bool:
-        row = await self.connection.fetchrow(
+        return await self.connection.fetchval(
             """
-            SELECT
-              EXISTS (
-                SELECT 1 FROM likes
-                WHERE from_user_id = $1 AND to_user_id = $2 AND status = 'active'
-              ) AS ab,
-              EXISTS (
-                SELECT 1 FROM likes
-                WHERE from_user_id = $2 AND to_user_id = $1 AND status = 'active'
-              ) AS ba
+            SELECT EXISTS (
+                SELECT 1 FROM connections
+                WHERE user_id = $1 AND other_user_id = $2
+            )
             """,
             a, b,
         )
-        return bool(row["ab"] and row["ba"])
 
     async def get_relationship_flags(self, me: int, target: int) -> RelationshipFlags:
         row = await self.connection.fetchrow(
@@ -135,6 +131,10 @@ class SocialRepository:
                 WHERE from_user_id = $2 AND to_user_id = $1 AND status = 'active'
               ) AS liked_you,
               EXISTS (
+                SELECT 1 FROM connections
+                WHERE user_id = $1 AND other_user_id = $2
+              ) AS connected,
+              EXISTS (
                 SELECT 1 FROM blocks
                 WHERE from_user_id = $1 AND to_user_id = $2 AND status = 'active'
               ) AS blocked_by_me,
@@ -148,6 +148,7 @@ class SocialRepository:
         return RelationshipFlags(
             liked_by_me=bool(row["liked_by_me"]),
             liked_you=bool(row["liked_you"]),
+            connected=bool(row["connected"]),
             blocked_by_me=bool(row["blocked_by_me"]),
             blocked_you=bool(row["blocked_you"]),
         )
@@ -172,6 +173,26 @@ class SocialRepository:
             user_id, limit, offset,
         )
         return [LikeReceivedOut.model_validate(dict(r)) for r in rows]
+
+    async def list_connections(
+        self, user_id: int, limit: int, offset: int
+    ) -> List[ConnectionOut]:
+        rows = await self.connection.fetch(
+            """
+            SELECT u.id, u.username, u.first_name, u.last_name, c.connected_at
+            FROM connections c
+            JOIN users u ON u.id = c.other_user_id
+            WHERE c.user_id = $1
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_pairs bp
+                WHERE bp.user_id = $1 AND bp.other_user_id = c.other_user_id
+              )
+            ORDER BY c.connected_at DESC, u.id DESC
+            LIMIT $2 OFFSET $3
+            """,
+            user_id, limit, offset,
+        )
+        return [ConnectionOut.model_validate(dict(r)) for r in rows]
 
     async def is_blocked_either_way(self, a: int, b: int) -> bool:
         row = await self.connection.fetchrow(

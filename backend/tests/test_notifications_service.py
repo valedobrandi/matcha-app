@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, UTC
 from modules.notifications.service import NotificationsService
-from modules.notifications.schemas import NotificationActor, NotificationOut
+from modules.notifications.schemas import NotificationActor, NotificationOut, UnreadCountOut
 from modules.notifications.exceptions import NotificationNotFoundException
 
 
@@ -44,11 +44,23 @@ class FakeRepo:
                 n += 1
         return n
 
+    async def mark_read_by_actor(self, user_id, actor_id, type, up_to_entity_id):
+        for uid, row in self.rows:
+            if (
+                uid == user_id
+                and row.actor.id == actor_id
+                and row.type == type
+                and row.entity_id is not None
+                and row.entity_id <= up_to_entity_id
+                and row.read_at is None
+            ):
+                row.read_at = datetime.now(UTC)
+
     async def unread_count(self, user_id):
-        return sum(
-            1
-            for uid, row in self.rows
-            if uid == user_id and row.read_at is None
+        unread = [row for uid, row in self.rows if uid == user_id and row.read_at is None]
+        return UnreadCountOut(
+            unread_count=len(unread),
+            unread_messages=sum(1 for row in unread if row.type == "message"),
         )
 
 
@@ -58,6 +70,14 @@ class FakeHub:
 
     async def push(self, user_id, envelope):
         self.pushed.append((user_id, envelope))
+
+
+class FailingHub:
+    async def push(self, user_id, envelope):
+        raise RuntimeError("socket gone")
+
+
+READ_EVENT = {"type": "notifications.read", "payload": None}
 
 
 @pytest.mark.asyncio
@@ -114,3 +134,48 @@ async def test_should_not_mark_read_when_other_users_notification():
     created = await service.create_event(2, "liked", 1)
     with pytest.raises(NotificationNotFoundException):
         await service.mark_read(99, created.id)
+
+
+@pytest.mark.asyncio
+async def test_should_tell_every_tab_of_the_user_when_one_notification_is_read():
+    repo = FakeRepo()
+    hub = FakeHub()
+    created = await repo.create(2, "liked", 1)
+    service = NotificationsService(repo, hub=hub)
+    await service.mark_read(2, created.id)
+    assert hub.pushed == [(2, READ_EVENT)]
+
+
+@pytest.mark.asyncio
+async def test_should_tell_every_tab_of_the_user_when_all_notifications_are_read():
+    hub = FakeHub()
+    service = NotificationsService(FakeRepo(), hub=hub)
+    await service.mark_all_read(2)
+    assert hub.pushed == [(2, READ_EVENT)]
+
+
+@pytest.mark.asyncio
+async def test_should_tell_every_tab_of_the_user_when_a_senders_messages_are_read():
+    hub = FakeHub()
+    service = NotificationsService(FakeRepo(), hub=hub)
+    await service.mark_read_by_actor(2, 1, "message", 10)
+    assert hub.pushed == [(2, READ_EVENT)]
+
+
+@pytest.mark.asyncio
+async def test_should_tell_no_tab_when_the_notification_to_mark_read_is_missing():
+    hub = FakeHub()
+    service = NotificationsService(FakeRepo(), hub=hub)
+    with pytest.raises(NotificationNotFoundException):
+        await service.mark_read(2, 99)
+    assert hub.pushed == []
+
+
+@pytest.mark.asyncio
+async def test_should_still_mark_all_read_when_telling_the_tabs_fails():
+    repo = FakeRepo()
+    await repo.create(2, "liked", 1)
+    service = NotificationsService(repo, hub=FailingHub())
+    result = await service.mark_all_read(2)
+    assert result.ok is True
+    assert (await service.unread_count(2)).unread_count == 0

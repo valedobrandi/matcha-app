@@ -38,3 +38,6 @@ class LikeReceivedOut(SocialUserCard):
 
 class BlockedUserOut(SocialUserCard):
     blocked_at: datetime
+
+class ConnectionOut(SocialUserCard):
+    connected_at: datetime

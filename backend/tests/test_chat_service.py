@@ -25,13 +25,14 @@ class FakeChatRepo:
         self.messages.append(msg)
         return msg
 
-    async def list_messages(self, me, peer, limit, offset):
+    async def list_messages(self, me, peer, limit, before):
         owned = [
             m
-            for m in self.messages
+            for m in reversed(self.messages)
             if {m.from_user_id, m.to_user_id} == {me, peer}
+            and (before is None or m.id < before)
         ]
-        return owned[offset:offset + limit]
+        return owned[:limit]
 
 
 class FakeSocial:
@@ -53,6 +54,7 @@ class FakeSocial:
 class FakeNotifier:
     def __init__(self):
         self.events = []
+        self.read = []
 
     async def create_event(self, user_id, type, actor_id, entity_id=None):
         self.events.append(
@@ -64,10 +66,28 @@ class FakeNotifier:
             }
         )
 
+    async def mark_read_by_actor(self, user_id, actor_id, type, up_to_entity_id):
+        self.read.append(
+            {
+                "user_id": user_id,
+                "actor_id": actor_id,
+                "type": type,
+                "up_to_entity_id": up_to_entity_id,
+            }
+        )
+
+
+class FakeHub:
+    def __init__(self):
+        self.pushed = []
+
+    async def push(self, user_id, envelope):
+        self.pushed.append((user_id, envelope))
+
 
 @pytest.mark.asyncio
 async def test_should_send_when_connected():
-    service = ChatService(FakeChatRepo(), FakeSocial(connected=True))
+    service = ChatService(FakeChatRepo(), FakeSocial(connected=True), FakeNotifier())
     msg = await service.send(1, 2, SendMessageInput(body="hi"))
     assert msg.body == "hi"
     assert msg.from_user_id == 1
@@ -76,7 +96,7 @@ async def test_should_send_when_connected():
 
 @pytest.mark.asyncio
 async def test_should_forbid_when_not_connected():
-    service = ChatService(FakeChatRepo(), FakeSocial(connected=False))
+    service = ChatService(FakeChatRepo(), FakeSocial(connected=False), FakeNotifier())
     with pytest.raises(NotConnectedException):
         await service.send(1, 2, SendMessageInput(body="hi"))
 
@@ -84,20 +104,20 @@ async def test_should_forbid_when_not_connected():
 @pytest.mark.asyncio
 async def test_should_answer_user_not_found_when_blocked():
     service = ChatService(
-        FakeChatRepo(), FakeSocial(connected=True, blocked=True)
+        FakeChatRepo(), FakeSocial(connected=True, blocked=True), FakeNotifier()
     )
     with pytest.raises(ChatUserNotFoundException):
         await service.send(1, 2, SendMessageInput(body="hi"))
 
 
 @pytest.mark.asyncio
-async def test_should_list_when_connected():
+async def test_should_list_newest_first_when_connected():
     repo = FakeChatRepo()
-    service = ChatService(repo, FakeSocial(connected=True))
+    service = ChatService(repo, FakeSocial(connected=True), FakeNotifier())
     await service.send(1, 2, SendMessageInput(body="a"))
     await service.send(2, 1, SendMessageInput(body="b"))
-    msgs = await service.list_messages(1, 2, 50, 0)
-    assert [m.body for m in msgs] == ["a", "b"]
+    msgs = await service.list_messages(1, 2, 50, None)
+    assert [m.body for m in msgs] == ["b", "a"]
 
 
 @pytest.mark.asyncio
@@ -114,6 +134,43 @@ async def test_should_emit_message_notification_when_sent():
 
 @pytest.mark.asyncio
 async def test_should_raise_when_peer_missing():
-    service = ChatService(FakeChatRepo(), FakeSocial(connected=True, users={1}))
+    service = ChatService(
+        FakeChatRepo(), FakeSocial(connected=True, users={1}), FakeNotifier()
+    )
     with pytest.raises(ChatUserNotFoundException):
         await service.send(1, 2, SendMessageInput(body="hi"))
+
+
+@pytest.mark.asyncio
+async def test_should_push_the_message_to_the_recipient_and_the_sender_when_sent():
+    hub = FakeHub()
+    service = ChatService(
+        FakeChatRepo(), FakeSocial(connected=True), FakeNotifier(), hub=hub
+    )
+    msg = await service.send(1, 2, SendMessageInput(body="hi"))
+    envelope = {"type": "chat.message", "payload": msg.model_dump(mode="json")}
+    assert hub.pushed == [(2, envelope), (1, envelope)]
+
+
+@pytest.mark.asyncio
+async def test_should_mark_the_peers_message_notifications_read_up_to_the_shown_message_when_read():
+    notifier = FakeNotifier()
+    service = ChatService(
+        FakeChatRepo(), FakeSocial(connected=True), notifier=notifier
+    )
+    result = await service.mark_conversation_read(1, 2, 10)
+    assert result.ok is True
+    assert notifier.read == [
+        {"user_id": 1, "actor_id": 2, "type": "message", "up_to_entity_id": 10}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_should_leave_notifications_unread_when_reading_a_conversation_while_not_connected():
+    notifier = FakeNotifier()
+    service = ChatService(
+        FakeChatRepo(), FakeSocial(connected=False), notifier=notifier
+    )
+    with pytest.raises(NotConnectedException):
+        await service.mark_conversation_read(1, 2, 10)
+    assert notifier.read == []

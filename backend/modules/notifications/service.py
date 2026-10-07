@@ -46,15 +46,22 @@ class NotificationsService:
         updated = await self.repository.mark_read(user_id, notification_id)
         if not updated:
             raise NotificationNotFoundException()
+        await self._push_read(user_id)
         return NotificationOkResponse()
 
     async def mark_all_read(self, user_id: int) -> NotificationOkResponse:
         await self.repository.mark_all_read(user_id)
+        await self._push_read(user_id)
         return NotificationOkResponse()
 
+    async def mark_read_by_actor(
+        self, user_id: int, actor_id: int, type: NotificationType, up_to_entity_id: int
+    ) -> None:
+        await self.repository.mark_read_by_actor(user_id, actor_id, type, up_to_entity_id)
+        await self._push_read(user_id)
+
     async def unread_count(self, user_id: int) -> UnreadCountOut:
-        count = await self.repository.unread_count(user_id)
-        return UnreadCountOut(unread_count=count)
+        return await self.repository.unread_count(user_id)
 
     async def _push_notification(
         self, user_id: int, notification: NotificationOut
@@ -75,3 +82,11 @@ class NotificationsService:
                 notification.id,
                 user_id,
             )
+
+    async def _push_read(self, user_id: int) -> None:
+        if self.hub is None:
+            return
+        try:
+            await self.hub.push(user_id, {"type": "notifications.read", "payload": None})
+        except Exception:
+            logger.exception("Failed to push notifications.read to user %s", user_id)

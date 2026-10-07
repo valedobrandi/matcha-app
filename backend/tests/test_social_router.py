@@ -15,6 +15,7 @@ from modules.social.schemas import (
     RelationshipResponse,
     VisitorOut,
     LikeReceivedOut,
+    ConnectionOut,
 )
 from modules.social.exceptions import (
     CannotVisitSelfException,
@@ -119,6 +120,17 @@ class FakeSocialService:
 
     async def list_blocks(self, user_id: int, limit: int, offset: int):
         return []
+
+    async def list_connections(self, user_id: int, limit: int, offset: int):
+        return [
+            ConnectionOut(
+                id=2,
+                username="bob",
+                first_name="Bob",
+                last_name="B",
+                connected_at=datetime.datetime(2026, 1, 3),
+            )
+        ][offset:offset + limit]
 
     async def report(
         self, reporter_id: int, target_id: int, reason: str | None
@@ -286,6 +298,25 @@ class TestSocialLists:
         )
         assert response.status_code == 200
         assert isinstance(response.json(), list)
+
+    def test_should_list_connections_with_the_time_they_connected_when_authenticated(
+        self, override_social
+    ):
+        token = make_token(1)
+        response = client.get(
+            "/social/connections",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert response.json() == [
+            {
+                "id": 2,
+                "username": "bob",
+                "first_name": "Bob",
+                "last_name": "B",
+                "connected_at": "2026-01-03T00:00:00",
+            }
+        ]
 
 
 class TestAuthMeStaysThin:

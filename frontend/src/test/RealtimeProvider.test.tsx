@@ -63,6 +63,20 @@ describe('RealtimeProvider', () => {
         await expectNotificationsRefetched(queryClient)
     })
 
+    it('does refetch the unread count and the list when notifications are read in another tab', async () => {
+        let socketClient: RealtimeClient | undefined
+        server.use(realtime.addEventListener('connection', ({ client }) => {
+            socketClient = client
+        }))
+
+        const queryClient = renderProvider()
+        await expectNotificationsRefetched(queryClient)
+        seedNotifications(queryClient)
+        socketClient!.send(JSON.stringify({ type: 'notifications.read', payload: null }))
+
+        await expectNotificationsRefetched(queryClient)
+    })
+
     it('does refetch the notifications every time the socket opens', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         const clients: RealtimeClient[] = []

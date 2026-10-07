@@ -8,6 +8,7 @@ import pytest
 
 from db_support import add_block, add_like, add_notification, add_user, add_visit
 from modules.notifications.repository import InAppNotificationsRepository
+from modules.notifications.schemas import UnreadCountOut
 from modules.social.repository import SocialRepository
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
@@ -73,7 +74,9 @@ async def test_should_hide_blocked_actors_from_notifications_and_the_unread_coun
     await add_block(connection, blocking_me, me)
 
     assert await notification_actor_ids(connection, me) == [other]
-    assert await InAppNotificationsRepository(connection).unread_count(me) == 1
+    assert await InAppNotificationsRepository(connection).unread_count(me) == UnreadCountOut(
+        unread_count=1, unread_messages=0
+    )
 
 
 async def test_should_bring_the_history_back_when_the_block_is_inactive(connection, token):
@@ -87,7 +90,9 @@ async def test_should_bring_the_history_back_when_the_block_is_inactive(connecti
     assert await visitor_ids(connection, me) == [visitor]
     assert await liker_ids(connection, me) == [visitor]
     assert await notification_actor_ids(connection, me) == [visitor]
-    assert await InAppNotificationsRepository(connection).unread_count(me) == 1
+    assert await InAppNotificationsRepository(connection).unread_count(me) == UnreadCountOut(
+        unread_count=1, unread_messages=0
+    )
     assert await SocialRepository(connection).count_likes_received(me) == 1
     assert await SocialRepository(connection).count_visitors(me) == 1
 

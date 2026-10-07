@@ -18,6 +18,7 @@ from modules.social.schemas import (
     VisitorOut,
     LikeReceivedOut,
     BlockedUserOut,
+    ConnectionOut,
 )
 from core.presence import ONLINE_WINDOW_SECONDS
 from typing import Any, List, Optional
@@ -126,6 +127,11 @@ class SocialService:
     ) -> List[LikeReceivedOut]:
         return await self.social_repo.list_likes_received(user_id, limit, offset)
 
+    async def list_connections(
+        self, user_id: int, limit: int, offset: int
+    ) -> List[ConnectionOut]:
+        return await self.social_repo.list_connections(user_id, limit, offset)
+
     async def block(self, from_user_id: int, to_user_id: int) -> BlockStateResponse:
         if from_user_id == to_user_id:
             raise CannotBlockSelfException()
@@ -163,7 +169,7 @@ class SocialService:
         return RelationshipResponse(
             liked_by_me=flags.liked_by_me,
             liked_you=flags.liked_you,
-            connected=flags.liked_by_me and flags.liked_you,
+            connected=flags.connected,
             blocked_by_me=flags.blocked_by_me,
             last_connection=last_connection,
             is_online=self._is_online(last_connection),

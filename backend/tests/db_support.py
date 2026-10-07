@@ -37,15 +37,18 @@ async def add_visit(connection, viewer_id, target_id) -> None:
     )
 
 
-async def add_like(connection, from_user_id, to_user_id) -> None:
+async def add_like(connection, from_user_id, to_user_id, status="active", at=None) -> None:
     await connection.execute(
-        "INSERT INTO likes (from_user_id, to_user_id, status) VALUES ($1, $2, 'active')",
-        from_user_id, to_user_id,
+        """
+        INSERT INTO likes (from_user_id, to_user_id, status, updated_at)
+        VALUES ($1, $2, $3, COALESCE($4::timestamp, NOW()))
+        """,
+        from_user_id, to_user_id, status, at,
     )
 
 
-async def add_notification(connection, user_id, actor_id, type="liked") -> None:
+async def add_notification(connection, user_id, actor_id, type="liked", entity_id=None) -> None:
     await connection.execute(
-        "INSERT INTO in_app_notifications (user_id, type, actor_id) VALUES ($1, $2, $3)",
-        user_id, type, actor_id,
+        "INSERT INTO in_app_notifications (user_id, type, actor_id, entity_id) VALUES ($1, $2, $3, $4)",
+        user_id, type, actor_id, entity_id,
     )

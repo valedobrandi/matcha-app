@@ -2,6 +2,8 @@ from typing import List
 import asyncpg
 from modules.chat.schemas import MessageOut
 
+ABOVE_EVERY_MESSAGE_ID = 2**31
+
 
 class ChatRepository:
     def __init__(self, connection: asyncpg.Connection):
@@ -23,22 +25,22 @@ class ChatRepository:
         return self._to_out(row)
 
     async def list_messages(
-        self, me: int, peer: int, limit: int, offset: int
+        self, me: int, peer: int, limit: int, before: int | None
     ) -> List[MessageOut]:
         rows = await self.connection.fetch(
             """
             SELECT id, from_user_id, to_user_id, body, created_at
             FROM chat_messages
-            WHERE
-                (from_user_id = $1 AND to_user_id = $2)
-                OR (from_user_id = $2 AND to_user_id = $1)
-            ORDER BY created_at ASC, id ASC
-            LIMIT $3 OFFSET $4
+            WHERE LEAST(from_user_id, to_user_id) = LEAST($1::int, $2::int)
+              AND GREATEST(from_user_id, to_user_id) = GREATEST($1::int, $2::int)
+              AND id < $4::bigint
+            ORDER BY id DESC
+            LIMIT $3
             """,
             me,
             peer,
             limit,
-            offset,
+            ABOVE_EVERY_MESSAGE_ID if before is None else before,
         )
         return [self._to_out(row) for row in rows]
 
