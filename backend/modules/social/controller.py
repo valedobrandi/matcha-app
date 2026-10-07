@@ -27,7 +27,7 @@ def get_social_service(
     db: asyncpg.Connection = Depends(get_db_connection),
 ) -> SocialService:
     notifier = NotificationsService(InAppNotificationsRepository(db), hub=hub)
-    return SocialService(SocialRepository(db), UsersRepository(db), notifier=notifier)
+    return SocialService(SocialRepository(db), UsersRepository(db), hub, notifier=notifier)
 
 @social_router.post("/visits/{target_user_id}", response_model=SocialOkResponse)
 async def create_visit(

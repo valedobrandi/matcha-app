@@ -60,9 +60,13 @@ class ConnectionHub:
             del self._connections[user_id]
 
     async def push(self, user_id: int, envelope: dict[str, Any]) -> None:
-        # Serialized once, outside the per-socket try: an envelope that is not JSON raises to the
-        # caller instead of unregistering every tab. Same arguments as Starlette's send_json.
-        text = json.dumps(envelope, separators=(",", ":"), ensure_ascii=False)
+        # Serialized once, outside the per-socket try: an envelope that is not JSON is logged and
+        # dropped instead of unregistering every tab. Same arguments as Starlette's send_json.
+        try:
+            text = json.dumps(envelope, separators=(",", ":"), ensure_ascii=False)
+        except (TypeError, ValueError):
+            logger.exception("Dropped an envelope that is not JSON for user %s", user_id)
+            return
         for websocket in tuple(self._connections.get(user_id, ())):
             # A tab that closed while an earlier send in this loop awaited has left the hub.
             if websocket not in self._connections.get(user_id, ()):

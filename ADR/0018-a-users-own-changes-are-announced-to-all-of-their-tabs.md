@@ -34,18 +34,26 @@ opened and every time a message arrives in an open one.
   and `POST /chat/conversations/{peer_id}/read`. It is sent after every successful call, even
   when nothing was unread, because a reload is harmless. It is not sent when the notification is
   missing (404).
+- **Second event:** `{"type": "blocks.changed", "payload": null}`, pushed by `SocialService` to
+  the blocker's own sockets after `POST` or `DELETE /social/blocks/{id}`. It never goes to the
+  blocked user, who is never told about a block
+  ([ADR-0007](0007-the-blocked-user-is-never-told.md)).
 - **Client:** `RealtimeProvider` reloads the unread count and the notifications list on
-  `notifications.read`, as it does on `notification`. The tab that made the change still updates
-  itself from its own request, so it does not depend on its socket; the echo it also receives
-  costs one extra reload.
-- **Best effort:** a failed push is logged and the request still succeeds. A tab that missed the
+  `notifications.read`, as it does on `notification`. On `blocks.changed` it reloads every view
+  that hides blocked users, from the same list `useBlock` reloads in the tab that blocked. The
+  tab that made the change still updates itself from its own request, so it does not depend on
+  its socket; the echo it also receives costs one extra reload.
+- **Best effort:** `hub.push` logs and drops what it cannot deliver, including an envelope that
+  is not JSON, and never raises, so the services call it without a wrapper and the request still
+  succeeds. The hub is a required dependency of every service that pushes. A tab that missed the
   event reloads when its socket opens again (ADR-0011).
 
 ## Status
 
 Decided on 2026-10-06: `NotificationsService` pushes `notifications.read` after the three
 mark-read requests and `RealtimeProvider` reloads on it. Recorded on 2026-10-06 at the owner's
-request.
+request. Extended on 2026-10-07 after the review of #40: `blocks.changed`, and the best-effort
+policy moved into the hub.
 
 ## Positions
 
@@ -76,12 +84,15 @@ harmless.
 
 ## Implications
 
-- `test_notifications_service.py` checks the event after each of the three requests, no event
-  after a 404, and that a failing push does not fail the request. `RealtimeProvider.test.tsx`
-  checks that `notifications.read` marks the cached count and list stale.
-- Each call costs every open tab of the user two requests (the count and the list).
-- New events follow the same rule once a screen shows the changed state, for example a block
-  made in one tab while another tab shows a list. None are added before a screen needs them.
+- `test_notifications_service.py` checks the event after each of the three requests and no
+  event after a 404. `test_social_service.py` checks that a block and an unblock reach only the
+  blocker, and that a refused block sends nothing. `test_ws_hub.py` checks that an envelope that
+  is not JSON is logged without raising or dropping a tab. `RealtimeProvider.test.tsx` checks that
+  both events mark the cached queries stale.
+- Each mark-read call costs every open tab of the user two requests (the count and the list). A
+  block marks ten queries stale, and each tab fetches again only the ones it shows.
+- New events follow the same rule once a screen shows the changed state. None are added before a
+  screen needs them.
 - Event names are strings repeated in `RealtimeProvider`. Generating them from backend models,
   as the HTTP types are (ADR-0015), is a separate step.
 - The hub lives in one process ([ADR-0003](0003-realtime-delivery-uses-a-fastapi-websocket-hub.md),

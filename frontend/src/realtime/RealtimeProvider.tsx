@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/auth/useAuth"
 import { WS_URL } from "@/api/client"
 import { invalidateNotifications } from "@/notifications/queryKeys"
+import { invalidateBlockedUserViews } from "@/social/queryKeys"
 
 // The server closes with 1008 when the token is invalid: reconnecting cannot help.
 const INVALID_TOKEN_CLOSE_CODE = 1008
@@ -78,6 +79,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
                 if (event.type === "notification" || event.type === "notifications.read") {
                     invalidateNotifications(queryClient)
                 }
+                if (event.type === "blocks.changed") invalidateBlockedUserViews(queryClient)
             }
             socket.onclose = event => {
                 stopPinging()

@@ -164,14 +164,14 @@ async def test_should_skip_a_tab_that_closed_during_the_same_push(caplog):
 
 
 @pytest.mark.asyncio
-async def test_should_raise_and_keep_every_tab_when_the_envelope_is_not_json():
+async def test_should_log_and_keep_every_tab_when_the_envelope_is_not_json(caplog):
     hub = ConnectionHub()
     first_tab, second_tab = FakeWebSocket(), FakeWebSocket()
     await hub.connect(1, first_tab)
     await hub.connect(1, second_tab)
-    with pytest.raises(TypeError):
-        await hub.push(1, {"type": "notification", "payload": object()})
+    await hub.push(1, {"type": "notification", "payload": object()})
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
+    assert [record.levelname for record in caplog.records] == ["ERROR"]
     assert first_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
     assert second_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
 

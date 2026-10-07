@@ -77,6 +77,22 @@ describe('RealtimeProvider', () => {
         await expectNotificationsRefetched(queryClient)
     })
 
+    it('does refetch the views that hide blocked users when a block changes in another tab', async () => {
+        let socketClient: RealtimeClient | undefined
+        server.use(realtime.addEventListener('connection', ({ client }) => {
+            socketClient = client
+        }))
+
+        const queryClient = renderProvider()
+        await expectNotificationsRefetched(queryClient)
+        seedNotifications(queryClient)
+        queryClient.setQueryData(['visitors'], [])
+        socketClient!.send(JSON.stringify({ type: 'blocks.changed', payload: null }))
+
+        await waitFor(() => expect(isInvalidated(queryClient, 'visitors')).toBe(true))
+        await expectNotificationsRefetched(queryClient)
+    })
+
     it('does refetch the notifications every time the socket opens', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         const clients: RealtimeClient[] = []

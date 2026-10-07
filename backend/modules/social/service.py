@@ -25,6 +25,7 @@ from typing import Any, List, Optional
 
 FAME_LIKE_DELTA = 5
 FAME_VISIT_DELTA = 1
+BLOCKS_CHANGED = {"type": "blocks.changed", "payload": None}
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +35,12 @@ class SocialService:
         self,
         social_repo: SocialRepository,
         users_repo: UsersRepository,
+        hub: Any,
         notifier: Any = None,
     ):
         self.social_repo = social_repo
         self.users_repo = users_repo
+        self.hub = hub
         self.notifier = notifier
 
     async def _ensure_not_blocked(self, a: int, b: int) -> None:
@@ -138,10 +141,12 @@ class SocialService:
         if not await self.social_repo.user_exists(to_user_id):
             raise SocialUserNotFoundException()
         await self.social_repo.activate_block(from_user_id, to_user_id)
+        await self.hub.push(from_user_id, BLOCKS_CHANGED)
         return BlockStateResponse(blocked=True)
 
     async def unblock(self, from_user_id: int, to_user_id: int) -> BlockStateResponse:
         await self.social_repo.soft_unblock(from_user_id, to_user_id)
+        await self.hub.push(from_user_id, BLOCKS_CHANGED)
         return BlockStateResponse(blocked=False)
 
     async def list_blocks(
