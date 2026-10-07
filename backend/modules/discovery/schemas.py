@@ -15,6 +15,7 @@ class DiscoveryProfileCard(ApiModel):
     common_tags_count: int = 0
     location_label: Optional[str] = None
     liked_by_me: bool
+    profile_photo_url: Optional[str] = None
 
 
 class SuggestQueryParams(BaseModel):

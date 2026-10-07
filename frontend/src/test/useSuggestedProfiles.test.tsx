@@ -22,6 +22,7 @@ function makeProfile(overrides: Partial<DiscoveryProfile> = {}): DiscoveryProfil
         common_tags_count: 2,
         location_label: 'Paris',
         liked_by_me: false,
+        profile_photo_url: null,
         ...overrides,
     }
 }
