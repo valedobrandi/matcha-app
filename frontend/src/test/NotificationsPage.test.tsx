@@ -12,7 +12,7 @@ import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
 const BOB = { id: 5, username: 'bob', first_name: 'Bob', last_name: 'Smith' }
 
 function notification(id: number, type: string, readAt: string | null = null) {
-    return { id, type, actor: BOB, entity_id: null, read_at: readAt, created_at: '2026-10-06T09:30:00' }
+    return { id, type, actor: BOB, entity_id: null, read_at: readAt, created_at: '2026-10-06T09:30:00Z' }
 }
 
 class NeverIntersectingObserver {
@@ -72,9 +72,9 @@ describe('NotificationsPage', () => {
         serveNotifications(() => [
             notification(1, 'liked'),
             notification(2, 'visited'),
-            notification(3, 'matched', '2026-10-06T10:00:00'),
-            notification(4, 'unliked', '2026-10-06T10:00:00'),
-            notification(5, 'message', '2026-10-06T10:00:00'),
+            notification(3, 'matched', '2026-10-06T10:00:00Z'),
+            notification(4, 'unliked', '2026-10-06T10:00:00Z'),
+            notification(5, 'message', '2026-10-06T10:00:00Z'),
         ], () => 2)
 
         renderPage()
@@ -103,7 +103,7 @@ describe('NotificationsPage', () => {
     })
 
     it('does open the conversation with the sender when a message notification is clicked', async () => {
-        serveNotifications(() => [notification(8, 'message', '2026-10-06T10:00:00')], () => 0)
+        serveNotifications(() => [notification(8, 'message', '2026-10-06T10:00:00Z')], () => 0)
 
         renderPage()
         fireEvent.click(await screen.findByRole('link', { name: /Bob Smith sent you a message/ }))

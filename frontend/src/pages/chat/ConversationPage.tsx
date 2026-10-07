@@ -43,10 +43,6 @@ import { usePublicProfile } from "@/users/usePublicProfile"
 
 const MAX_MESSAGE_LENGTH = 2000
 
-function sentAt(message: MessageOut) {
-    return new Date(message.created_at.endsWith("Z") ? message.created_at : `${message.created_at}Z`)
-}
-
 function dayLabel(date: Date) {
     if (isToday(date)) return "Today"
     if (isYesterday(date)) return "Yesterday"
@@ -154,9 +150,9 @@ function MessageList({ peerId, peerFirstName, messages, hasOlder, isLoadingOlder
                 <MessageScrollerContent className="gap-3 p-4">
                     {messages.map((message, index) => {
                         const isMine = message.from_user_id !== peerId
-                        const time = sentAt(message)
+                        const time = new Date(message.created_at)
                         const next = messages[index + 1]
-                        const nextTime = next && sentAt(next)
+                        const nextTime = next && new Date(next.created_at)
                         const opensHistory = index === 0 && !hasOlder
                         const closesDay = nextTime !== undefined && !isSameDay(time, nextTime)
                         return (

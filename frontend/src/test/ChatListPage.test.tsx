@@ -41,8 +41,8 @@ afterEach(() => {
 describe('ChatListPage', () => {
     it('does list the connections and open the conversation with the one chosen', async () => {
         server.use(http.get(`${API_BASE_URL}/social/connections`, () => HttpResponse.json([
-            { id: 5, username: 'bob', first_name: 'Bob', last_name: 'Smith', connected_at: '2026-10-07T09:00:00' },
-            { id: 6, username: 'cara', first_name: 'Cara', last_name: 'Jones', connected_at: '2026-10-06T09:00:00' },
+            { id: 5, username: 'bob', first_name: 'Bob', last_name: 'Smith', connected_at: '2026-10-07T09:00:00Z' },
+            { id: 6, username: 'cara', first_name: 'Cara', last_name: 'Jones', connected_at: '2026-10-06T09:00:00Z' },
         ])))
 
         renderPage()

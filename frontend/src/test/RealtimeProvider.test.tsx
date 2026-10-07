@@ -53,7 +53,7 @@ function chatMessage(id: number, fromUserId: number): MessageOut {
         from_user_id: fromUserId,
         to_user_id: fromUserId === BOB_ID ? MY_ID : BOB_ID,
         body: `Message ${id}`,
-        created_at: '2026-10-07T09:30:00',
+        created_at: '2026-10-07T09:30:00Z',
     }
 }
 

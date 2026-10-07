@@ -1,5 +1,4 @@
-from core.api_model import ApiModel
-from datetime import datetime
+from core.api_model import ApiModel, UtcDatetime
 from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
@@ -20,8 +19,8 @@ class NotificationOut(ApiModel):
     type: NotificationType
     actor: NotificationActor
     entity_id: Optional[int] = None
-    read_at: Optional[datetime] = None
-    created_at: datetime
+    read_at: Optional[UtcDatetime] = None
+    created_at: UtcDatetime
 
 
 class UnreadCountOut(ApiModel):

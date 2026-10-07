@@ -18,7 +18,7 @@ describe('BlockListPage unblock', () => {
 
     it('does drop the user from the list when the unblock succeeds', async () => {
         vi.stubGlobal('IntersectionObserver', NeverIntersectingObserver)
-        let blocked = [{ id: 7, first_name: 'Eve', last_name: 'E', blocked_at: '2026-01-01T00:00:00' }]
+        let blocked = [{ id: 7, first_name: 'Eve', last_name: 'E', blocked_at: '2026-01-01T00:00:00Z' }]
         server.use(
             http.get(`${API_BASE_URL}/social/blocks`, () => HttpResponse.json(blocked)),
             http.delete(`${API_BASE_URL}/social/blocks/:id`, () => {

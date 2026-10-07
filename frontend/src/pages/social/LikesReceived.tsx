@@ -31,9 +31,7 @@ function LikesReceived() {
                 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
                 <div className="flex w-full flex-col gap-2 text-sm">
                 {likesReceivedList.map((like) => {
-                    const rawDate = like.liked_at 
-                                    ? (like.liked_at.endsWith('Z') ? like.liked_at : like.liked_at + 'Z') : null
-                    const formattedDate = rawDate ? new Date(rawDate).toLocaleString('en-US', {
+                    const formattedDate = new Date(like.liked_at).toLocaleString('en-US', {
                         month: 'short',
                         day: '2-digit',
                         year: 'numeric',
@@ -41,7 +39,7 @@ function LikesReceived() {
                         minute: '2-digit',
                         second: '2-digit',
                         hour12: true
-                    }) : ''                
+                    })
                     return (                   
                         <div key={like.id}>
                             <dl

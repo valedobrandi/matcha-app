@@ -1,6 +1,5 @@
-from core.api_model import ApiModel
+from core.api_model import ApiModel, UtcDatetime
 from pydantic import BaseModel, EmailStr, Field, model_validator, field_validator
-from datetime import datetime
 from typing import List, Literal, Optional
 from modules.auth.schemas import validate_password_strength
 from modules.tags.schemas import TagOut
@@ -12,7 +11,7 @@ class UserProfile(ApiModel):
     first_name: str
     last_name: str
     is_verified: bool
-    created_at: datetime
+    created_at: UtcDatetime
     gender: Optional[Literal["male", "female", "other"]] = None
     sexual_preference: Optional[Literal["man", "woman", "bisexual"]] = None
     age: Optional[int] = None
@@ -23,7 +22,7 @@ class UserProfile(ApiModel):
     longitude: Optional[float] = None
     location_label: Optional[str] = None
     location_consent: bool = False
-    last_connection: Optional[datetime] = None
+    last_connection: Optional[UtcDatetime] = None
     likes_received_count: int = 0
     visitors_count: int = 0
 
@@ -93,7 +92,7 @@ class PublicProfile(ApiModel):
     bio: Optional[str] = None
     fame_rating: int = 0
     location_label: Optional[str] = None
-    last_connection: Optional[datetime] = None
+    last_connection: Optional[UtcDatetime] = None
     is_online: bool = False
     tags: List[TagOut] = Field(default_factory=list)
     photos: List[PhotoOut] = Field(default_factory=list)

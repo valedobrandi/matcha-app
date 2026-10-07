@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -48,8 +48,8 @@ async def test_should_list_the_newest_connection_first_when_its_second_like_is_t
     connections = await SocialRepository(connection).list_connections(me, MANY, 0)
 
     assert [(c.id, c.connected_at) for c in connections] == [
-        (newer, datetime(2026, 1, 3)),
-        (older, datetime(2026, 1, 2)),
+        (newer, datetime(2026, 1, 3, tzinfo=timezone.utc)),
+        (older, datetime(2026, 1, 2, tzinfo=timezone.utc)),
     ]
 
 
