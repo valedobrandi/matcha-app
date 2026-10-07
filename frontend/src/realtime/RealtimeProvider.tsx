@@ -8,7 +8,7 @@ import { invalidateBlockedUserViews, invalidateLikeViews } from "@/social/queryK
 import type { MessageOut } from "@/types/chat"
 import type { NotificationOut } from "@/types/notifications"
 
-// The server closes with 1008 when the token is invalid: reconnecting cannot help.
+// The server closes with 1008 when the token is invalid or expires: reconnecting cannot help.
 const INVALID_TOKEN_CLOSE_CODE = 1008
 const FIRST_RECONNECT_DELAY_MS = 1000
 const MAX_RECONNECT_DELAY_MS = 5000
@@ -21,7 +21,7 @@ const LIKE_NOTIFICATIONS = new Set<NotificationOut["type"]>(["liked", "matched",
 type RealtimeEvent =
     | { type: "notification", payload: NotificationOut }
     | { type: "chat.message", payload: MessageOut }
-    | { type: "notifications.read" | "blocks.changed" | "likes.changed" | "pong", payload: null }
+    | { type: "notifications.read" | "blocks.changed" | "likes.changed" | "pong" | "ready", payload: null }
 
 function reconnectDelay(attempt: number): number {
     return Math.min(FIRST_RECONNECT_DELAY_MS * 2 ** attempt, MAX_RECONNECT_DELAY_MS)
@@ -64,7 +64,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         }
 
         const ping = () => {
-            if (socket.readyState !== WebSocket.OPEN || pongTimer !== undefined) return
+            if (openedAt === undefined || socket.readyState !== WebSocket.OPEN || pongTimer !== undefined) return
             socket.send(PING)
             pongTimer = setTimeout(abandonSocket, PONG_TIMEOUT_MS)
         }
@@ -75,16 +75,19 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
 
         const connect = () => {
             openedAt = undefined
-            socket = new WebSocket(`${WS_URL}?token=${encodeURIComponent(accessToken)}`)
+            socket = new WebSocket(WS_URL)
             socket.onopen = () => {
-                openedAt = Date.now()
-                pingTimer = setInterval(ping, PING_INTERVAL_MS)
-                queryClient.invalidateQueries()
+                socket.send(JSON.stringify({ type: "auth", payload: { token: accessToken } }))
             }
             socket.onmessage = message => {
                 clearTimeout(pongTimer)
                 pongTimer = undefined
                 const event = JSON.parse(message.data) as RealtimeEvent
+                if (event.type === "ready") {
+                    openedAt = Date.now()
+                    pingTimer = setInterval(ping, PING_INTERVAL_MS)
+                    queryClient.invalidateQueries()
+                }
                 if (event.type === "notification" || event.type === "notifications.read") {
                     invalidateNotifications(queryClient)
                 }

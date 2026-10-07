@@ -2,7 +2,7 @@ import json
 import logging
 import pytest
 from fastapi import WebSocketDisconnect
-from core.ws_hub import ConnectionHub, decode_user_id_from_token
+from core.ws_hub import ConnectionHub, SocketIdentity, decode_socket_identity
 from core.config import settings
 import jwt
 import datetime
@@ -11,15 +11,11 @@ import time
 
 class FakeWebSocket:
     def __init__(self):
-        self.accepted = False
         self.texts = []
 
     @property
     def sent(self):
         return [json.loads(text) for text in self.texts]
-
-    async def accept(self):
-        self.accepted = True
 
     async def send_text(self, data):
         self.texts.append(data)
@@ -64,10 +60,10 @@ class TabThatClosesTheOther(FakeWebSocket):
         self.hub.disconnect(1, self.other)
 
 
-def _token(user_id: int) -> str:
+def _token(user_id: int, exp: float | None = None) -> str:
     now = datetime.datetime.now(datetime.UTC)
     return jwt.encode(
-        {"sub": str(user_id), "exp": time.time() + 3600, "iat": int(now.timestamp())},
+        {"sub": str(user_id), "exp": exp or time.time() + 3600, "iat": int(now.timestamp())},
         settings.JWT_SECRET.get_secret_value(),
         algorithm=settings.JWT_ALGORITHM,
     )
@@ -77,7 +73,7 @@ def _token(user_id: int) -> str:
 async def test_should_push_when_user_connected():
     hub = ConnectionHub()
     ws = FakeWebSocket()
-    await hub.connect(1, ws)
+    hub.connect(1, ws)
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
     assert ws.sent == [{"type": "notification", "payload": {"id": 1}}]
 
@@ -88,21 +84,24 @@ async def test_should_noop_push_when_user_offline():
     await hub.push(99, {"type": "notification", "payload": {}})
 
 
-def test_should_decode_valid_token():
-    assert decode_user_id_from_token(_token(7)) == 7
+def test_should_decode_the_user_and_expiry_when_the_token_is_valid():
+    exp = time.time() + 3600
+    assert decode_socket_identity(_token(7, exp)) == SocketIdentity(user_id=7, expires_at=exp)
 
 
-def test_should_reject_invalid_token():
-    assert decode_user_id_from_token("not-a-jwt") is None
-    assert decode_user_id_from_token("") is None
+def test_should_reject_the_token_when_it_is_invalid_empty_or_has_no_expiry():
+    no_expiry = jwt.encode({"sub": "7"}, settings.JWT_SECRET.get_secret_value(), algorithm=settings.JWT_ALGORITHM)
+    assert decode_socket_identity("not-a-jwt") is None
+    assert decode_socket_identity("") is None
+    assert decode_socket_identity(no_expiry) is None
 
 
 @pytest.mark.asyncio
 async def test_should_push_to_every_tab_when_user_has_two_sockets():
     hub = ConnectionHub()
     first_tab, second_tab = FakeWebSocket(), FakeWebSocket()
-    await hub.connect(1, first_tab)
-    await hub.connect(1, second_tab)
+    hub.connect(1, first_tab)
+    hub.connect(1, second_tab)
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
     assert first_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
     assert second_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
@@ -112,8 +111,8 @@ async def test_should_push_to_every_tab_when_user_has_two_sockets():
 async def test_should_keep_pushing_to_other_tab_when_one_tab_disconnects():
     hub = ConnectionHub()
     first_tab, second_tab = FakeWebSocket(), FakeWebSocket()
-    await hub.connect(1, first_tab)
-    await hub.connect(1, second_tab)
+    hub.connect(1, first_tab)
+    hub.connect(1, second_tab)
     hub.disconnect(1, first_tab)
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
     assert first_tab.sent == []
@@ -124,8 +123,8 @@ async def test_should_keep_pushing_to_other_tab_when_one_tab_disconnects():
 async def test_should_drop_closed_socket_and_reach_other_tab_when_a_send_fails():
     hub = ConnectionHub()
     closed_tab, open_tab = ClosedWebSocket(), FakeWebSocket()
-    await hub.connect(1, closed_tab)
-    await hub.connect(1, open_tab)
+    hub.connect(1, closed_tab)
+    hub.connect(1, open_tab)
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
     await hub.push(1, {"type": "notification", "payload": {"id": 2}})
     assert closed_tab.send_attempts == 1
@@ -138,7 +137,7 @@ async def test_should_drop_closed_socket_and_reach_other_tab_when_a_send_fails()
 @pytest.mark.asyncio
 async def test_should_not_log_a_warning_when_a_closed_tab_misses_a_push(caplog):
     hub = ConnectionHub()
-    await hub.connect(1, ClosedWebSocket())
+    hub.connect(1, ClosedWebSocket())
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
     assert [record for record in caplog.records if record.levelno >= logging.WARNING] == []
 
@@ -146,7 +145,7 @@ async def test_should_not_log_a_warning_when_a_closed_tab_misses_a_push(caplog):
 @pytest.mark.asyncio
 async def test_should_log_an_error_when_a_send_fails_unexpectedly(caplog):
     hub = ConnectionHub()
-    await hub.connect(1, BrokenWebSocket())
+    hub.connect(1, BrokenWebSocket())
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
     assert [record.levelname for record in caplog.records] == ["ERROR"]
 
@@ -156,8 +155,8 @@ async def test_should_skip_a_tab_that_closed_during_the_same_push(caplog):
     hub = ConnectionHub()
     first_tab, second_tab = TabThatClosesTheOther(hub), TabThatClosesTheOther(hub)
     first_tab.other, second_tab.other = second_tab, first_tab
-    await hub.connect(1, first_tab)
-    await hub.connect(1, second_tab)
+    hub.connect(1, first_tab)
+    hub.connect(1, second_tab)
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
     assert len(first_tab.sent) + len(second_tab.sent) == 1
     assert [record for record in caplog.records if record.levelno >= logging.WARNING] == []
@@ -167,8 +166,8 @@ async def test_should_skip_a_tab_that_closed_during_the_same_push(caplog):
 async def test_should_log_and_keep_every_tab_when_the_envelope_is_not_json(caplog):
     hub = ConnectionHub()
     first_tab, second_tab = FakeWebSocket(), FakeWebSocket()
-    await hub.connect(1, first_tab)
-    await hub.connect(1, second_tab)
+    hub.connect(1, first_tab)
+    hub.connect(1, second_tab)
     await hub.push(1, {"type": "notification", "payload": object()})
     await hub.push(1, {"type": "notification", "payload": {"id": 1}})
     assert [record.levelname for record in caplog.records] == ["ERROR"]
@@ -180,6 +179,6 @@ async def test_should_log_and_keep_every_tab_when_the_envelope_is_not_json(caplo
 async def test_should_send_the_same_text_as_starlette_send_json():
     hub = ConnectionHub()
     tab = FakeWebSocket()
-    await hub.connect(1, tab)
+    hub.connect(1, tab)
     await hub.push(1, {"type": "notification", "payload": {"first_name": "Zoë"}})
     assert tab.texts == ['{"type":"notification","payload":{"first_name":"Zoë"}}']

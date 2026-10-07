@@ -53,7 +53,7 @@ constraints.
 
 With the API running and a valid JWT:
 
-1. Connect: `ws://localhost:8000/ws?token=<jwt>` (token can appear in logs — eval only).
+1. Connect to `ws://localhost:8000/ws`, send `{"type":"auth","payload":{"token":"<jwt>"}}` and wait for `{"type":"ready","payload":null}` (ADR-0021).
 2. In another client, trigger a like/visit/message against that user.
 3. Expect a JSON envelope within a few seconds:
    `{ "type": "notification" | "chat.message", "payload": { ... } }`.

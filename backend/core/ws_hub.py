@@ -1,18 +1,15 @@
 """In-process WebSocket connection hub (ADR-0003).
 
-Auth for ``/ws``: JWT via query param ``?token=<jwt>`` using the same secret and
-algorithm as HTTP Bearer auth in ``core.auth``. Anonymous sockets are rejected.
+Auth for ``/ws``: the first frame carries the JWT (ADR-0021), checked with the same secret
+and algorithm as HTTP Bearer auth in ``core.auth``. Anonymous sockets are rejected.
 Every open socket of a user is kept, one per tab, and each push goes to all of them.
-
-Security note: query-string JWTs can appear in access logs and Referer headers.
-Acceptable for local eval; prefer a first-message auth handshake before production.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, NamedTuple, Optional, Set
 
 from fastapi import WebSocket, WebSocketDisconnect
 import jwt
@@ -22,8 +19,13 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 
-def decode_user_id_from_token(token: str) -> Optional[int]:
-    """Return user id from a JWT, or None if missing/invalid/expired."""
+class SocketIdentity(NamedTuple):
+    user_id: int
+    expires_at: float
+
+
+def decode_socket_identity(token: str) -> Optional[SocketIdentity]:
+    """Return the user and expiry of a JWT, or None if missing/invalid/expired."""
     if not token:
         return None
     try:
@@ -31,15 +33,10 @@ def decode_user_id_from_token(token: str) -> Optional[int]:
             token,
             settings.JWT_SECRET.get_secret_value(),
             algorithms=[settings.JWT_ALGORITHM],
+            options={"require": ["sub", "exp"]},
         )
-    except jwt.PyJWTError:
-        return None
-    sub = payload.get("sub")
-    if sub is None:
-        return None
-    try:
-        return int(sub)
-    except (ValueError, TypeError):
+        return SocketIdentity(user_id=int(payload["sub"]), expires_at=float(payload["exp"]))
+    except (jwt.PyJWTError, ValueError, TypeError):
         return None
 
 
@@ -47,8 +44,7 @@ class ConnectionHub:
     def __init__(self) -> None:
         self._connections: Dict[int, Set[WebSocket]] = {}
 
-    async def connect(self, user_id: int, websocket: WebSocket) -> None:
-        await websocket.accept()
+    def connect(self, user_id: int, websocket: WebSocket) -> None:
         self._connections.setdefault(user_id, set()).add(websocket)
 
     def disconnect(self, user_id: int, websocket: WebSocket) -> None:

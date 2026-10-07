@@ -114,5 +114,4 @@ Transport is not domain: the hub delivers envelopes and holds no business rules.
 
 ## Notes
 
-WS auth mechanism (query-param JWT vs. first-message auth) is open; the decision lands in
-the Task 5 PR description. Whatever is picked, unauthenticated sockets are rejected.
+WS auth mechanism: first-message auth, see [ADR-0021](0021-the-socket-token-travels-in-the-first-frame.md). Whatever is picked, unauthenticated sockets are rejected.
