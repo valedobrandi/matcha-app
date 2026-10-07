@@ -131,6 +131,18 @@ describe('NotificationsPage', () => {
         expect(screen.getByRole('link', { name: 'Notifications' }).textContent).toBe('')
     })
 
+    it('does say mark all as read failed when the server cannot be reached', async () => {
+        serveNotifications(() => [notification(1, 'liked')], () => 1)
+        server.use(http.post(`${API_BASE_URL}/notifications/read-all`, () => HttpResponse.error()))
+
+        renderPage()
+        await screen.findByRole('link', { name: 'Notifications, 1 unread' })
+        fireEvent.click(screen.getByRole('button', { name: 'Mark all as read' }))
+
+        expect(await screen.findByText('Could not mark as read, please try again')).toBeInTheDocument()
+        expect(screen.getByText('New')).toBeInTheDocument()
+    })
+
     it('does point to discovery when there are no notifications yet', async () => {
         serveNotifications(() => [], () => 0)
 
