@@ -214,7 +214,7 @@ function MessageComposer({ peerId, peerName }: { peerId: number, peerName: strin
         event.preventDefault()
         if (text === "" || isSending) return
         if (await send(text)) {
-            setBody("")
+            setBody(current => current.startsWith(body) ? current.slice(body.length) : current)
             scrollToEnd({ behavior: "smooth" })
         }
     }

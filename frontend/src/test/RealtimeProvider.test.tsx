@@ -111,11 +111,14 @@ describe('RealtimeProvider', () => {
         const queryClient = renderProvider()
         await expectNotificationsRefetched(queryClient)
         seedNotifications(queryClient)
+        seedChat(queryClient)
         queryClient.setQueryData(['visitors'], [])
         socketClient!.send(JSON.stringify({ type: 'blocks.changed', payload: null }))
 
         await waitFor(() => expect(isInvalidated(queryClient, 'visitors')).toBe(true))
         await expectNotificationsRefetched(queryClient)
+        expect(isInvalidated(queryClient, CONNECTIONS_KEY)).toBe(true)
+        expect(queryClient.getQueryState([CONVERSATION_KEY, BOB_ID])?.isInvalidated).toBe(true)
     })
 
     it('does refetch every query on screen every time the socket opens, as events may have been missed', async () => {
