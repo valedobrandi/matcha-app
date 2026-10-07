@@ -44,9 +44,16 @@ class FakeRepo:
                 n += 1
         return n
 
-    async def mark_read_by_actor(self, user_id, actor_id, type):
+    async def mark_read_by_actor(self, user_id, actor_id, type, up_to_entity_id):
         for uid, row in self.rows:
-            if uid == user_id and row.actor.id == actor_id and row.type == type and row.read_at is None:
+            if (
+                uid == user_id
+                and row.actor.id == actor_id
+                and row.type == type
+                and row.entity_id is not None
+                and row.entity_id <= up_to_entity_id
+                and row.read_at is None
+            ):
                 row.read_at = datetime.now(UTC)
 
     async def unread_count(self, user_id):
@@ -151,7 +158,7 @@ async def test_should_tell_every_tab_of_the_user_when_all_notifications_are_read
 async def test_should_tell_every_tab_of_the_user_when_a_senders_messages_are_read():
     hub = FakeHub()
     service = NotificationsService(FakeRepo(), hub=hub)
-    await service.mark_read_by_actor(2, 1, "message")
+    await service.mark_read_by_actor(2, 1, "message", 10)
     assert hub.pushed == [(2, READ_EVENT)]
 
 
