@@ -50,7 +50,7 @@ export function ProfileCard({profile, onLike, onUnlike, likeState}: ProfileCardP
               </Button>
               <div className="flex gap-1 flex-wrap">
                   <h2 className="text-2xl font-bold">{profile.first_name}</h2>
-                  <Badge variant="secondary">fame</Badge>
+                  <Badge variant="secondary">{profile.fame_rating} Popularity</Badge>
               </div>
               <p className="text-xs">{profile.age} years old</p>
               <p>{profile.location_label}</p>

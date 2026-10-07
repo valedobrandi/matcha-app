@@ -1,11 +1,10 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '../auth/ProtectedRoute'
 import { ProfileCompleteRoute } from '../auth/ProfileCompleteRoute'
 import { ProfileIncompleteRoute } from '../auth/ProfileIncompleteRoute'
 import { PublicOnlyRoute } from '../auth/PublicOnlyRoute'
 import { AuthLayout } from '../layouts/AuthLayout'
 import { RootLayout } from '../layouts/RootLayout'
-import { HomePage } from '../pages/HomePage'
 import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { RegisterPage } from '../pages/auth/RegisterPage'
@@ -33,7 +32,7 @@ export function AppRoutes() {
             <Route path="/profile/complete" element={<ProfileCompletePage />} />
           </Route>
           <Route element={<ProfileCompleteRoute />}>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<Navigate to="/suggest" replace />} />
             <Route path="/profile" element={<MyProfilePage />} />
             <Route path="/suggest" element={<SuggestPage />} />
             <Route path="/likes" element={<Likes />} />

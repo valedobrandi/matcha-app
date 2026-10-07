@@ -86,7 +86,7 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                         </Button> 
                     </div>
                     <CardDescription>
-                      These are your personal secret informations.
+                      This information is private.
                     </CardDescription>
                 </div>
                 {accountEditing && (

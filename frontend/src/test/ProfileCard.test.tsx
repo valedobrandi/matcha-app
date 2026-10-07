@@ -39,6 +39,12 @@ describe('ProfileCard', () => {
             .toHaveAttribute('src', `${API_BASE_URL}/uploads/bob.jpg`)
     })
 
+    it('does show the popularity score next to the name', () => {
+        renderCard(makeProfile({ fame_rating: 42 }))
+
+        expect(screen.getByText('42 Popularity')).toBeInTheDocument()
+    })
+
     it('does show the initials when the user has no profile photo', () => {
         renderCard(makeProfile())
 

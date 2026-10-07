@@ -1,11 +1,13 @@
 services:
   database:
-    image: postgres:16-alpine
+    build:
+      context: postgres
     container_name: matcha_database
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-matcha}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_INITDB_ARGS: --auth-local=scram-sha-256 --auth-host=scram-sha-256
     ports:
       - "5432:5432"
     volumes:
