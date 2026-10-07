@@ -88,6 +88,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
         },
     })
     const serverError = toServerMessage(profileUpdate.error)
+        ?? (profileUpdate.error ? "Could not save your profile, please try again" : null)
 
     const handleCancel = () => {
         profileUpdate.reset()

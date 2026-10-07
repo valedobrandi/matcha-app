@@ -24,7 +24,6 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
     const [accountEditing, setAccountEditing] = useState<boolean>(false)
     const [passwordEditing, setPasswordEditing] = useState<boolean>(false)
     const [serverError, setServerError] = useState<string | null>(null)
-    const [passwordChangeCfm, setPasswordChangeCfm] = useState<string | null>(null)
 
     const {
         register,
@@ -57,16 +56,13 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
             setAccountEditing(false)
             onSaved()
         },
-        onError: error => setServerError(toServerMessage(error)),
+        onError: error => setServerError(toServerMessage(error) ?? "Could not save your account, please try again"),
     })
 
     const passwordChange = useMutation({
         mutationFn: (passwords: PasswordChangeValues) => usersApi.changePassword(accessToken!, passwords),
         onMutate: () => setServerError(null),
-        onSuccess: response => {
-            setPasswordEditing(false)
-            setPasswordChangeCfm(response.message)
-        },
+        onSuccess: () => setPasswordEditing(false),
         onError: error => setServerError(toServerMessage(error) ?? "Request failed"),
     })
     
@@ -105,7 +101,7 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                 <form>
                     <FieldGroup>
                         <Field>
-                            <FieldLabel htmlFor="usernamer">Username</FieldLabel>
+                            <FieldLabel htmlFor="username">Username</FieldLabel>
                             <Input id="username" type="text" disabled={!accountEditing} aria-invalid={!!errors.username}
                                 {...register("username")}
                             />
@@ -126,7 +122,7 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                             <FieldError errors={[errors.last_name]}/>  
                         </Field>
                         <Field>
-                            <FieldLabel htmlFor="new-email">Email address</FieldLabel>
+                            <FieldLabel htmlFor="user-email">Email address</FieldLabel>
                             <Input id="user-email" type="email" disabled={!accountEditing}
                                 aria-invalid={!!errors.email}
                                 {...register("email")}
@@ -143,6 +139,7 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                                     </Button>
                                 </div>
                             </Field>
+                            {!passwordEditing && passwordChange.data && (<p>{passwordChange.data.message}</p>)}
                             {passwordEditing && (
                             <Field>
                                 <div>
@@ -162,8 +159,8 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                                     <FieldError errors={[passwordForm.formState.errors.new_password]}/>
                                 </div>
                                 <div>
-                                    <FieldLabel htmlFor="reset-pwd">Confirm new password</FieldLabel>
-                                    <Input id="reset-pwd" type="password" disabled={!passwordEditing}
+                                    <FieldLabel htmlFor="confirm-pwd">Confirm new password</FieldLabel>
+                                    <Input id="confirm-pwd" type="password" disabled={!passwordEditing}
                                     aria-invalid={!!passwordForm.formState.errors.confirm_password}
                                     {...passwordForm.register("confirm_password")}
                                     />
@@ -172,7 +169,6 @@ function AccountTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                                 <div>
                                     <Button onClick={passwordForm.handleSubmit(passwords => passwordChange.mutate(passwords))}>Reset</Button>
                                     <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-                                    {passwordChangeCfm && (<p>{passwordChangeCfm}</p>)}
                                 </div>
                             </Field>
                             )}
