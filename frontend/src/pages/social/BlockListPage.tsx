@@ -31,9 +31,7 @@ export function BlockListPage() {
                 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
                 <div className="flex w-full flex-col gap-2 text-sm">
                 {blockList.map((block) => {
-                    const rawDate = block.blocked_at
-                                    ? (block.blocked_at.endsWith('Z') ? block.blocked_at : block.blocked_at + 'Z') : null
-                    const formattedDate = rawDate ? new Date(rawDate).toLocaleString('en-US', {
+                    const formattedDate = new Date(block.blocked_at).toLocaleString('en-US', {
                         month: 'short',
                         day: '2-digit',
                         year: 'numeric',
@@ -41,7 +39,7 @@ export function BlockListPage() {
                         minute: '2-digit',
                         second: '2-digit',
                         hour12: true
-                    }) : ''                
+                    })
                     return (                   
                         <div key={block.id}>
                             <dl

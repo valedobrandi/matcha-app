@@ -1,6 +1,5 @@
-from core.api_model import ApiModel
+from core.api_model import ApiModel, UtcDatetime
 from pydantic import BaseModel, Field
-from datetime import datetime
 from typing import Optional
 
 class SocialOkResponse(ApiModel):
@@ -21,7 +20,7 @@ class RelationshipResponse(ApiModel):
     liked_you: bool
     connected: bool
     blocked_by_me: bool = False
-    last_connection: Optional[datetime] = None
+    last_connection: Optional[UtcDatetime] = None
     is_online: bool = False
 
 class SocialUserCard(ApiModel):
@@ -31,13 +30,13 @@ class SocialUserCard(ApiModel):
     last_name: str
 
 class VisitorOut(SocialUserCard):
-    visited_at: datetime
+    visited_at: UtcDatetime
 
 class LikeReceivedOut(SocialUserCard):
-    liked_at: datetime
+    liked_at: UtcDatetime
 
 class BlockedUserOut(SocialUserCard):
-    blocked_at: datetime
+    blocked_at: UtcDatetime
 
 class ConnectionOut(SocialUserCard):
-    connected_at: datetime
+    connected_at: UtcDatetime

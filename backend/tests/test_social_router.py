@@ -314,7 +314,7 @@ class TestSocialLists:
                 "username": "bob",
                 "first_name": "Bob",
                 "last_name": "B",
-                "connected_at": "2026-01-03T00:00:00",
+                "connected_at": "2026-01-03T00:00:00Z",
             }
         ]
 

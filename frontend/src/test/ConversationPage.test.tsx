@@ -14,7 +14,7 @@ const realtime = ws.link(WS_URL)
 
 type RealtimeClient = WebSocketHandlerConnection['client']
 
-function chatMessage(id: number, fromUserId: number, body = `Message ${id}`, createdAt = '2026-10-07T09:30:00') {
+function chatMessage(id: number, fromUserId: number, body = `Message ${id}`, createdAt = '2026-10-07T09:30:00Z') {
     return {
         id,
         from_user_id: fromUserId,
@@ -113,18 +113,18 @@ describe('ConversationPage', () => {
     })
 
     it('does label each day where it starts once the whole history is shown', async () => {
-        vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-07T09:31:00Z') })
+        vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-07T12:30:00Z') })
         serveConversation(() => [
-            chatMessage(3, ME, 'Good morning', '2026-10-07T09:30:00'),
-            chatMessage(2, BOB.id, 'Good night', '2026-10-06T21:00:00'),
-            chatMessage(1, BOB.id, 'Hi', '2026-10-06T20:00:00'),
+            chatMessage(3, ME, 'Fine, thanks', '2026-10-07T12:29:00Z'),
+            chatMessage(2, BOB.id, 'How are you?', '2026-10-06T12:28:00Z'),
+            chatMessage(1, BOB.id, 'Hi', '2026-10-06T12:27:00Z'),
         ])
         connectSocket()
 
         renderConversation()
 
         const log = await screen.findByRole('log')
-        await waitFor(() => expect(log).toHaveTextContent(/^Yesterday.*Hi.*Good night.*Today.*Good morning/))
+        await waitFor(() => expect(log).toHaveTextContent(/^Yesterday.*Hi.*How are you\?.*Today.*Fine, thanks/))
     })
 
     it('does leave the top unlabelled while older messages remain to load', async () => {

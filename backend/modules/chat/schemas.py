@@ -1,5 +1,4 @@
-from core.api_model import ApiModel
-from datetime import datetime
+from core.api_model import ApiModel, UtcDatetime
 from pydantic import BaseModel, Field
 
 
@@ -16,7 +15,7 @@ class MessageOut(ApiModel):
     from_user_id: int
     to_user_id: int
     body: str
-    created_at: datetime
+    created_at: UtcDatetime
 
 
 class ChatOkResponse(ApiModel):

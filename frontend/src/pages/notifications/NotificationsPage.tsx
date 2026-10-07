@@ -106,9 +106,6 @@ export function NotificationsPage() {
                         const { icon: Icon, sentence } = NOTIFICATION_KINDS[notification.type]
                         const { actor } = notification
                         const isUnread = notification.read_at === null
-                        const createdAt = notification.created_at.endsWith("Z")
-                            ? notification.created_at
-                            : `${notification.created_at}Z`
                         return (
                             <div role="listitem" key={notification.id}>
                                 <Item
@@ -125,8 +122,8 @@ export function NotificationsPage() {
                                     <ItemContent>
                                         <ItemTitle>{sentence(`${actor.first_name} ${actor.last_name}`)}</ItemTitle>
                                         <ItemDescription>
-                                            <time dateTime={createdAt}>
-                                                {new Date(createdAt).toLocaleString("en-US", {
+                                            <time dateTime={notification.created_at}>
+                                                {new Date(notification.created_at).toLocaleString("en-US", {
                                                     month: "short",
                                                     day: "numeric",
                                                     hour: "numeric",

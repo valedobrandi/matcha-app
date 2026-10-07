@@ -32,9 +32,7 @@ function Visitors() {
                 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
                 <div className="flex w-full flex-col gap-2 text-sm">
                 {visitorsList.map((visitor) => {
-                    const rawDate = visitor.visited_at
-                                    ? (visitor.visited_at.endsWith('Z') ? visitor.visited_at : visitor.visited_at + 'Z') : null
-                    const formattedDate = rawDate ? new Date(rawDate).toLocaleString('en-US', {
+                    const formattedDate = new Date(visitor.visited_at).toLocaleString('en-US', {
                         month: 'short',
                         day: '2-digit',
                         year: 'numeric',
@@ -42,7 +40,7 @@ function Visitors() {
                         minute: '2-digit',
                         second: '2-digit',
                         hour12: true
-                    }) : ''                
+                    })
                     return (                   
                         <div key={visitor.id}>
                             <dl
