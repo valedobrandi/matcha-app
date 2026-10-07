@@ -29,7 +29,7 @@ Status vocabulary: `Open` · `Pending` · `Decided` · `Approved` · `Superseded
 | [0009](0009-popularity-is-one-stored-score-shown-on-every-profile.md) | Popularity is one stored score, shown on every profile including your own | Decided | Backend, Frontend | 2026-10-05 |
 | [0010](0010-an-unspecified-orientation-is-matched-as-bisexual.md) | An unspecified orientation is kept as unknown and matched as bisexual | Decided | Backend, Frontend | 2026-10-05 |
 | [0011](0011-one-socket-per-tab-feeds-notifications-into-the-query-cache.md) | One socket per tab feeds notifications into the query cache | Decided | Backend, Frontend | 2026-10-05 |
-| [0012](0012-chat-lists-connections-and-uses-message-notifications-as-unread.md) | Chat lists your connections and uses message notifications as its unread signal | Open | Backend, Frontend | 2026-10-05 |
+| [0012](0012-chat-lists-connections-and-uses-message-notifications-as-unread.md) | Chat lists your connections and uses message notifications as its unread signal | Decided | Backend, Frontend | 2026-10-05 |
 | [0013](0013-visibility-sql-is-tested-on-a-real-postgres.md) | Visibility SQL is tested on a real Postgres | Decided | Backend | 2026-10-04 |
 | [0014](0014-frontend-server-state-goes-through-tanstack-query.md) | Frontend server state goes through TanStack Query | Decided | Frontend | 2026-10-04 |
 | [0015](0015-backend-models-are-the-only-source-of-the-api-contract.md) | Backend models are the only source of the API contract | Decided | Backend, Frontend | 2026-10-04 |

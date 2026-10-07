@@ -31,6 +31,10 @@ function UserPage() {
     return <p>Profile {useParams().userId}</p>
 }
 
+function ChatPage() {
+    return <p>Chat with {useParams().peerId}</p>
+}
+
 function renderPage() {
     const Wrapper = authWrapper(makeAuthValue())
     render(
@@ -40,6 +44,7 @@ function renderPage() {
                 <Routes>
                     <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/users/:userId" element={<UserPage />} />
+                    <Route path="/chat/:peerId" element={<ChatPage />} />
                 </Routes>
             </MemoryRouter>
         </Wrapper>,
@@ -95,6 +100,15 @@ describe('NotificationsPage', () => {
 
         expect(await screen.findByText('Profile 5')).toBeInTheDocument()
         await waitFor(() => expect(markedRead).toEqual(['7']))
+    })
+
+    it('does open the conversation with the sender when a message notification is clicked', async () => {
+        serveNotifications(() => [notification(8, 'message', '2026-10-06T10:00:00')], () => 0)
+
+        renderPage()
+        fireEvent.click(await screen.findByRole('link', { name: /Bob Smith sent you a message/ }))
+
+        expect(await screen.findByText('Chat with 5')).toBeInTheDocument()
     })
 
     it('does mark all as read and clear the bell count', async () => {

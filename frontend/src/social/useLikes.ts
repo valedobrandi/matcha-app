@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type LikeStateResponse } from "@/types/social";
 import { toServerMessage } from "@/hooks/toServerMessage";
+import { invalidateLikeViews } from "./queryKeys";
 
 type LikeAction = { targetId: number, liked: boolean }
 
@@ -18,10 +19,7 @@ export function useLikes() {
             : socialApi.postUnLike(accessToken!, targetId),
         onSuccess: async (state, { targetId }) => {
             setLikeState(prev=>({...prev, [targetId]: state}))
-            await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ["relationship"] }),
-                queryClient.invalidateQueries({ queryKey: ["public-profile"] }),
-            ])
+            await invalidateLikeViews(queryClient)
         },
     })
     const serverError = toServerMessage(mutation.error)

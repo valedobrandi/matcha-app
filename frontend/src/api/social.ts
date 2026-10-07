@@ -1,4 +1,4 @@
-import type { LikeReceivedOut, LikeStateResponse, VisitorOut, RelationshipResponse, BlockStateResponse, OkResponse, BlockedUserOut } from "@/types/social";
+import type { LikeReceivedOut, LikeStateResponse, VisitorOut, RelationshipResponse, BlockStateResponse, OkResponse, BlockedUserOut, ConnectionOut } from "@/types/social";
 import { apiDelete, apiGet, apiPost } from "./client";
 import { toQueryString } from "./query";
 import type { BasicQueryParamsValues } from "@/schemas/discovery";
@@ -37,6 +37,13 @@ export async function getVisitorsList(
     params: BasicQueryParamsValues
 ): Promise<VisitorOut[]> {
     return apiGet<VisitorOut[]>(`/social/visitors${toQueryString(params)}`, {token})
+}
+
+export async function getConnections(
+    token: string,
+    params: BasicQueryParamsValues
+): Promise<ConnectionOut[]> {
+    return apiGet<ConnectionOut[]>(`/social/connections${toQueryString(params)}`, {token})
 }
 
 export async function getBlockList(

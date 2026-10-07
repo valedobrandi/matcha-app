@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Open |
+| **Status** | Decided |
 | **Group** | Backend, Frontend |
 | **Date** | 2026-10-05 |
 | **Supersedes** | — |
@@ -58,8 +58,12 @@ lacks three things:
 
 ## Status
 
-Open. Recorded on 2026-10-05 at the owner's request. The implementation is not merged yet. The
-status becomes `Decided` when it is.
+Decided on 2026-10-07: `/chat` lists the connections and `/chat/:peerId` shows the conversation.
+The screen loads the next older page when the oldest loaded message comes into view, adds each
+`chat.message` once by its id, and marks the conversation read up to the newest message from the
+other user that is in view, so a message below the visible part or in a hidden tab stays unread.
+The sidebar's Chat item shows a dot, and a message notification opens the conversation. Recorded on
+2026-10-05 at the owner's request.
 
 ## Positions
 
@@ -97,7 +101,15 @@ where "connected" is already computed.
 - `ChatService` pushes `chat.message` to the sender as well as the recipient.
 - Frontend tests use MSW for HTTP and the socket: sending, receiving a live message, and
   opening a conversation that marks its message notifications read.
-- Measure delivery against the 10-second budget in the pull request.
+- The conversation uses the shadcn chat parts (`MessageScroller`, `Message`, `Bubble`, `Marker`),
+  which add the `@shadcn/react` package. Its scroller keeps the reading position when older
+  messages are added above and reports which messages are in view.
+- Every time the socket opens, the tab fetches again every query it shows
+  ([ADR-0018](0018-a-users-own-changes-are-announced-to-all-of-their-tabs.md)), so a message
+  sent while the socket was closed still shows up.
+- Delivery against the 10-second budget, measured locally in headless Chrome on 2026-10-07: 78 to
+  313 ms from pressing Enter in one user's conversation to the message shown in view in the other
+  user's open conversation, and 78 ms from sending to the Chat dot on another page.
 
 ## Related
 

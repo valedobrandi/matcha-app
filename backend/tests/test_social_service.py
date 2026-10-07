@@ -141,6 +141,7 @@ class FakeHub:
 
 
 BLOCKS_CHANGED = {"type": "blocks.changed", "payload": None}
+LIKES_CHANGED = {"type": "likes.changed", "payload": None}
 
 
 @pytest.mark.asyncio
@@ -480,4 +481,37 @@ async def test_should_tell_no_tab_when_a_block_is_refused():
         await service.block(1, 1)
     with pytest.raises(SocialUserNotFoundException):
         await service.block(1, 99)
+    assert hub.pushed == []
+
+
+@pytest.mark.asyncio
+async def test_should_tell_only_the_likers_tabs_when_they_like_someone():
+    hub = FakeHub()
+    service = SocialService(FakeSocialRepository(), FakeUsersRepository(), hub)
+    await service.like(1, 2)
+    assert hub.pushed == [(1, LIKES_CHANGED)]
+
+
+@pytest.mark.asyncio
+async def test_should_tell_only_the_likers_tabs_when_they_unlike_someone():
+    hub = FakeHub()
+    service = SocialService(FakeSocialRepository(), FakeUsersRepository(), hub)
+    await service.unlike(1, 2)
+    assert hub.pushed == [(1, LIKES_CHANGED)]
+
+
+@pytest.mark.asyncio
+async def test_should_tell_no_tab_when_a_like_or_an_unlike_is_refused():
+    hub = FakeHub()
+    social = FakeSocialRepository()
+    service = SocialService(social, FakeUsersRepository(has_avatar=False), hub)
+    with pytest.raises(CannotLikeSelfException):
+        await service.like(1, 1)
+    with pytest.raises(ProfilePhotoRequiredException):
+        await service.like(1, 2)
+    with pytest.raises(SocialUserNotFoundException):
+        await service.unlike(1, 99)
+    social.blocks[(2, 1)] = "active"
+    with pytest.raises(SocialUserNotFoundException):
+        await service.unlike(1, 2)
     assert hub.pushed == []

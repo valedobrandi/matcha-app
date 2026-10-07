@@ -48,7 +48,7 @@ const NOTIFICATION_KINDS: Record<NotificationOut["type"], { icon: LucideIcon, se
 
 export function NotificationsPage() {
     const { notifications, serverError, isLoading, hasMore, loadMore } = useNotifications(PAGE_SIZE)
-    const unreadCount = useUnreadCount()
+    const { unreadCount } = useUnreadCount()
     const { markRead, markAllRead, isMarkingAll, serverError: markError } = useMarkNotificationsRead()
     const sentinelRef = useInfiniteScroll(loadMore, isLoading)
     const error = serverError ?? markError
@@ -114,7 +114,7 @@ export function NotificationsPage() {
                                 <Item
                                     size="sm"
                                     variant={isUnread ? "muted" : "default"}
-                                    render={<Link to={`/users/${actor.id}`} />}
+                                    render={<Link to={notification.type === "message" ? `/chat/${actor.id}` : `/users/${actor.id}`} />}
                                     onClick={() => {
                                         if (isUnread) markRead(notification.id)
                                     }}

@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ws, type WebSocketHandlerConnection } from 'msw'
 import { render, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, type InfiniteData } from '@tanstack/react-query'
 import { AuthContext } from '@/auth/AuthContext'
 import { RealtimeProvider } from '@/realtime/RealtimeProvider'
 import { WS_URL } from '@/api/client'
+import { CONNECTIONS_KEY, CONVERSATION_KEY } from '@/chat/queryKeys'
 import { NOTIFICATIONS_KEY, UNREAD_COUNT_KEY } from '@/notifications/queryKeys'
+import type { MessageOut } from '@/types/chat'
 import { server } from './server'
 import { makeAuthValue } from './renderWithAuth'
 
@@ -40,6 +42,29 @@ function isInvalidated(queryClient: QueryClient, key: string) {
 async function expectNotificationsRefetched(queryClient: QueryClient) {
     await waitFor(() => expect(isInvalidated(queryClient, UNREAD_COUNT_KEY)).toBe(true))
     expect(isInvalidated(queryClient, NOTIFICATIONS_KEY)).toBe(true)
+}
+
+const BOB_ID = 5
+const MY_ID = 1
+
+function chatMessage(id: number, fromUserId: number): MessageOut {
+    return {
+        id,
+        from_user_id: fromUserId,
+        to_user_id: fromUserId === BOB_ID ? MY_ID : BOB_ID,
+        body: `Message ${id}`,
+        created_at: '2026-10-07T09:30:00',
+    }
+}
+
+function seedChat(queryClient: QueryClient) {
+    queryClient.setQueryData([CONNECTIONS_KEY], [])
+    queryClient.setQueryData([CONVERSATION_KEY, BOB_ID], { pages: [[chatMessage(2, BOB_ID)]], pageParams: [undefined] })
+}
+
+function conversationIds(queryClient: QueryClient) {
+    return queryClient.getQueryData<InfiniteData<MessageOut[]>>([CONVERSATION_KEY, BOB_ID])
+        ?.pages.flat().map(message => message.id)
 }
 
 afterEach(() => {
@@ -93,22 +118,89 @@ describe('RealtimeProvider', () => {
         await expectNotificationsRefetched(queryClient)
     })
 
-    it('does refetch the notifications every time the socket opens', async () => {
+    it('does refetch every query on screen every time the socket opens, as events may have been missed', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         const clients: RealtimeClient[] = []
         server.use(realtime.addEventListener('connection', ({ client }) => {
             clients.push(client)
         }))
+        const seedEverySocketFedView = (queryClient: QueryClient) => {
+            seedNotifications(queryClient)
+            seedChat(queryClient)
+            queryClient.setQueryData(['visitors'], [])
+            queryClient.setQueryData(['public-profile', BOB_ID], {})
+        }
+        const expectEverySocketFedViewRefetched = async (queryClient: QueryClient) => {
+            await expectNotificationsRefetched(queryClient)
+            for (const key of [CONNECTIONS_KEY, 'visitors'])
+                expect(isInvalidated(queryClient, key)).toBe(true)
+            for (const key of [[CONVERSATION_KEY, BOB_ID], ['public-profile', BOB_ID]])
+                expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true)
+        }
 
         const queryClient = renderProvider()
-        await expectNotificationsRefetched(queryClient)
-        seedNotifications(queryClient)
+        seedEverySocketFedView(queryClient)
+        await expectEverySocketFedViewRefetched(queryClient)
+        seedEverySocketFedView(queryClient)
         clients[0].close()
 
         await vi.advanceTimersByTimeAsync(1000)
 
         await waitFor(() => expect(clients).toHaveLength(2))
+        await expectEverySocketFedViewRefetched(queryClient)
+    })
+
+    it('does add a pushed chat message to its conversation once, whichever side sent it', async () => {
+        let socketClient: RealtimeClient | undefined
+        server.use(realtime.addEventListener('connection', ({ client }) => {
+            socketClient = client
+        }))
+
+        const queryClient = renderProvider()
         await expectNotificationsRefetched(queryClient)
+        seedChat(queryClient)
+        for (const message of [chatMessage(3, MY_ID), chatMessage(4, BOB_ID), chatMessage(4, BOB_ID), chatMessage(5, BOB_ID)])
+            socketClient!.send(JSON.stringify({ type: 'chat.message', payload: message }))
+
+        await waitFor(() => expect(conversationIds(queryClient)).toEqual([5, 4, 3, 2]))
+    })
+
+    it('does refetch the views that show likes when the likes change in another tab', async () => {
+        let socketClient: RealtimeClient | undefined
+        server.use(realtime.addEventListener('connection', ({ client }) => {
+            socketClient = client
+        }))
+
+        const queryClient = renderProvider()
+        await expectNotificationsRefetched(queryClient)
+        seedChat(queryClient)
+        queryClient.setQueryData(['relationship'], {})
+        socketClient!.send(JSON.stringify({ type: 'likes.changed', payload: null }))
+
+        await waitFor(() => expect(isInvalidated(queryClient, 'relationship')).toBe(true))
+        expect(isInvalidated(queryClient, CONNECTIONS_KEY)).toBe(true)
+        expect(queryClient.getQueryState([CONVERSATION_KEY, BOB_ID])?.isInvalidated).toBe(true)
+    })
+
+    it('does refetch the chat list when a match or an unlike is notified, but not on a visit', async () => {
+        let socketClient: RealtimeClient | undefined
+        server.use(realtime.addEventListener('connection', ({ client }) => {
+            socketClient = client
+        }))
+
+        const queryClient = renderProvider()
+        await expectNotificationsRefetched(queryClient)
+        seedNotifications(queryClient)
+        seedChat(queryClient)
+        socketClient!.send(JSON.stringify({ type: 'notification', payload: { id: 8, type: 'visited' } }))
+        await expectNotificationsRefetched(queryClient)
+        expect(isInvalidated(queryClient, CONNECTIONS_KEY)).toBe(false)
+
+        for (const type of ['matched', 'unliked']) {
+            seedChat(queryClient)
+            socketClient!.send(JSON.stringify({ type: 'notification', payload: { id: 9, type } }))
+            await waitFor(() => expect(isInvalidated(queryClient, CONNECTIONS_KEY)).toBe(true))
+        }
     })
 
     it('does back off up to 5 s when the server drops every connection right after it opens', async () => {

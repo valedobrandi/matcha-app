@@ -26,6 +26,7 @@ from typing import Any, List, Optional
 FAME_LIKE_DELTA = 5
 FAME_VISIT_DELTA = 1
 BLOCKS_CHANGED = {"type": "blocks.changed", "payload": None}
+LIKES_CHANGED = {"type": "likes.changed", "payload": None}
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,7 @@ class SocialService:
             if connected:
                 await self._emit(from_user_id, "matched", to_user_id)
                 await self._emit(to_user_id, "matched", from_user_id)
+        await self.hub.push(from_user_id, LIKES_CHANGED)
         return LikeStateResponse(liked=True, connected=connected)
 
     async def unlike(self, from_user_id: int, to_user_id: int) -> LikeStateResponse:
@@ -123,6 +125,7 @@ class SocialService:
         connected = await self.social_repo.is_connected(from_user_id, to_user_id)
         if deactivated:
             await self._emit(to_user_id, "unliked", from_user_id)
+        await self.hub.push(from_user_id, LIKES_CHANGED)
         return LikeStateResponse(liked=False, connected=connected)
 
     async def list_likes_received(
