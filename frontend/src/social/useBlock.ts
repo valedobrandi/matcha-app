@@ -2,7 +2,7 @@ import { useAuth } from "@/auth/useAuth";
 import * as socialApi from "@/api/social"
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toServerMessage } from "@/hooks/toServerMessage";
-import { invalidateNotifications } from "@/notifications/queryKeys";
+import { invalidateBlockedUserViews } from "./queryKeys";
 
 type BlockAction = { targetId: number, blocked: boolean }
 
@@ -14,18 +14,7 @@ export function useBlock() {
         mutationFn: ({ targetId, blocked }: BlockAction) => blocked
             ? socialApi.postBlock(accessToken!, targetId)
             : socialApi.deleteBlock(accessToken!, targetId),
-        // Every query that hides blocked users, or counts what those lists show (ADR-0005).
-        // The public profile is left out: usePublicProfile requests it again once the
-        // relationship says the block is gone.
-        onSuccess: () => Promise.all([
-            ...[
-                "relationship", "blocks", "suggested-profiles", "search-profiles", "search-list",
-                "visitors", "likes-received", "me",
-            ].map(
-                queryKey => queryClient.invalidateQueries({ queryKey: [queryKey] })
-            ),
-            invalidateNotifications(queryClient),
-        ]),
+        onSuccess: () => invalidateBlockedUserViews(queryClient),
     })
     const serverError = toServerMessage(mutation.error)
 

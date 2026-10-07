@@ -72,18 +72,13 @@ class FakeHub:
         self.pushed.append((user_id, envelope))
 
 
-class FailingHub:
-    async def push(self, user_id, envelope):
-        raise RuntimeError("socket gone")
-
-
 READ_EVENT = {"type": "notifications.read", "payload": None}
 
 
 @pytest.mark.asyncio
 async def test_should_create_row_when_event():
     repo = FakeRepo()
-    service = NotificationsService(repo)
+    service = NotificationsService(repo, FakeHub())
     result = await service.create_event(user_id=2, type="liked", actor_id=1)
     assert result.type == "liked"
     assert result.actor.id == 1
@@ -110,7 +105,7 @@ async def test_should_push_the_notification_with_its_actor_when_an_event_is_crea
 @pytest.mark.asyncio
 async def test_should_count_unread_when_unread_exists():
     repo = FakeRepo()
-    service = NotificationsService(repo)
+    service = NotificationsService(repo, FakeHub())
     await service.create_event(2, "liked", 1)
     await service.create_event(2, "visited", 1)
     count = await service.unread_count(2)
@@ -120,7 +115,7 @@ async def test_should_count_unread_when_unread_exists():
 @pytest.mark.asyncio
 async def test_should_mark_read_when_owned():
     repo = FakeRepo()
-    service = NotificationsService(repo)
+    service = NotificationsService(repo, FakeHub())
     created = await service.create_event(2, "liked", 1)
     await service.mark_read(2, created.id)
     count = await service.unread_count(2)
@@ -130,7 +125,7 @@ async def test_should_mark_read_when_owned():
 @pytest.mark.asyncio
 async def test_should_not_mark_read_when_other_users_notification():
     repo = FakeRepo()
-    service = NotificationsService(repo)
+    service = NotificationsService(repo, FakeHub())
     created = await service.create_event(2, "liked", 1)
     with pytest.raises(NotificationNotFoundException):
         await service.mark_read(99, created.id)
@@ -169,13 +164,3 @@ async def test_should_tell_no_tab_when_the_notification_to_mark_read_is_missing(
     with pytest.raises(NotificationNotFoundException):
         await service.mark_read(2, 99)
     assert hub.pushed == []
-
-
-@pytest.mark.asyncio
-async def test_should_still_mark_all_read_when_telling_the_tabs_fails():
-    repo = FakeRepo()
-    await repo.create(2, "liked", 1)
-    service = NotificationsService(repo, hub=FailingHub())
-    result = await service.mark_all_read(2)
-    assert result.ok is True
-    assert (await service.unread_count(2)).unread_count == 0

@@ -16,7 +16,7 @@ class ChatService:
         chat_repo: ChatRepository,
         social_repo: Any,
         notifier: Any,
-        hub: Any = None,
+        hub: Any,
     ):
         self.chat_repo = chat_repo
         self.social_repo = social_repo
@@ -46,8 +46,9 @@ class ChatService:
             logger.exception(
                 "Failed to emit message notification for chat %s", message.id
             )
-        await self._push_chat(peer, message)
-        await self._push_chat(me, message)
+        envelope = {"type": "chat.message", "payload": message.model_dump(mode="json")}
+        await self.hub.push(peer, envelope)
+        await self.hub.push(me, envelope)
         return message
 
     async def list_messages(
@@ -67,21 +68,3 @@ class ChatService:
             up_to_entity_id=up_to_message_id,
         )
         return ChatOkResponse()
-
-    async def _push_chat(self, user_id: int, message: MessageOut) -> None:
-        if self.hub is None:
-            return
-        try:
-            await self.hub.push(
-                user_id,
-                {
-                    "type": "chat.message",
-                    "payload": message.model_dump(mode="json"),
-                },
-            )
-        except Exception:
-            logger.exception(
-                "Failed to push chat message %s to user %s",
-                message.id,
-                user_id,
-            )

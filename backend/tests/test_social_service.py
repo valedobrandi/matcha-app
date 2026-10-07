@@ -132,11 +132,22 @@ class FakeUsersRepository:
         return self.last_connection
 
 
+class FakeHub:
+    def __init__(self):
+        self.pushed = []
+
+    async def push(self, user_id, envelope):
+        self.pushed.append((user_id, envelope))
+
+
+BLOCKS_CHANGED = {"type": "blocks.changed", "payload": None}
+
+
 @pytest.mark.asyncio
 async def test_record_visit_rejects_self():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     with pytest.raises(CannotVisitSelfException):
         await service.record_visit(1, 1)
     assert users.fame_bumps == []
@@ -146,7 +157,7 @@ async def test_record_visit_rejects_self():
 async def test_first_visit_bumps_fame_repeat_does_not():
     social = FakeSocialRepository()
     users = FakeUsersRepository(fame=10)
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     await service.record_visit(1, 2)
     await service.record_visit(1, 2)
     assert users.fame_bumps == [(2, FAME_VISIT_DELTA)]
@@ -157,7 +168,7 @@ async def test_first_visit_bumps_fame_repeat_does_not():
 async def test_like_requires_profile_photo():
     social = FakeSocialRepository()
     users = FakeUsersRepository(has_avatar=False)
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     with pytest.raises(ProfilePhotoRequiredException):
         await service.like(1, 2)
     assert users.fame_bumps == []
@@ -167,7 +178,7 @@ async def test_like_requires_profile_photo():
 async def test_like_self_rejected():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     with pytest.raises(CannotLikeSelfException):
         await service.like(1, 1)
 
@@ -176,7 +187,7 @@ async def test_like_self_rejected():
 async def test_like_target_not_found():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     with pytest.raises(SocialUserNotFoundException):
         await service.like(1, 99)
 
@@ -185,7 +196,7 @@ async def test_like_target_not_found():
 async def test_mutual_like_sets_connected():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     first = await service.like(1, 2)
     assert first.liked is True
     assert first.connected is False
@@ -197,7 +208,7 @@ async def test_mutual_like_sets_connected():
 async def test_unlike_clears_connected_and_is_idempotent():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     await service.like(1, 2)
     await service.like(2, 1)
     res = await service.unlike(1, 2)
@@ -211,7 +222,7 @@ async def test_unlike_clears_connected_and_is_idempotent():
 async def test_like_bumps_fame_only_when_newly_inserted():
     social = FakeSocialRepository()
     users = FakeUsersRepository(fame=0)
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     await service.like(1, 2)
     await service.like(1, 2)
     assert users.fame_bumps == [(2, FAME_LIKE_DELTA)]
@@ -222,7 +233,7 @@ async def test_like_bumps_fame_only_when_newly_inserted():
 async def test_unlike_then_relike_does_not_bump_fame():
     social = FakeSocialRepository()
     users = FakeUsersRepository(fame=0)
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     await service.like(1, 2)
     await service.unlike(1, 2)
     await service.like(1, 2)
@@ -234,7 +245,7 @@ async def test_unlike_then_relike_does_not_bump_fame():
 async def test_fame_clamp_at_100():
     social = FakeSocialRepository()
     users = FakeUsersRepository(fame=99)
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     await service.like(1, 2)
     assert users.fame == 100
 
@@ -243,7 +254,7 @@ async def test_fame_clamp_at_100():
 async def test_block_self_rejected():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     with pytest.raises(CannotBlockSelfException):
         await service.block(1, 1)
 
@@ -252,7 +263,7 @@ async def test_block_self_rejected():
 async def test_should_answer_not_found_to_like_and_visit_when_the_viewer_blocked_the_target():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     await service.block(1, 2)
     with pytest.raises(SocialUserNotFoundException):
         await service.like(1, 2)
@@ -264,7 +275,7 @@ async def test_should_answer_not_found_to_like_and_visit_when_the_viewer_blocked
 async def test_should_answer_not_found_to_like_and_visit_when_the_target_blocked_the_viewer():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     await service.block(2, 1)
     with pytest.raises(SocialUserNotFoundException):
         await service.like(1, 2)
@@ -276,7 +287,7 @@ async def test_should_answer_not_found_to_like_and_visit_when_the_target_blocked
 async def test_unblock_allows_like_again():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     await service.block(1, 2)
     await service.unblock(1, 2)
     res = await service.like(1, 2)
@@ -286,7 +297,7 @@ async def test_unblock_allows_like_again():
 @pytest.mark.asyncio
 async def test_should_keep_the_likes_and_restore_the_connection_when_the_block_is_lifted():
     social = FakeSocialRepository()
-    service = SocialService(social, FakeUsersRepository())
+    service = SocialService(social, FakeUsersRepository(), FakeHub())
     await service.like(1, 2)
     await service.like(2, 1)
     await service.block(1, 2)
@@ -298,7 +309,7 @@ async def test_should_keep_the_likes_and_restore_the_connection_when_the_block_i
 @pytest.mark.asyncio
 async def test_should_answer_not_found_to_the_relationship_when_the_target_blocked_the_viewer():
     social = FakeSocialRepository()
-    service = SocialService(social, FakeUsersRepository())
+    service = SocialService(social, FakeUsersRepository(), FakeHub())
     await service.block(2, 1)
     with pytest.raises(SocialUserNotFoundException):
         await service.get_relationship(1, 2)
@@ -308,7 +319,7 @@ async def test_should_answer_not_found_to_the_relationship_when_the_target_block
 async def test_report_rejects_self():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     with pytest.raises(CannotReportSelfException):
         await service.report(1, 1, "x")
 
@@ -317,7 +328,7 @@ async def test_report_rejects_self():
 async def test_report_stores_ok():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     res = await service.report(1, 2, "fake")
     assert res.ok is True
     assert social.reports[(1, 2)] == "fake"
@@ -328,7 +339,7 @@ async def test_relationship_includes_block_and_online_fields():
     social = FakeSocialRepository()
     recent = datetime.now(timezone.utc) - timedelta(seconds=60)
     users = FakeUsersRepository(last_connection=recent)
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     await service.block(1, 2)
     flags = await service.get_relationship(1, 2)
     assert flags.blocked_by_me is True
@@ -342,7 +353,7 @@ async def test_relationship_offline_when_stale():
     social = FakeSocialRepository()
     stale = datetime.now(timezone.utc) - timedelta(seconds=ONLINE_WINDOW_SECONDS + 10)
     users = FakeUsersRepository(last_connection=stale)
-    service = SocialService(social, users)
+    service = SocialService(social, users, FakeHub())
     flags = await service.get_relationship(1, 2)
     assert flags.is_online is False
 
@@ -365,7 +376,7 @@ async def test_should_emit_visited_when_visit_inserted():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
     notifier = FakeNotifier()
-    service = SocialService(social, users, notifier=notifier)
+    service = SocialService(social, users, FakeHub(), notifier=notifier)
     await service.record_visit(1, 2)
     await service.record_visit(1, 2)
     # Every successful visit emits (including revisits); fame still once.
@@ -381,7 +392,7 @@ async def test_should_emit_liked_when_like_activated():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
     notifier = FakeNotifier()
-    service = SocialService(social, users, notifier=notifier)
+    service = SocialService(social, users, FakeHub(), notifier=notifier)
     await service.like(1, 2)
     assert {"user_id": 2, "type": "liked", "actor_id": 1, "entity_id": None} in notifier.events
 
@@ -391,7 +402,7 @@ async def test_should_emit_matched_to_both_when_like_connects():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
     notifier = FakeNotifier()
-    service = SocialService(social, users, notifier=notifier)
+    service = SocialService(social, users, FakeHub(), notifier=notifier)
     await service.like(1, 2)
     await service.like(2, 1)
     matched = [e for e in notifier.events if e["type"] == "matched"]
@@ -404,7 +415,7 @@ async def test_should_emit_unliked_when_unlike():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
     notifier = FakeNotifier()
-    service = SocialService(social, users, notifier=notifier)
+    service = SocialService(social, users, FakeHub(), notifier=notifier)
     await service.like(1, 2)
     notifier.events.clear()
     await service.unlike(1, 2)
@@ -415,7 +426,7 @@ async def test_should_emit_unliked_when_unlike():
 
 @pytest.mark.asyncio
 async def test_should_answer_not_found_when_unliking_a_missing_user():
-    service = SocialService(FakeSocialRepository(), FakeUsersRepository())
+    service = SocialService(FakeSocialRepository(), FakeUsersRepository(), FakeHub())
     with pytest.raises(SocialUserNotFoundException):
         await service.unlike(1, 99)
 
@@ -425,7 +436,7 @@ async def test_should_answer_not_found_when_unliking_a_missing_user():
 async def test_should_answer_not_found_and_emit_nothing_when_unliking_across_a_block(blocker, blocked):
     social = FakeSocialRepository()
     notifier = FakeNotifier()
-    service = SocialService(social, FakeUsersRepository(), notifier=notifier)
+    service = SocialService(social, FakeUsersRepository(), FakeHub(), notifier=notifier)
     await service.like(1, 2)
     await service.block(blocker, blocked)
     notifier.events.clear()
@@ -440,6 +451,33 @@ async def test_should_not_fail_like_when_notifier_raises():
     social = FakeSocialRepository()
     users = FakeUsersRepository()
     notifier = FakeNotifier(fail=True)
-    service = SocialService(social, users, notifier=notifier)
+    service = SocialService(social, users, FakeHub(), notifier=notifier)
     res = await service.like(1, 2)
     assert res.liked is True
+
+
+@pytest.mark.asyncio
+async def test_should_tell_only_the_blockers_tabs_when_they_block_someone():
+    hub = FakeHub()
+    service = SocialService(FakeSocialRepository(), FakeUsersRepository(), hub)
+    await service.block(1, 2)
+    assert hub.pushed == [(1, BLOCKS_CHANGED)]
+
+
+@pytest.mark.asyncio
+async def test_should_tell_only_the_blockers_tabs_when_they_unblock_someone():
+    hub = FakeHub()
+    service = SocialService(FakeSocialRepository(), FakeUsersRepository(), hub)
+    await service.unblock(1, 2)
+    assert hub.pushed == [(1, BLOCKS_CHANGED)]
+
+
+@pytest.mark.asyncio
+async def test_should_tell_no_tab_when_a_block_is_refused():
+    hub = FakeHub()
+    service = SocialService(FakeSocialRepository(), FakeUsersRepository(), hub)
+    with pytest.raises(CannotBlockSelfException):
+        await service.block(1, 1)
+    with pytest.raises(SocialUserNotFoundException):
+        await service.block(1, 99)
+    assert hub.pushed == []

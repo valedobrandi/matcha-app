@@ -33,7 +33,8 @@ dead socket from a quiet one.
 
 [ADR-0018](0018-a-users-own-changes-are-announced-to-all-of-their-tabs.md) adds
 `{"type":"notifications.read","payload":null}`, pushed to all of a user's sockets after they mark
-notifications read, so their other tabs reload.
+notifications read, and `{"type":"blocks.changed","payload":null}`, pushed to the blocker's
+sockets after a block or an unblock, so their other tabs reload.
 
 ## Status
 
