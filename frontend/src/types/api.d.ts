@@ -971,6 +971,11 @@ export interface components {
              */
             visitors_count: number;
         };
+        /** ReadConversationInput */
+        ReadConversationInput: {
+            /** Up To Message Id */
+            up_to_message_id: number;
+        };
         /** RegisterResponse */
         RegisterResponse: {
             /** Message */
@@ -1586,7 +1591,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReadConversationInput"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

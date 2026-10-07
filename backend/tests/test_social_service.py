@@ -77,6 +77,7 @@ class FakeSocialRepository:
         return RelationshipFlags(
             liked_by_me=self.likes.get((me, target)) == "active",
             liked_you=self.likes.get((target, me)) == "active",
+            connected=await self.is_connected(me, target),
             blocked_by_me=self.blocks.get((me, target)) == "active",
             blocked_you=self.blocks.get((target, me)) == "active",
         )

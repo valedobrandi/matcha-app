@@ -21,7 +21,7 @@ from core.config import settings
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 
-# Effect of each migration: ("table", name), ("view", name) or ("column", "table.column").
+# Effect of each migration: ("table", name), ("view", name), ("index", name) or ("column", "table.column").
 EFFECTS: dict[str, tuple[str, str]] = {
     "0001_create_users": ("table", "users"),
     "0002_create_email_outbox": ("table", "email_outbox"),
@@ -37,6 +37,8 @@ EFFECTS: dict[str, tuple[str, str]] = {
     "0012_create_profile_completeness_view": ("view", "profile_completeness"),
     "0013_create_blocked_pairs_view": ("view", "blocked_pairs"),
     "0014_add_matching_preference": ("column", "users.matching_preference"),
+    "0015_create_connections_view": ("view", "connections"),
+    "0016_replace_chat_messages_pair_index": ("index", "idx_chat_messages_pair_id"),
 }
 
 
@@ -50,6 +52,12 @@ async def _effect_present(conn: asyncpg.Connection, version: str) -> bool:
         return await conn.fetchval(
             "SELECT EXISTS (SELECT 1 FROM information_schema.tables "
             "WHERE table_schema = current_schema() AND table_name = $1)",
+            name,
+        )
+    if kind == "index":
+        return await conn.fetchval(
+            "SELECT EXISTS (SELECT 1 FROM pg_indexes "
+            "WHERE schemaname = current_schema() AND indexname = $1)",
             name,
         )
     table, column = name.split(".")

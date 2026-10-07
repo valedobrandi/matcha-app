@@ -58,12 +58,12 @@ class FakeChatService:
         self.list_calls.append((me, peer, limit, before))
         return self.messages[:limit]
 
-    async def mark_conversation_read(self, me, peer):
+    async def mark_conversation_read(self, me, peer, up_to_message_id):
         if self.blocked:
             raise ChatUserNotFoundException()
         if not self.connected:
             raise NotConnectedException()
-        self.read_calls.append((me, peer))
+        self.read_calls.append((me, peer, up_to_message_id))
         return ChatOkResponse()
 
 
@@ -142,12 +142,24 @@ class TestChatRouter:
         assert response.status_code == 200
         assert override_chat.list_calls == [(1, 2, 50, None)]
 
-    def test_should_mark_the_conversation_read_when_connected(self, override_chat):
+    def test_should_mark_the_conversation_read_up_to_the_given_message_when_connected(
+        self, override_chat
+    ):
+        token = make_token(1)
+        response = client.post(
+            "/chat/conversations/2/read",
+            json={"up_to_message_id": 10},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert response.json() == {"ok": True}
+        assert override_chat.read_calls == [(1, 2, 10)]
+
+    def test_should_reject_a_conversation_read_without_the_shown_message(self, override_chat):
         token = make_token(1)
         response = client.post(
             "/chat/conversations/2/read",
             headers={"Authorization": f"Bearer {token}"},
         )
-        assert response.status_code == 200
-        assert response.json() == {"ok": True}
-        assert override_chat.read_calls == [(1, 2)]
+        assert response.status_code == 422
+        assert override_chat.read_calls == []
