@@ -30,7 +30,7 @@ function useProfileForm(onSuccess?: ()=>void) {
                 sexual_preference: userInfo.sexual_preference ?? undefined,
                 age: userInfo.age ?? undefined,
                 bio: userInfo.bio ?? "",
-            } as ProfileValues)
+            } as ProfileValues, { keepDirtyValues: true })
         }
     }, [userInfo, reset])
 

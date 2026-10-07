@@ -107,8 +107,9 @@ harmless.
   block marks ten queries stale, and each tab fetches again only the ones it shows.
 - Each time a socket opens, its tab fetches every query it shows once more. That happens when the
   tab loads and after a reconnect, not on every page change, because the socket lives in the
-  layout. Every GET is free of side effects (a visit is recorded by its own `POST`), so the extra
-  fetch only refreshes the screen.
+  layout. The GETs behind those queries change nothing but the caller's `last_connection` (a visit
+  is recorded by its own `POST`), and a form filled from a query keeps the fields the user has
+  changed (`useProfileForm`), so the extra fetch only refreshes the screen.
 - New events follow the same rule once a screen shows the changed state. None are added before a
   screen needs them.
 - Event names are strings repeated in `RealtimeProvider`. Generating them from backend models,

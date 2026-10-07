@@ -15,8 +15,9 @@ export function invalidateChat(queryClient: QueryClient) {
 
 export function addMessageToConversation(queryClient: QueryClient, message: MessageOut) {
     for (const participantId of [message.from_user_id, message.to_user_id]) {
-        queryClient.setQueriesData<ConversationPages>(
-            { queryKey: [CONVERSATION_KEY, participantId] },
+        const filters = { queryKey: [CONVERSATION_KEY, participantId] }
+        const addMessage = () => queryClient.setQueriesData<ConversationPages>(
+            filters,
             conversation => {
                 if (!conversation || conversation.pages.some(page => page.some(shown => shown.id === message.id)))
                     return conversation
@@ -27,5 +28,10 @@ export function addMessageToConversation(queryClient: QueryClient, message: Mess
                 }
             },
         )
+        addMessage()
+        if (queryClient.isFetching(filters) > 0)
+            void queryClient
+                .refetchQueries({ ...filters, fetchStatus: "fetching" }, { cancelRefetch: false })
+                .then(addMessage)
     }
 }

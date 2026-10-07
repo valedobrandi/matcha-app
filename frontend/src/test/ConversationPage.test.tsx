@@ -24,17 +24,19 @@ function chatMessage(id: number, fromUserId: number, body = `Message ${id}`, cre
     }
 }
 
-class EverythingInViewObserver {
-    callback: IntersectionObserverCallback
-    constructor(callback: IntersectionObserverCallback) { this.callback = callback }
-    observe(target: Element) {
-        this.callback(
-            [{ target, isIntersecting: true } as unknown as IntersectionObserverEntry],
-            this as unknown as IntersectionObserver,
-        )
-    }
-    unobserve() {}
-    disconnect() {}
+function stubMessagesInView(isInView: (messageId: string | undefined) => boolean) {
+    vi.stubGlobal('IntersectionObserver', class {
+        callback: IntersectionObserverCallback
+        constructor(callback: IntersectionObserverCallback) { this.callback = callback }
+        observe(target: HTMLElement) {
+            this.callback(
+                [{ target, isIntersecting: isInView(target.dataset.messageId) } as unknown as IntersectionObserverEntry],
+                this as unknown as IntersectionObserver,
+            )
+        }
+        unobserve() {}
+        disconnect() {}
+    })
 }
 
 function serveConversation(history: (before: string | null) => unknown[]) {
@@ -164,19 +166,45 @@ describe('ConversationPage', () => {
     it('does keep a new line on Shift+Enter instead of sending', async () => {
         serveConversation(() => [chatMessage(1, BOB.id)])
         connectSocket()
-        const sent = vi.fn()
-        server.use(http.post(`${API_BASE_URL}/chat/messages/:peerId`, () => {
-            sent()
-            return HttpResponse.json(chatMessage(2, ME))
+        const sentBodies: unknown[] = []
+        server.use(http.post(`${API_BASE_URL}/chat/messages/:peerId`, async ({ request }) => {
+            sentBodies.push(await request.json())
+            return HttpResponse.json(chatMessage(2, ME, 'Hello\nBob'))
         }))
 
         renderConversation()
         const messageBox = await findMessageBox()
         fireEvent.change(messageBox, { target: { value: 'Hello' } })
-        fireEvent.keyDown(messageBox, { key: 'Enter', shiftKey: true })
+        const newLineKept = fireEvent.keyDown(messageBox, { key: 'Enter', shiftKey: true })
+        fireEvent.change(messageBox, { target: { value: 'Hello\nBob' } })
+        fireEvent.keyDown(messageBox, { key: 'Enter' })
 
-        expect(messageBox).toHaveValue('Hello')
-        expect(sent).not.toHaveBeenCalled()
+        await waitFor(() => expect(sentBodies).toHaveLength(1))
+        expect(newLineKept).toBe(true)
+        expect(sentBodies).toEqual([{ body: 'Hello\nBob' }])
+    })
+
+    it('does keep the text typed while the message is sending', async () => {
+        serveConversation(() => [chatMessage(1, BOB.id)])
+        connectSocket()
+        let releaseSend = () => {}
+        const sendHeld = new Promise<void>(resolve => { releaseSend = resolve })
+        server.use(http.post(`${API_BASE_URL}/chat/messages/:peerId`, async () => {
+            await sendHeld
+            return HttpResponse.json(chatMessage(2, ME, 'Hey'))
+        }))
+        const followUp = 'are you free tonight?'
+
+        renderConversation()
+        const messageBox = await findMessageBox()
+        fireEvent.change(messageBox, { target: { value: 'Hey' } })
+        fireEvent.keyDown(messageBox, { key: 'Enter' })
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled())
+        fireEvent.change(messageBox, { target: { value: `Hey${followUp}` } })
+        releaseSend()
+
+        expect(await screen.findByText('Hey')).toBeInTheDocument()
+        await waitFor(() => expect(messageBox).toHaveValue(followUp))
     })
 
     it('does show a message the peer sends while the conversation is open', async () => {
@@ -191,8 +219,53 @@ describe('ConversationPage', () => {
         expect(await screen.findByText('Are you there?')).toBeInTheDocument()
     })
 
+    it('does show a message the peer sends while the conversation is loading', async () => {
+        serveConversation(() => [])
+        let releaseHistory = () => {}
+        const historyHeld = new Promise<void>(resolve => { releaseHistory = resolve })
+        server.use(http.get(`${API_BASE_URL}/chat/messages/:peerId`, async () => {
+            await historyHeld
+            return HttpResponse.json([chatMessage(1, BOB.id)])
+        }))
+        const sockets = connectSocket()
+
+        renderConversation()
+        await screen.findByRole('heading', { name: 'Bob Smith' })
+        await waitFor(() => expect(sockets).toHaveLength(1))
+        sockets[0].send(JSON.stringify({ type: 'chat.message', payload: chatMessage(2, BOB.id) }))
+        releaseHistory()
+
+        expect(await screen.findByText('Message 1')).toBeInTheDocument()
+        expect(await screen.findByText('Message 2')).toBeInTheDocument()
+    })
+
+    it('does keep a message the peer sends while the conversation is fetched again', async () => {
+        serveConversation(() => [])
+        let releaseRefetch = () => {}
+        const refetchHeld = new Promise<void>(resolve => { releaseRefetch = resolve })
+        let historyRequests = 0
+        server.use(http.get(`${API_BASE_URL}/chat/messages/:peerId`, async () => {
+            historyRequests += 1
+            if (historyRequests === 1) return HttpResponse.json([chatMessage(1, BOB.id)])
+            await refetchHeld
+            return HttpResponse.json([chatMessage(2, BOB.id), chatMessage(1, BOB.id)])
+        }))
+        const sockets = connectSocket()
+
+        renderConversation()
+        await screen.findByText('Message 1')
+        await waitFor(() => expect(sockets).toHaveLength(1))
+        sockets[0].send(JSON.stringify({ type: 'likes.changed', payload: null }))
+        sockets[0].send(JSON.stringify({ type: 'chat.message', payload: chatMessage(3, BOB.id) }))
+        await waitFor(() => expect(historyRequests).toBeGreaterThan(1))
+        releaseRefetch()
+
+        expect(await screen.findByText('Message 2')).toBeInTheDocument()
+        expect(await screen.findByText('Message 3')).toBeInTheDocument()
+    })
+
     it('does mark the conversation read up to the newest message from the peer that the screen shows', async () => {
-        vi.stubGlobal('IntersectionObserver', EverythingInViewObserver)
+        stubMessagesInView(() => true)
         const { readUpTo } = serveConversation(() => [chatMessage(3, ME), chatMessage(2, BOB.id), chatMessage(1, BOB.id)])
         const sockets = connectSocket()
 
@@ -205,18 +278,39 @@ describe('ConversationPage', () => {
     })
 
     it('does leave the messages unread while the screen shows none of them', async () => {
+        stubMessagesInView(messageId => messageId === '3')
         const { readUpTo } = serveConversation(() => [chatMessage(2, BOB.id), chatMessage(1, BOB.id)])
-        connectSocket()
+        const sockets = connectSocket()
 
         renderConversation()
         await screen.findByText('Message 2')
-        await new Promise(resolve => setTimeout(resolve, 50))
+        await waitFor(() => expect(sockets).toHaveLength(1))
+        sockets[0].send(JSON.stringify({ type: 'chat.message', payload: chatMessage(3, BOB.id) }))
 
-        expect(readUpTo).toEqual([])
+        await waitFor(() => expect(readUpTo).toEqual([3]))
+    })
+
+    it('does mark the conversation read again when the first attempt fails', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        stubMessagesInView(() => true)
+        const { readUpTo } = serveConversation(() => [chatMessage(2, BOB.id), chatMessage(1, BOB.id)])
+        let failedReads = 0
+        server.use(http.post(`${API_BASE_URL}/chat/conversations/:peerId/read`, () => {
+            if (failedReads > 0) return
+            failedReads += 1
+            return HttpResponse.json({ detail: 'Service unavailable' }, { status: 503 })
+        }))
+        connectSocket()
+
+        renderConversation()
+        await waitFor(() => expect(failedReads).toBe(1))
+        await vi.advanceTimersByTimeAsync(1000)
+
+        await waitFor(() => expect(readUpTo).toEqual([2]))
     })
 
     it('does load older messages once the oldest shown message comes into view', async () => {
-        vi.stubGlobal('IntersectionObserver', EverythingInViewObserver)
+        stubMessagesInView(() => true)
         const page = (newestId: number, count: number) =>
             Array.from({ length: count }, (_, index) => chatMessage(newestId - index, BOB.id))
         const { requestedBefore } = serveConversation(before => before === null ? page(100, 50) : page(50, 10))
