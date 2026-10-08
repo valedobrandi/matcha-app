@@ -38,4 +38,4 @@ Status vocabulary: `Open` · `Pending` · `Decided` · `Approved` · `Superseded
 | [0018](0018-a-users-own-changes-are-announced-to-all-of-their-tabs.md) | A user's own changes are announced to all of their tabs, which reload what changed | Decided | Backend, Frontend | 2026-10-06 |
 | [0019](0019-the-backend-refuses-to-start-without-a-required-setting.md) | The backend refuses to start without a setting it cannot work without | Decided | Backend | 2026-10-07 |
 | [0020](0020-every-timestamp-the-api-sends-is-in-utc-and-says-so.md) | Every timestamp the API sends is in UTC and says so | Decided | Backend, Frontend | 2026-10-07 |
-| [0021](0021-the-socket-token-travels-in-the-first-frame.md) | The socket token travels in the first frame, never in the URL | Open | Backend, Frontend | 2026-10-07 |
+| [0021](0021-the-socket-token-travels-in-the-first-frame.md) | The socket token travels in the first frame, never in the URL | Decided | Backend, Frontend | 2026-10-07 |
