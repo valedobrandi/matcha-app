@@ -96,8 +96,7 @@ class DiscoveryRepository:
                           + sin(radians($2)) * sin(radians(u.latitude))
                         ))
                       )
-                    )::numeric,
-                    1
+                    )::numeric
                   )::float8
                 END AS distance_km,
                 (

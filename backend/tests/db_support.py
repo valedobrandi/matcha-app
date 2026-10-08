@@ -3,16 +3,16 @@
 
 async def add_user(
     connection, token, label, *, tag_ids=(), photo=True, bio="bio", age=25,
-    gender="female", sexual_preference="bisexual",
+    gender="female", sexual_preference="bisexual", latitude=None, longitude=None,
 ) -> int:
     user_id = await connection.fetchval(
         """
-        INSERT INTO users (email, username, first_name, last_name, gender, sexual_preference, age, bio)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO users (email, username, first_name, last_name, gender, sexual_preference, age, bio, latitude, longitude)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING id
         """,
         f"{token}{label}@example.test", f"{token}{label}", label.capitalize(), "Tester",
-        gender, sexual_preference, age, bio,
+        gender, sexual_preference, age, bio, latitude, longitude,
     )
     for tag in tag_ids:
         await connection.execute("INSERT INTO user_tags (user_id, tag_id) VALUES ($1, $2)", user_id, tag)
