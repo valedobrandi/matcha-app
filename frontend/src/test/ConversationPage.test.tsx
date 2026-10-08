@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import * as MSW from 'msw'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { http, HttpResponse, ws, type WebSocketHandlerConnection } from 'msw'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { focusManager } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -15,10 +12,6 @@ import { RealtimeProvider } from '@/realtime/RealtimeProvider'
 
 const ME = 1
 const BOB = { id: 5, username: 'bob', first_name: 'Bob', last_name: 'Smith' }
-const realtime = MSW.ws.link(WS_URL)
-
-type RealtimeClient = MSW.WebSocketHandlerConnection['client']
-
 function chatMessage(id: number, fromUserId: number, body = `Message ${id}`, createdAt = '2026-10-07T09:30:00Z') {
     return {
         id,
@@ -86,7 +79,7 @@ function renderConversation() {
     render(
         <Wrapper>
             <RealtimeProvider>
-                <MemoryRouter initialEntries={[`/chat/${BOB.id}`}>
+                <MemoryRouter initialEntries={[`/chat/${BOB.id}`]}>
                     <Routes>
                         <Route path="/chat/:peerId" element={<ConversationPage />} />
                     </Routes>
