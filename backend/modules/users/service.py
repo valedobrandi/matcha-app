@@ -24,9 +24,20 @@ from modules.tags.schemas import TagInput, TagOut
 from modules.tags.exceptions import TagContentProfanity
 from modules.tags.service import profanity
 from core.presence import ONLINE_WINDOW_SECONDS
-from typing import List, Optional, Protocol
+from typing import List, Optional, Protocol, TypeVar
 from fastapi import UploadFile
 import bcrypt
+
+NEIGHBORHOOD_DECIMALS = 2
+
+LocationPayload = TypeVar("LocationPayload", UserLocationInput, EditProfileInput)
+
+
+def _at_neighborhood_precision(payload: LocationPayload) -> LocationPayload:
+    return payload.model_copy(update={
+        "latitude": round(payload.latitude, NEIGHBORHOOD_DECIMALS),
+        "longitude": round(payload.longitude, NEIGHBORHOOD_DECIMALS),
+    })
 
 
 class ProfileSocialReads(Protocol):
@@ -123,7 +134,7 @@ class UsersService:
     ) -> UserProfile:
         if not payload.location_consent:
             raise InvalidLocationException()
-        user_profile = await self.repository.update_location(current_user_id, payload)
+        user_profile = await self.repository.update_location(current_user_id, _at_neighborhood_precision(payload))
         if not user_profile:
             raise UserNotFoundException()
         return user_profile
@@ -151,7 +162,7 @@ class UsersService:
             current_user_id: int,
             payload: EditProfileInput
             ) -> UserProfile:
-        user_profile = await self.repository.edit_profile(current_user_id, payload)
+        user_profile = await self.repository.edit_profile(current_user_id, _at_neighborhood_precision(payload))
         if not user_profile:
             raise UserNotFoundException()
         return user_profile
