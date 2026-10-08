@@ -1,21 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ws, type WebSocketHandlerConnection } from 'msw'
 import { render, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider, type InfiniteData } from '@tanstack/react-query'
 import { AuthContext } from '@/auth/AuthContext'
 import { RealtimeProvider } from '@/realtime/RealtimeProvider'
-import { WS_URL } from '@/api/client'
 import { CONNECTIONS_KEY, CONVERSATION_KEY } from '@/chat/queryKeys'
 import { NOTIFICATIONS_KEY, UNREAD_COUNT_KEY } from '@/notifications/queryKeys'
 import type { MessageOut } from '@/types/chat'
 import { server } from './server'
+import { onAuthenticatedConnection, onConnection, READY, type RealtimeClient } from './realtimeServer'
 import { makeAuthValue } from './renderWithAuth'
 
-const realtime = ws.link(WS_URL)
 const PING = '{"type":"ping","payload":null}'
 const PONG = '{"type":"pong","payload":null}'
-
-type RealtimeClient = WebSocketHandlerConnection['client']
 
 function seedNotifications(queryClient: QueryClient) {
     queryClient.setQueryData([UNREAD_COUNT_KEY], { unread_count: 1 })
@@ -74,9 +70,42 @@ afterEach(() => {
 })
 
 describe('RealtimeProvider', () => {
+    it('does send the token as the first frame, never in the URL, and refetch only once the server is ready', async () => {
+        let socketClient: RealtimeClient | undefined
+        const frames: unknown[] = []
+        server.use(onConnection(({ client }) => {
+            socketClient = client
+            client.addEventListener('message', event => frames.push(event.data))
+        }))
+
+        const queryClient = renderProvider(makeAuthValue({ accessToken: 'secret-jwt' }))
+        await waitFor(() => expect(frames).toEqual([JSON.stringify({ type: 'auth', payload: { token: 'secret-jwt' } })]))
+        expect(socketClient!.url.search).toBe('')
+        expect(isInvalidated(queryClient, UNREAD_COUNT_KEY)).toBe(false)
+        socketClient!.send(READY)
+
+        await expectNotificationsRefetched(queryClient)
+    })
+
+    it('does not ping before the server is ready, so the first frame is always the token', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        const frames: string[] = []
+        server.use(onConnection(({ client }) => {
+            client.addEventListener('message', event => frames.push(String(event.data)))
+        }))
+
+        renderProvider()
+        await waitFor(() => expect(frames).toHaveLength(1))
+        document.dispatchEvent(new Event('visibilitychange'))
+        window.dispatchEvent(new Event('online'))
+        await vi.advanceTimersByTimeAsync(10_000)
+
+        expect(frames.map(frame => JSON.parse(frame).type)).toEqual(['auth'])
+    })
+
     it('does refetch the unread count and the list when a notification arrives', async () => {
         let socketClient: RealtimeClient | undefined
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             socketClient = client
         }))
 
@@ -90,7 +119,7 @@ describe('RealtimeProvider', () => {
 
     it('does refetch the unread count and the list when notifications are read in another tab', async () => {
         let socketClient: RealtimeClient | undefined
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             socketClient = client
         }))
 
@@ -104,7 +133,7 @@ describe('RealtimeProvider', () => {
 
     it('does refetch the views that hide blocked users when a block changes in another tab', async () => {
         let socketClient: RealtimeClient | undefined
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             socketClient = client
         }))
 
@@ -124,7 +153,7 @@ describe('RealtimeProvider', () => {
     it('does refetch every query on screen every time the socket opens, as events may have been missed', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         const clients: RealtimeClient[] = []
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             clients.push(client)
         }))
         const seedEverySocketFedView = (queryClient: QueryClient) => {
@@ -155,7 +184,7 @@ describe('RealtimeProvider', () => {
 
     it('does add a pushed chat message to its conversation once, whichever side sent it', async () => {
         let socketClient: RealtimeClient | undefined
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             socketClient = client
         }))
 
@@ -170,7 +199,7 @@ describe('RealtimeProvider', () => {
 
     it('does refetch the views that show likes when the likes change in another tab', async () => {
         let socketClient: RealtimeClient | undefined
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             socketClient = client
         }))
 
@@ -187,7 +216,7 @@ describe('RealtimeProvider', () => {
 
     it('does refetch the chat list when a match or an unlike is notified, but not on a visit', async () => {
         let socketClient: RealtimeClient | undefined
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             socketClient = client
         }))
 
@@ -209,7 +238,7 @@ describe('RealtimeProvider', () => {
     it('does back off up to 5 s when the server drops every connection right after it opens', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         let connections = 0
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             connections += 1
             setTimeout(() => client.close())
         }))
@@ -225,7 +254,7 @@ describe('RealtimeProvider', () => {
     it('does reconnect after the first delay when a connection that stayed up drops', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         const clients: RealtimeClient[] = []
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             clients.push(client)
             if (clients.length === 1) setTimeout(() => client.close())
             client.addEventListener('message', event => {
@@ -247,7 +276,7 @@ describe('RealtimeProvider', () => {
     it('does log out and stop reconnecting when the server rejects the token with 1008', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         let connections = 0
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onConnection(({ client }) => {
             connections += 1
             setTimeout(() => client.close(1008, 'invalid token'))
         }))
@@ -273,7 +302,7 @@ describe('RealtimeProvider', () => {
             },
         }))
         let connections = 0
-        server.use(realtime.addEventListener('connection', () => {
+        server.use(onAuthenticatedConnection(() => {
             connections += 1
         }))
 
@@ -290,7 +319,7 @@ describe('RealtimeProvider', () => {
     it('does keep the connection while the server answers pings', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         let connections = 0
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             connections += 1
             client.addEventListener('message', event => {
                 if (event.data === PING) client.send(PONG)
@@ -308,7 +337,7 @@ describe('RealtimeProvider', () => {
     it('does check the connection at once when the tab becomes visible', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         let connections = 0
-        server.use(realtime.addEventListener('connection', () => {
+        server.use(onAuthenticatedConnection(() => {
             connections += 1
         }))
 
@@ -324,7 +353,7 @@ describe('RealtimeProvider', () => {
     it('does check the connection at once when the browser comes back online', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         let connections = 0
-        server.use(realtime.addEventListener('connection', () => {
+        server.use(onAuthenticatedConnection(() => {
             connections += 1
         }))
 

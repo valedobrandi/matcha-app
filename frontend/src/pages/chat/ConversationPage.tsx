@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
 import { Link, useParams } from "react-router-dom"
 import { isSameDay, isToday, isYesterday } from "date-fns"
+import { focusManager } from "@tanstack/react-query"
 import { ArrowLeftIcon, MessageCircleIcon, SendHorizontalIcon } from "lucide-react"
 import { API_BASE_URL } from "@/api/client"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -128,6 +129,7 @@ function MessageList({ peerId, peerFirstName, messages, hasOlder, isLoadingOlder
     const { visibleMessageIds } = useMessageScrollerVisibility()
     const markRead = useMarkConversationRead(peerId)
     const markedUpTo = useRef(0)
+    const [focusCount, setFocusCount] = useState(0)
     const seenIds = new Set(visibleMessageIds.map(Number))
     const newestSeenFromPeer = messages.findLast(
         message => message.from_user_id === peerId && seenIds.has(message.id)
@@ -137,8 +139,16 @@ function MessageList({ peerId, peerFirstName, messages, hasOlder, isLoadingOlder
     useEffect(() => {
         if (newestSeenFromPeer <= markedUpTo.current) return
         markedUpTo.current = newestSeenFromPeer
-        markRead(newestSeenFromPeer)
-    }, [newestSeenFromPeer, markRead])
+        markRead(newestSeenFromPeer, {
+            onError: () => {
+                if (markedUpTo.current === newestSeenFromPeer) markedUpTo.current = 0
+            },
+        })
+    }, [newestSeenFromPeer, markRead, focusCount])
+
+    useEffect(() => focusManager.subscribe(isFocused => {
+        if (isFocused) setFocusCount(count => count + 1)
+    }), [])
 
     useEffect(() => {
         if (isOldestSeen && canLoadOlder) void loadOlder()

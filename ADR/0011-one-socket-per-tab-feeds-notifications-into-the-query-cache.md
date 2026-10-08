@@ -35,7 +35,7 @@ socket nor a notification screen, and three gaps stand in the way:
   does), and the insert returns it, so the live push carries it too.
 - **Every tab:** the hub keeps every open socket of a user and pushes each event to all of them.
 - **One client:** a `RealtimeProvider` in the authenticated layout opens one socket per tab with
-  the access token (`/ws?token=`, ADR-0003). It reconnects with a backoff from 1 s capped at 5 s,
+  the access token, sent as the first frame ([ADR-0021](0021-the-socket-token-travels-in-the-first-frame.md)). It reconnects with a backoff from 1 s capped at 5 s,
   which resets only once a connection has stayed up for 10 s. When the server closes with code
   1008 (invalid or expired token), it logs out, as an HTTP 401 does.
 - **Heartbeat:** the client sends `{"type":"ping","payload":null}` every 5 s, and at once when

@@ -16,10 +16,12 @@ export function useMarkNotificationsRead() {
         onSuccess: () => invalidateNotifications(queryClient),
     })
 
+    const error = markAll.error ?? markOne.error
+
     return {
         markRead: (notificationId: number) => markOne.mutate(notificationId),
         markAllRead: () => markAll.mutate(),
         isMarkingAll: markAll.isPending,
-        serverError: toServerMessage(markAll.error ?? markOne.error),
+        serverError: toServerMessage(error) ?? (error ? "Could not mark as read, please try again" : null),
     }
 }

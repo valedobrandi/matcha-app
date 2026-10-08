@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { http, HttpResponse, ws, type WebSocketHandlerConnection } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { server } from './server'
+import { onAuthenticatedConnection } from './realtimeServer'
 import { authWrapper, makeAuthValue } from './renderWithAuth'
-import { API_BASE_URL, WS_URL } from '@/api/client'
+import { API_BASE_URL } from '@/api/client'
 import { NotificationBell } from '@/components/NotificationBell'
 import { RealtimeProvider } from '@/realtime/RealtimeProvider'
 
-const realtime = ws.link(WS_URL)
 
 function serveUnreadCount(count: () => number) {
     server.use(
@@ -48,7 +48,7 @@ describe('NotificationBell', () => {
         let unread = 1
         let socketClient: WebSocketHandlerConnection['client'] | undefined
         serveUnreadCount(() => unread)
-        server.use(realtime.addEventListener('connection', ({ client }) => {
+        server.use(onAuthenticatedConnection(({ client }) => {
             socketClient = client
         }))
 
