@@ -1,6 +1,6 @@
 from core.api_model import ApiModel
-from typing import Optional
-from pydantic import BaseModel, EmailStr, field_validator
+from typing import Annotated, Optional
+from pydantic import AfterValidator, BaseModel, EmailStr, Field, StringConstraints, field_validator
 from zxcvbn import zxcvbn
 import re
 
@@ -14,7 +14,22 @@ class UserRecord(BaseModel):
     fortytwo_id: Optional[int] = None
     is_verified: bool = False
 
+BCRYPT_MAX_BYTES = 72
+
+
+def fits_bcrypt(v: str) -> str:
+    if len(v.encode("utf-8")) > BCRYPT_MAX_BYTES:
+        raise ValueError(f"Password must be at most {BCRYPT_MAX_BYTES} bytes long")
+    return v
+
+
+PasswordInput = Annotated[str, AfterValidator(fits_bcrypt)]
+PersonName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
+EmailInput = Annotated[EmailStr, Field(max_length=100)]
+
+
 def validate_password_strength(v: str) -> str:
+    fits_bcrypt(v)
 
     if len(v) < 8:
         raise ValueError('Password must be at least 8 characters long')
@@ -33,10 +48,10 @@ def validate_password_strength(v: str) -> str:
     return v
 
 class UserRegisterInput(BaseModel):
-    email: EmailStr
-    username: str
-    first_name: str
-    last_name: str
+    email: EmailInput
+    username: PersonName
+    first_name: PersonName
+    last_name: PersonName
     password: str
 
     @field_validator('password')
@@ -54,7 +69,7 @@ class ResetPasswordInput(BaseModel):
         return validate_password_strength(v)
 
 class ForgotPasswordInput(BaseModel):
-    email: EmailStr
+    email: EmailInput
 
 class ForgotPasswordResponse(ApiModel):
     message: str
@@ -66,7 +81,7 @@ class ResetPasswordResponse(ApiModel):
 
 class LoginInput(BaseModel):
     username: str
-    password: str
+    password: PasswordInput
 
 class TokenResponse(ApiModel):
     access_token: str
@@ -76,7 +91,7 @@ class RegisterResponse(ApiModel):
     message: str
 
 class ResendVerificationInput(BaseModel):
-    email: EmailStr
+    email: EmailInput
 
 class ResendVerificationResponse(ApiModel):
     message: str

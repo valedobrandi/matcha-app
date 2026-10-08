@@ -1,8 +1,11 @@
 from core.api_model import ApiModel, UtcDatetime
-from pydantic import BaseModel, EmailStr, Field, model_validator, field_validator
-from typing import List, Literal, Optional
-from modules.auth.schemas import validate_password_strength
+from pydantic import BaseModel, EmailStr, Field, StringConstraints, model_validator, field_validator
+from typing import Annotated, List, Literal, Optional
+from modules.auth.schemas import EmailInput, PasswordInput, PersonName, validate_password_strength
 from modules.tags.schemas import TagOut
+
+LocationLabel = Annotated[str, StringConstraints(strip_whitespace=True, max_length=100)]
+
 
 class UserProfile(ApiModel):
     id: int
@@ -20,7 +23,7 @@ class UserProfile(ApiModel):
     fame_rating: int = 0
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-    location_label: Optional[str] = None
+    location_label: Optional[LocationLabel] = None
     location_consent: bool = False
     last_connection: Optional[UtcDatetime] = None
     likes_received_count: int = 0
@@ -30,19 +33,19 @@ class UserProfileInput(BaseModel):
     gender: Literal["male", "female", "other"]
     sexual_preference: Optional[Literal["man", "woman", "bisexual"]] = None
     age: int = Field(..., ge=18, le=100)
-    bio: str = Field(..., min_length=1)
+    bio: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
 
 class UserLocationInput(BaseModel):
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
-    location_label: Optional[str] = None
+    location_label: Optional[LocationLabel] = None
     location_consent: bool
 
 class UserAccountInput(BaseModel):
-    username: str = Field(..., min_length=1)
-    first_name: str = Field(..., min_length=1)
-    last_name: str = Field(..., min_length=1)
-    email: EmailStr
+    username: PersonName
+    first_name: PersonName
+    last_name: PersonName
+    email: EmailInput
 
 class PhotoOut(ApiModel):
     id: int
@@ -52,7 +55,7 @@ class PhotoOut(ApiModel):
 class EditProfileInput(UserProfileInput):
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
-    location_label: Optional[str] = None
+    location_label: Optional[LocationLabel] = None
     location_consent: bool
 
     @model_validator(mode="after")
@@ -64,7 +67,7 @@ class EditProfileInput(UserProfileInput):
         return self
 
 class PasswordChangeInput(BaseModel):
-    current_password: str
+    current_password: PasswordInput
     new_password: str
     confirm_password: str
 

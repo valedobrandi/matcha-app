@@ -1,17 +1,24 @@
-"""Names the image format of an upload from its leading bytes.
+"""Names the image format of an upload by decoding it with Pillow.
 
-Replaces the standard-library imghdr (deprecated in 3.11, removed in 3.13). Only the formats
-the profile photo upload allows are recognised; anything else, including SVG, returns None.
+Only the formats the profile photo upload allows are recognised. A file that does not decode
+completely as one of them, including one that only starts like an image, returns None.
 """
 
-_SIGNATURES = (
-    ("jpeg", lambda head: head.startswith(b"\xff\xd8\xff")),
-    ("png", lambda head: head.startswith(b"\x89PNG\r\n\x1a\n")),
-    ("gif", lambda head: head.startswith((b"GIF87a", b"GIF89a"))),
-    ("webp", lambda head: head[:4] == b"RIFF" and head[8:12] == b"WEBP"),
-)
+import io
+import warnings
+
+from PIL import Image
+
+_FORMATS = {"JPEG": "jpeg", "PNG": "png", "GIF": "gif", "WEBP": "webp"}
 
 
 def detect_image_type(content: bytes) -> str | None:
-    head = content[:12]
-    return next((name for name, matches in _SIGNATURES if matches(head)), None)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(io.BytesIO(content)) as image:
+                image_format = image.format
+                image.load()
+    except (OSError, SyntaxError, ValueError, Image.DecompressionBombWarning, Image.DecompressionBombError):
+        return None
+    return _FORMATS.get(image_format or "")

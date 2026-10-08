@@ -5,6 +5,7 @@ import { z } from 'zod'
 const emailSchema = z
   .string()
   .min(1, 'Email is required')
+  .max(100, 'Email must be at most 100 characters')
   .pipe(z.email('Invalid email'))
 
 export const passwordSchema = z
@@ -13,12 +14,19 @@ export const passwordSchema = z
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/[0-9]/, 'Password must contain at least one number')
+  .refine(password => new TextEncoder().encode(password).length <= 72, 'Password is too long')
+
+export const nameSchema = (label: string) => z
+  .string()
+  .trim()
+  .min(1, `${label} is required`)
+  .max(50, `${label} must be at most 50 characters`)
 
 export const registerSchema = z.object({
   email: emailSchema,
-  username: z.string().min(1, 'Username is required'),
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
+  username: nameSchema('Username'),
+  first_name: nameSchema('First name'),
+  last_name: nameSchema('Last name'),
   password: passwordSchema,
 })
 
