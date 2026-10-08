@@ -4,10 +4,17 @@ import type { UseFormSetValue } from "react-hook-form"
 
 type NominatimAddress = Partial<Record<"neighbourhood" | "quarter" | "suburb" | "village" | "hamlet" | "city" | "town" | "municipality", string>>
 
+const MAX_LOCATION_LABEL_LENGTH = 100
+
 function neighborhoodLabel(address: NominatimAddress) {
     const area = address.neighbourhood ?? address.quarter ?? address.suburb ?? address.village ?? address.hamlet
     const city = address.city ?? address.town ?? address.village ?? address.municipality
-    return [...new Set([area, city].filter(Boolean))].join(", ")
+    const label = [...new Set([area, city].filter(Boolean))].join(", ")
+    if (label.length <= MAX_LOCATION_LABEL_LENGTH)
+        return label
+    if (city && city.length <= MAX_LOCATION_LABEL_LENGTH)
+        return city
+    return ""
 }
 
 function useLocationInput(setValue: UseFormSetValue<EditProfileValues>){

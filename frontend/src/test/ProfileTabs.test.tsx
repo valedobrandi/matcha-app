@@ -104,6 +104,34 @@ describe('ProfileTab location from GPS', () => {
         })])
     })
 
+    it('does save only the city when the neighborhood and city together exceed 100 characters', async () => {
+        serveMyTagsAndPhotos()
+        stubGeolocation(48.8584, 2.2945)
+        let releaseGeocoding = () => {}
+        const geocoding = new Promise<void>(resolve => { releaseGeocoding = resolve })
+        const sentBodies: unknown[] = []
+        server.use(
+            http.get(NOMINATIM_REVERSE, async () => {
+                await geocoding
+                return HttpResponse.json({ address: { quarter: 'Q'.repeat(95), city: 'Paris' } })
+            }),
+            http.patch(`${API_BASE_URL}/users/me/profile`, async ({ request }) => {
+                sentBodies.push(await request.json())
+                return HttpResponse.json(PROFILE)
+            }),
+        )
+        const onSaved = renderProfileTab(vi.fn(), { ...PROFILE, location_consent: false })
+
+        fireEvent.click(screen.getByRole('switch', { name: 'Share your location' }))
+        const locating = await screen.findByText('Getting your location...')
+        releaseGeocoding()
+        await waitForElementToBeRemoved(locating)
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+        await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1))
+        expect(sentBodies).toEqual([expect.objectContaining({ location_label: 'Paris', location_consent: true })])
+    })
+
     it('does ask for the location by hand when GPS finds no neighborhood or city', async () => {
         serveMyTagsAndPhotos()
         stubGeolocation(0, -30)
