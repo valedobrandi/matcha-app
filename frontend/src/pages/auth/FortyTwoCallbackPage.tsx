@@ -9,6 +9,9 @@ import { resolveErrorMessage } from '../../i18n/errors'
 import { AuthStatusCard } from '../../components/auth-status-card'
 import { Button } from '../../components/ui/button'
 import { Spinner } from '../../components/ui/spinner'
+import type { TokenResponse } from '../../types/auth'
+
+const exchangesByCode = new Map<string, Promise<TokenResponse>>()
 
 function getOAuthValidationError(
   code: string | null,
@@ -39,9 +42,10 @@ export function FortyTwoCallbackPage() {
     }
 
     let cancelled = false
+    const exchange = exchangesByCode.get(code) ?? authApi.fortytwoCallback(code)
+    exchangesByCode.set(code, exchange)
 
-    authApi
-      .fortytwoCallback(code)
+    exchange
       .then(async (response) => {
         if (cancelled) return
         clearOAuthState()

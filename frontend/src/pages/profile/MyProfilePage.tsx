@@ -95,10 +95,10 @@ export function ProfileTabs({profile, onSaved} : {profile : UserProfile, onSaved
                 <TabsTrigger value="Profile">Profile</TabsTrigger>
                 <TabsTrigger value="account">Account</TabsTrigger>
             </TabsList>
-            <TabsContent value="Profile">
+            <TabsContent value="Profile" keepMounted>
                 <ProfileTab profile={profile} onSaved={onSaved} />
             </TabsContent>
-            <TabsContent value="account">
+            <TabsContent value="account" keepMounted>
                 <AccountTab profile={profile} onSaved={onSaved}/>
             </TabsContent>
         </Tabs>

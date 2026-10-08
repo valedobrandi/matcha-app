@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { Button } from '@/components/ui/button'
@@ -8,6 +9,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
+import { Spinner } from '@/components/ui/spinner'
 import { SearchForm } from "@/components/ui/search-form"
 import { RealtimeProvider } from '@/realtime/RealtimeProvider'
 import { NotificationBell } from '@/components/NotificationBell'
@@ -39,7 +41,9 @@ export function RootLayout() {
           </header>
 
           <main className="flex-1 px-4 sm:px-6 py-8">
-            <Outlet />
+            <Suspense fallback={<Spinner className="mx-auto" />}>
+              <Outlet />
+            </Suspense>
           </main>
 
           <footer className="border-t">

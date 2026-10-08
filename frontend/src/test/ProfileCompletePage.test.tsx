@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { http, HttpResponse } from 'msw'
+import { delay, http, HttpResponse } from 'msw'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -9,7 +9,42 @@ import { ProfileCompletePage } from '@/pages/profile/ProfileCompletePage'
 import { makeAuthValue } from './renderWithAuth'
 import { sampleProfile, server } from './server'
 
+function renderWizard() {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+        <QueryClientProvider client={queryClient}>
+            <AuthContext.Provider value={makeAuthValue()}>
+                <MemoryRouter>
+                    <ProfileCompletePage />
+                </MemoryRouter>
+            </AuthContext.Provider>
+        </QueryClientProvider>,
+    )
+}
+
 describe('ProfileCompletePage', () => {
+    it('does open the tags step as soon as the profile is saved, without waiting for the profile to reload', async () => {
+        let profileRequests = 0
+        const savedProfile = { ...sampleProfile, gender: 'male', sexual_preference: null, age: 30, bio: 'hi', is_profile_completed: false }
+        server.use(
+            http.get(`${API_BASE_URL}/users/me`, async () => {
+                profileRequests += 1
+                if (profileRequests > 1) await delay('infinite')
+                return HttpResponse.json(savedProfile)
+            }),
+            http.patch(`${API_BASE_URL}/users/me`, () => HttpResponse.json(savedProfile)),
+            http.get(`${API_BASE_URL}/users/me/photos`, () => HttpResponse.json([])),
+            http.get(`${API_BASE_URL}/users/me/tags`, () => HttpResponse.json([])),
+        )
+        renderWizard()
+
+        await waitFor(() => expect(screen.getByLabelText('Age')).toHaveValue(30))
+        fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+        expect(await screen.findByLabelText('Choose your personal tags:')).toBeInTheDocument()
+        expect(profileRequests).toBe(2)
+    })
+
     it('does keep what the user typed when the profile is fetched again', async () => {
         let profileRequests = 0
         let storedAge: number | null = null

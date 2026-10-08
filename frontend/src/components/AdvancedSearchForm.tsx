@@ -1,8 +1,9 @@
+import { useState } from "react"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
-import { FieldLabel } from "@/components/ui/field"
+import { FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import useProfileTags from "@/users/useProfileTags"
+import { useTagSearch } from "@/discovery/useTagSearch"
 import { Checkbox } from "@/components/ui/checkbox"
 
 export interface AdvancedFilters {
@@ -18,17 +19,24 @@ interface AdvancedSearchFormProps {
 }
 
 function AdvancedSearchForm({value, onChange} : AdvancedSearchFormProps) {
-    const { inputValue, tagsSearchList, handleInput} = useProfileTags()
+    const { inputValue, tagsSearchList, serverError, handleInput } = useTagSearch()
+    const [draft, setDraft] = useState(value)
 
-    const patchValue = (partial: Partial<AdvancedFilters>) => {
-        onChange({...value, ...partial})
+    const moveThumbs = (partial: Partial<AdvancedFilters>) => {
+        setDraft(current => ({...current, ...partial}))
+    }
+
+    const commit = (partial: Partial<AdvancedFilters>) => {
+        const next = {...draft, ...partial}
+        setDraft(next)
+        onChange(next)
     }
 
     const handleCommonTags = (tagId: number) => {
-        const tagIds = value.tagIds.includes(tagId)
-            ? value.tagIds.filter(id => id !== tagId)
-            : [...value.tagIds, tagId]
-        patchValue({tagIds})
+        const tagIds = draft.tagIds.includes(tagId)
+            ? draft.tagIds.filter(id => id !== tagId)
+            : [...draft.tagIds, tagId]
+        commit({tagIds})
     }
 
     return (
@@ -37,13 +45,14 @@ function AdvancedSearchForm({value, onChange} : AdvancedSearchFormProps) {
                 <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium leading-none">Age</span>
                     <span className="text-sm text-muted-foreground">
-                        {value.ageRange.join(", ")}
+                        {draft.ageRange.join(", ")}
                     </span>
                 </div>
                 <Slider
                     id="slider-age"
-                    value={value.ageRange}
-                    onValueChange={(v) => patchValue({ageRange: v as number[]})}
+                    value={draft.ageRange}
+                    onValueChange={(v) => moveThumbs({ageRange: v as number[]})}
+                    onValueCommitted={(v) => commit({ageRange: v as number[]})}
                     min={18}
                     max={100}
                     step={1}
@@ -53,13 +62,14 @@ function AdvancedSearchForm({value, onChange} : AdvancedSearchFormProps) {
                 <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium leading-none">Fame</span>
                     <span className="text-sm text-muted-foreground">
-                        {value.fameRange.join(", ")}
+                        {draft.fameRange.join(", ")}
                     </span>
                 </div>
                 <Slider
                     id="slider-fame"
-                    value={value.fameRange}
-                    onValueChange={(v) => patchValue({fameRange: v as number[]})}
+                    value={draft.fameRange}
+                    onValueChange={(v) => moveThumbs({fameRange: v as number[]})}
+                    onValueCommitted={(v) => commit({fameRange: v as number[]})}
                     min={0}
                     max={100}
                     step={5}
@@ -68,20 +78,18 @@ function AdvancedSearchForm({value, onChange} : AdvancedSearchFormProps) {
             <div className="mx-auto grid w-full my-8 gap-3">
                 <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium leading-none">Max distance km</span>
-                    {value.maxDistance && (
+                    {draft.maxDistance && (
                         <span className="text-sm text-muted-foreground">
-                            {value.maxDistance} km
+                            {draft.maxDistance} km
                         </span>
                     )}
                 </div>
-                {value.maxDistance && (
+                {draft.maxDistance && (
                     <Slider
                     id="slider-distance"
-                    value={value.maxDistance}
-                    onValueChange={(v) => {
-                            const distance = Array.isArray(v) ? v : [v]
-                            patchValue({maxDistance: distance})
-                        }}
+                    value={draft.maxDistance}
+                    onValueChange={(v) => moveThumbs({maxDistance: Array.isArray(v) ? v : [v]})}
+                    onValueCommitted={(v) => commit({maxDistance: Array.isArray(v) ? v : [v]})}
                         min={1}
                         max={100}
                         step={20}
@@ -89,9 +97,9 @@ function AdvancedSearchForm({value, onChange} : AdvancedSearchFormProps) {
                 )}
                 <div className="flex items-center gap-2">
                     <Checkbox 
-                        checked={value.maxDistance === null}
+                        checked={draft.maxDistance === null}
                         onCheckedChange={(checked) => 
-                            patchValue({maxDistance: checked? null : [20]})
+                            commit({maxDistance: checked? null : [20]})
                         }
                     />
                     <FieldLabel className="text-sm font-medium leading-none">Any distance</FieldLabel>
@@ -106,10 +114,11 @@ function AdvancedSearchForm({value, onChange} : AdvancedSearchFormProps) {
                     onChange={(e)=>handleInput(e.target.value)}
                 />
             </div>
+            {serverError && <FieldError>{serverError}</FieldError>}
             <div className="mx-auto my-4 flex flex-wrap gap-1">
                 {tagsSearchList.length > 0 && (
                     tagsSearchList.map(tag=>{
-                        const isSelected = value.tagIds.includes(tag.id)
+                        const isSelected = draft.tagIds.includes(tag.id)
                         return (
                             <Button
                                 key={tag.id}

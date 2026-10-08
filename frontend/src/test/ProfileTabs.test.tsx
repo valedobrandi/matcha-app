@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { API_BASE_URL } from '@/api/client'
 import AccountTab from '@/components/AccountTab'
 import ProfileTab from '@/components/ProfileTab'
+import { ProfileTabs } from '@/pages/profile/MyProfilePage'
 import { authWrapper, makeAuthValue } from './renderWithAuth'
 import { sampleProfile, server } from './server'
 
@@ -41,6 +42,22 @@ function changePassword() {
     fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'Better456' } })
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
 }
+
+describe('ProfileTabs', () => {
+    it('does keep unsaved profile edits and edit mode when the user switches to the account tab and back', async () => {
+        serveMyTagsAndPhotos()
+        const Wrapper = authWrapper(makeAuthValue())
+        render(<Wrapper><ProfileTabs profile={PROFILE} onSaved={vi.fn()} /></Wrapper>)
+
+        fireEvent.click(screen.getByRole('button', { name: 'vues' }))
+        fireEvent.change(screen.getByLabelText(/Bio/), { target: { value: 'Still typing' } })
+        fireEvent.click(screen.getByRole('tab', { name: 'Account' }))
+        fireEvent.click(await screen.findByRole('tab', { name: 'Profile' }))
+
+        expect(await screen.findByLabelText(/Bio/)).toHaveValue('Still typing')
+        expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+    })
+})
 
 describe('ProfileTab', () => {
     it('does save the profile, tell the page and leave edit mode', async () => {
