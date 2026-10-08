@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { http, HttpResponse, ws, type WebSocketHandlerConnection } from 'msw'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { focusManager } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
