@@ -100,23 +100,30 @@ function PublicProfilePage() {
                                 <p>Popularity</p>
                             </div>
                         </div>
+                        {relationship?.connected ? (
+                            <p className="text-center">You and {publicProfile.first_name} are connected</p>
+                        ) : relationship?.liked_by_me ? (
+                            <p className="text-center">You like {publicProfile.first_name}</p>
+                        ) : relationship?.liked_you ? (
+                            <p className="text-center">{publicProfile.first_name} likes you</p>
+                        ) : null}
                         <div className="flex gap-1 justify-center">
                             <Button
                                 variant="outline"
                                 className="max-inline-32 cursor-pointer"
                                 onClick={()=>handleLike(publicProfile.id)}
                             >
-                                {relationship?.connected? "Connected"
-                                    : (relationship?.liked_by_me? "Liked by me"
-                                    : (relationship?.liked_you? "Liked you and feedback like"
-                                    : `Like ${publicProfile.gender === "male" ? "him" : "her"}`))}
+                                {relationship?.connected ? "Disconnect"
+                                    : relationship?.liked_by_me ? "Unlike"
+                                    : relationship?.liked_you ? "Like back"
+                                    : "Like"}
                             </Button>
                             <Button
                                 variant="outline"
                                 className="max-inline-32 cursor-pointer"
                                 onClick={()=>block(publicProfile.id)}
                             >
-                                {`Block ${publicProfile.gender === "male" ? "him" : "her"}`}
+                                Block
                             </Button>
                             <DropdownMenu>
                                 <DropdownMenuTrigger

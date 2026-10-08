@@ -22,6 +22,6 @@ test('logs in, opens a suggested profile and likes it', async ({ page }) => {
   await card.getByRole('heading', { level: 2 }).click()
   await expect(page).toHaveURL(/\/users\/\d+$/)
 
-  await page.getByRole('button', { name: /^Like (him|her)$/ }).click()
-  await expect(page.getByRole('button', { name: /^(Liked by me|Connected)$/ })).toBeVisible()
+  await page.getByRole('button', { name: /^Like( back)?$/ }).click()
+  await expect(page.getByRole('button', { name: /^(Unlike|Disconnect)$/ })).toBeVisible()
 })
