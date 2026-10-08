@@ -1,6 +1,5 @@
-import type { EditProfileValues } from "@/schemas/users"
+import type { LocationValues } from "@/schemas/users"
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { UseFormSetValue } from "react-hook-form"
 
 type NominatimAddress = Partial<Record<"neighbourhood" | "quarter" | "suburb" | "village" | "hamlet" | "city" | "town" | "municipality", string>>
 
@@ -17,7 +16,7 @@ function neighborhoodLabel(address: NominatimAddress) {
     return ""
 }
 
-function useLocationInput(setValue: UseFormSetValue<EditProfileValues>){
+function useLocationInput(onLocationChange: (location: LocationValues) => void){
     const [sharePosition, setSharePosition] = useState<boolean>(false)
     const [locationError, setLocationError] = useState<string | null> (null)
     const [isLocating, setIsLocating] = useState<boolean>(false)
@@ -49,10 +48,7 @@ function useLocationInput(setValue: UseFormSetValue<EditProfileValues>){
             const locationText = neighborhoodLabel(data.address ?? {})
             if (!locationText)
                 throw new Error("No neighborhood or city at this position")
-            setValue("latitude", latitude)
-            setValue("longitude", longitude)
-            setValue("location_label", locationText)
-            setValue("location_consent", true)
+            onLocationChange({ latitude, longitude, location_label: locationText, location_consent: true })
             setSharePosition(true)
         } catch (err) {
             if ((err as Error).name !== "AbortError") {
@@ -63,12 +59,11 @@ function useLocationInput(setValue: UseFormSetValue<EditProfileValues>){
             if (abortControlRef.current === control)
                 setIsLocating(false)
         }
-    }, [setValue])
+    }, [onLocationChange])
 
     const handleManuallyLocationInput = useCallback(async(text: string)=> {
         if (!text.trim()) {
-            setValue("latitude", null)
-            setValue("longitude", null)          
+            onLocationChange({ latitude: null, longitude: null, location_label: text, location_consent: false })
             return
         }
         abortControlRef.current?.abort()
@@ -85,13 +80,14 @@ function useLocationInput(setValue: UseFormSetValue<EditProfileValues>){
                 throw new Error(`Geocode failed: ${res.status}`)
             const data = await res.json()
             if (data[0]) {
-                setValue("location_label", text.trim())
-                setValue("latitude", parseFloat(data[0].lat))
-                setValue("longitude", parseFloat(data[0].lon))
-                setValue("location_consent", false)
+                onLocationChange({
+                    latitude: parseFloat(data[0].lat),
+                    longitude: parseFloat(data[0].lon),
+                    location_label: text.trim(),
+                    location_consent: false,
+                })
             } else {
-                setValue("latitude", null)
-                setValue("longitude", null)
+                onLocationChange({ latitude: null, longitude: null, location_label: text, location_consent: false })
                 setLocationError("No match for this address. Please try an valid address.")
                 return
             }
@@ -100,7 +96,7 @@ function useLocationInput(setValue: UseFormSetValue<EditProfileValues>){
                 setLocationError("Could not resolve this address.")
         }
 
-    }, [setValue])
+    }, [onLocationChange])
 
     const handleToggle = (checked: boolean) => {
         setSharePosition(checked)
@@ -108,10 +104,7 @@ function useLocationInput(setValue: UseFormSetValue<EditProfileValues>){
             handleEnableAutoLocation()
         else {
             abortControlRef.current?.abort()
-            setValue("latitude", null)
-            setValue("longitude", null)
-            setValue("location_label", "")
-            setValue("location_consent", false)      
+            onLocationChange({ latitude: null, longitude: null, location_label: "", location_consent: false })
         }
     }
 

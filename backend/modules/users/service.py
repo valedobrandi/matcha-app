@@ -13,7 +13,6 @@ from modules.users.schemas import (
 from modules.users.exceptions import (
     UserNotFoundException,
     TargetUserNotFoundException,
-    InvalidLocationException,
 )
 from modules.auth.exceptions import (
     InvalidCredentialsException,
@@ -132,8 +131,6 @@ class UsersService:
             current_user_id: int,
             payload: UserLocationInput,
     ) -> UserProfile:
-        if not payload.location_consent:
-            raise InvalidLocationException()
         user_profile = await self.repository.update_location(current_user_id, _at_neighborhood_precision(payload))
         if not user_profile:
             raise UserNotFoundException()

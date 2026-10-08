@@ -200,19 +200,20 @@ class TestPatchLocation:
         assert body["location_label"] == "Paris"
         assert body["location_consent"] is True
 
-    def test_location_update_rejects_without_consent(self, override_service):
+    def test_should_save_a_typed_location_when_the_user_refused_gps(self, override_service):
         token = make_token(user_id=1)
         response = client.patch(
             "/users/me/location",
             headers={"Authorization": f"Bearer {token}"},
             json={
-                "latitude": 48.85,
-                "longitude": 2.35,
+                "latitude": 45.76,
+                "longitude": 4.83,
+                "location_label": "Lyon",
                 "location_consent": False,
             },
         )
-        assert response.status_code == 400
-        assert response.json()["code"] == "INVALID_LOCATION"
+        assert response.status_code == 200
+        assert (response.json()["location_label"], response.json()["location_consent"]) == ("Lyon", False)
 
 
 class TestPatchAccount:

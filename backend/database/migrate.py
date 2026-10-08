@@ -21,7 +21,8 @@ from core.config import settings
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 
-# Effect of each migration: ("table", name), ("view", name), ("index", name) or ("column", "table.column").
+# Effect of each migration: ("table", name), ("view", name), ("index", name), ("column", "table.column")
+# or ("view_column", "view.table.column").
 EFFECTS: dict[str, tuple[str, str]] = {
     "0001_create_users": ("table", "users"),
     "0002_create_email_outbox": ("table", "email_outbox"),
@@ -39,6 +40,7 @@ EFFECTS: dict[str, tuple[str, str]] = {
     "0014_add_matching_preference": ("column", "users.matching_preference"),
     "0015_create_connections_view": ("view", "connections"),
     "0016_replace_chat_messages_pair_index": ("index", "idx_chat_messages_pair_id"),
+    "0017_require_location_for_a_complete_profile": ("view_column", "profile_completeness.users.latitude"),
 }
 
 
@@ -53,6 +55,15 @@ async def _effect_present(conn: asyncpg.Connection, version: str) -> bool:
             "SELECT EXISTS (SELECT 1 FROM information_schema.tables "
             "WHERE table_schema = current_schema() AND table_name = $1)",
             name,
+        )
+    if kind == "view_column":
+        view, table, column = name.split(".")
+        return await conn.fetchval(
+            "SELECT EXISTS (SELECT 1 FROM information_schema.view_column_usage "
+            "WHERE view_schema = current_schema() AND view_name = $1 AND table_name = $2 AND column_name = $3)",
+            view,
+            table,
+            column,
         )
     if kind == "index":
         return await conn.fetchval(

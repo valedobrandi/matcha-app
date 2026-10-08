@@ -1,4 +1,4 @@
-"""Runs the profile_completeness view (migrations 0012 and 0014) on a real Postgre.
+"""Runs the profile_completeness view (migrations 0012, 0014 and 0017) on a real Postgre.
 
 The view is the only owner of the "profile completed" rule. /users/me, the session
 contract and discovery all read it. See test_discovery_visibility_integration.py for how to
@@ -26,8 +26,9 @@ async def test_should_report_completed_when_every_required_part_is_present(conne
         {"bio": None},
         {"age": None},
         {"gender": None},
+        {"latitude": None, "longitude": None},
     ],
-    ids=["no_photo", "no_tags", "no_bio", "no_age", "no_gender"],
+    ids=["no_photo", "no_tags", "no_bio", "no_age", "no_gender", "no_location"],
 )
 async def test_should_report_incomplete_when_a_required_part_is_missing(connection, token, tag_id, missing):
     user = await add_user(connection, token, "incomplete", **{"tag_ids": [tag_id], **missing})

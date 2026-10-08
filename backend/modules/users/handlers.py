@@ -7,7 +7,6 @@ from modules.users.exceptions import (
     FileTooLargeException,
     InvalidPhotoTypeException,
     MaxPhotosReachedException,
-    InvalidLocationException,
     EmailAlreadyTakenException,
     UsernameAlreadyTakenException
 )
@@ -18,7 +17,6 @@ _EXCEPTION_STATUS = {
     FileTooLargeException: status.HTTP_413_CONTENT_TOO_LARGE,
     InvalidPhotoTypeException: status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
     MaxPhotosReachedException: status.HTTP_406_NOT_ACCEPTABLE,
-    InvalidLocationException: status.HTTP_400_BAD_REQUEST,
     EmailAlreadyTakenException: status.HTTP_409_CONFLICT,
     UsernameAlreadyTakenException: status.HTTP_409_CONFLICT,
 }

@@ -10,6 +10,7 @@ import type { UserProfile, Tag, TagInput, Photo, PublicProfile } from "../types/
 import type {
     AccountValues,
     EditProfileValues,
+    LocationValues,
     PasswordChangeValues,
     ProfileValues,
 } from "@/schemas/users"
@@ -20,6 +21,10 @@ export async function getUserProfile(token: string): Promise<UserProfile> {
 
 export async function updateUserProfile(token: string, body: ProfileValues): Promise<UserProfile> {
     return apiPatch<UserProfile>("/users/me", body, {token})
+}
+
+export async function updateUserLocation(token: string, body: LocationValues): Promise<UserProfile> {
+    return apiPatch<UserProfile>("/users/me/location", body, {token})
 }
 
 export async function editUserProfile(token: string, body: EditProfileValues): Promise<UserProfile> {

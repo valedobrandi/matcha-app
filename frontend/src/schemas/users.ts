@@ -8,22 +8,27 @@ export const profileSchema = z.object({
     bio: z.string().trim().min(1, "Bio is required").max(1000, "Bio must be at most 1000 characters"),
 })
 
-export const editProfileSchema = profileSchema.extend({
+const locationFields = {
     latitude: z.number().nullable(),
     longitude: z.number().nullable(),
     location_label: z.string().trim().max(100, "Location must be at most 100 characters").nullable(),
     location_consent: z.boolean()
-}).refine(
-    (data) =>
-        data.latitude !== null &&
-        data.longitude !== null &&
-        !!data.location_label &&
-        data.location_label.trim().length > 0,
-    {
-        path: ["location_label"],
-        message: "Please enter your location manually or enable location sharing."
-    }
-)
+}
+
+const hasLocation = (data: { latitude: number | null, longitude: number | null, location_label: string | null }) =>
+    data.latitude !== null &&
+    data.longitude !== null &&
+    !!data.location_label &&
+    data.location_label.trim().length > 0
+
+const locationMissing = {
+    path: ["location_label"],
+    message: "Please enter your location manually or enable location sharing."
+}
+
+export const locationSchema = z.object(locationFields).refine(hasLocation, locationMissing)
+
+export const editProfileSchema = profileSchema.extend(locationFields).refine(hasLocation, locationMissing)
 
 export const accountSchema = z.object({
   username: nameSchema('Username'),
@@ -47,5 +52,6 @@ export const passwordchangeSchema = z.object({
 
 export type ProfileValues = z.infer<typeof profileSchema>
 export type EditProfileValues = z.infer<typeof editProfileSchema>
+export type LocationValues = z.infer<typeof locationSchema>
 export type AccountValues = z.infer<typeof accountSchema>
 export type PasswordChangeValues = z.infer<typeof passwordchangeSchema>

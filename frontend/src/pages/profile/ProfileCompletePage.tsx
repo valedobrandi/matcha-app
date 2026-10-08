@@ -2,6 +2,8 @@ import useUserProfile from "@/users/useUserProfile"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
 import ProfileForm from "@/components/profile-form"
 import useProfileForm from "@/users/useProfileForm"
+import LocationForm from "@/components/location-form"
+import useLocationForm from "@/users/useLocationForm"
 import { useState } from "react"
 import useProfileTags from "@/users/useProfileTags"
 import TagsForm from "@/components/tags-form"
@@ -10,7 +12,7 @@ import useProfilePhotos from "@/users/useProfilePhotos"
 import { useAuth } from "@/auth/useAuth"
 import { useNavigate } from "react-router-dom"
 
-type  CompleteProfileStep = "basic" | "tags" | "photos"
+type  CompleteProfileStep = "basic" | "location" | "tags" | "photos"
 
 export function ProfileCompletePage() {
   const navigate = useNavigate()
@@ -23,7 +25,9 @@ export function ProfileCompletePage() {
         control,
         serverError: profileError,
         onSubmit,
-  } = useProfileForm(()=>{setCompleteProfileStep("tags")})
+  } = useProfileForm(()=>{setCompleteProfileStep("location")})
+
+  const location = useLocationForm(()=>{setCompleteProfileStep("tags")})
 
   const {
         inputValue,
@@ -73,6 +77,20 @@ export function ProfileCompletePage() {
           serverError={profileError}
           onSubmit={onSubmit}
           onSuccess={goTags}
+          />
+        )}
+        {completeProfileStep == "location" && (
+          <LocationForm
+            register = {location.register}
+            errors = {location.errors}
+            sharePosition = {location.sharePosition}
+            isLocating = {location.isLocating}
+            locationError = {location.locationError}
+            locationLabel = {location.locationLabel}
+            serverError = {location.serverError}
+            handleToggle = {location.handleToggle}
+            handleManuallyLocationInput = {location.handleManuallyLocationInput}
+            onSubmit = {location.onSubmit}
           />
         )}
         {completeProfileStep == "tags" && (

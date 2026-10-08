@@ -3,7 +3,7 @@
 
 async def add_user(
     connection, token, label, *, tag_ids=(), photo=True, bio="bio", age=25,
-    gender="female", sexual_preference="bisexual", latitude=None, longitude=None,
+    gender="female", sexual_preference="bisexual", latitude=48.85, longitude=2.35,
 ) -> int:
     user_id = await connection.fetchval(
         """

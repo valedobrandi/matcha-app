@@ -35,12 +35,6 @@ class MaxPhotosReachedException(UsersException):
     def __init__(self):
         super().__init__("Max_five_photos")
 
-class InvalidLocationException(UsersException):
-    code = "INVALID_LOCATION"
-    field = "location"
-    def __init__(self):
-        super().__init__("Invalid location payload")
-
 class EmailAlreadyTakenException(UsersException):
     code = "EMAIL_TAKEN"
     field = "email"

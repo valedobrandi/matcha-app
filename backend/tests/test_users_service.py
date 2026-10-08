@@ -11,7 +11,6 @@ from modules.users.service import UsersService
 from modules.users.exceptions import (
     UserNotFoundException,
     TargetUserNotFoundException,
-    InvalidLocationException,
     EmailAlreadyTakenException,
 )
 import bcrypt
@@ -235,16 +234,6 @@ async def test_get_profile_is_incomplete_when_the_repository_says_incomplete() -
 
 
 @pytest.mark.asyncio
-async def test_get_profile_completed_without_location() -> None:
-    user = _complete_user(latitude=None, longitude=None, location_consent=False)
-    repo = FakeRepository(user, tags=[{"id": 1}], photos=[{"id": 1}])
-    service = UsersService(repo, FakeSocial())
-
-    res = await service.get_profile(1)
-    assert res.is_profile_completed is True
-
-
-@pytest.mark.asyncio
 async def test_get_profile_when_user_not_found():
     repo = FakeRepository(None)
     service = UsersService(repo, FakeSocial())
@@ -254,21 +243,16 @@ async def test_get_profile_when_user_not_found():
 
 
 @pytest.mark.asyncio
-async def test_update_location_rejects_when_consent_false():
-    user = _complete_user()
-    repo = FakeRepository(user, tags=[1], photos=[1])
+async def test_should_store_a_typed_location_when_it_comes_without_gps_consent():
+    repo = FakeRepository(_complete_user(), tags=[1], photos=[1])
     service = UsersService(repo, FakeSocial())
-    with pytest.raises(InvalidLocationException):
-        await service.update_location(
-            1,
-            UserLocationInput(
-                latitude=48.85,
-                longitude=2.35,
-                location_label="Paris",
-                location_consent=False,
-            ),
-        )
-    assert repo.updated_location is None
+
+    res = await service.update_location(
+        1,
+        UserLocationInput(latitude=45.76, longitude=4.83, location_label="Lyon", location_consent=False),
+    )
+
+    assert (res.location_label, res.location_consent) == ("Lyon", False)
 
 
 @pytest.mark.asyncio

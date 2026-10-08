@@ -40,3 +40,4 @@ Status vocabulary: `Open` · `Pending` · `Decided` · `Approved` · `Superseded
 | [0020](0020-every-timestamp-the-api-sends-is-in-utc-and-says-so.md) | Every timestamp the API sends is in UTC and says so | Decided | Backend, Frontend | 2026-10-07 |
 | [0021](0021-the-socket-token-travels-in-the-first-frame.md) | The socket token travels in the first frame, never in the URL | Decided | Backend, Frontend | 2026-10-07 |
 | [0022](0022-a-location-is-kept-at-neighborhood-precision.md) | A location is kept at neighborhood precision and distances are whole kilometres | Open | Backend | 2026-10-08 |
+| [0023](0023-a-complete-profile-has-a-location.md) | A complete profile has a location, asked for during onboarding | Open | Backend, Frontend | 2026-10-08 |
