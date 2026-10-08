@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Open |
+| **Status** | Decided |
 | **Group** | Backend, Frontend |
 | **Date** | 2026-10-07 |
 | **Supersedes** | the `/ws?token=` part of [ADR-0011](0011-one-socket-per-tab-feeds-notifications-into-the-query-cache.md) |
@@ -37,8 +37,9 @@ needs another place.
 
 ## Status
 
-Open on 2026-10-07: the owner chose the first-frame handshake after the hand-in review flagged the
-token in the URL. It becomes Decided when the pull request merges.
+Decided on 2026-10-07 and implemented in #53: the owner chose the first-frame handshake after the
+hand-in review flagged the token in the URL. A live login on the dev stack reached `ready` and
+answered a ping with `pong`.
 
 ## Positions
 
