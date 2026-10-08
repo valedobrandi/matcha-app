@@ -133,6 +133,7 @@ class FakeRepository:
         self.photos = photos or []
         self.current_user_id = None
         self.updated_location = None
+        self.edited_profile = None
         self.updated_account = None
         self.raise_on_account = None
 
@@ -148,6 +149,10 @@ class FakeRepository:
 
     async def get_my_photos(self, user_id: int):
         return self.photos
+
+    async def edit_profile(self, current_user_id: int, payload: EditProfileInput):
+        self.edited_profile = (current_user_id, payload)
+        return self.user
 
     async def update_location(self, current_user_id: int, payload: UserLocationInput):
         self.updated_location = (current_user_id, payload)
@@ -283,6 +288,37 @@ async def test_update_location_succeeds_when_consent_true():
     assert res.location_label == "Paris"
     assert res.location_consent is True
     assert repo.updated_location == (1, payload)
+
+
+@pytest.mark.asyncio
+async def test_should_store_gps_coordinates_at_neighborhood_precision_when_the_location_is_shared():
+    repo = FakeRepository(_complete_user(), tags=[1], photos=[1])
+    service = UsersService(repo, FakeSocial())
+
+    await service.update_location(
+        1,
+        UserLocationInput(latitude=48.858372, longitude=2.294481, location_label="Gros-Caillou, Paris", location_consent=True),
+    )
+
+    _, stored = repo.updated_location
+    assert (stored.latitude, stored.longitude) == (48.86, 2.29)
+
+
+@pytest.mark.asyncio
+async def test_should_store_coordinates_at_neighborhood_precision_when_the_profile_is_edited():
+    repo = FakeRepository(_complete_user(), tags=[1], photos=[1])
+    service = UsersService(repo, FakeSocial())
+
+    await service.edit_profile(
+        1,
+        EditProfileInput(
+            gender="female", sexual_preference="man", age=24, bio="hello",
+            latitude=45.757813, longitude=4.832011, location_label="Lyon", location_consent=False,
+        ),
+    )
+
+    _, stored = repo.edited_profile
+    assert (stored.latitude, stored.longitude) == (45.76, 4.83)
 
 
 @pytest.mark.asyncio

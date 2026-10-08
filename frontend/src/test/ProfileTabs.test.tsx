@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react'
 import { API_BASE_URL } from '@/api/client'
 import AccountTab from '@/components/AccountTab'
 import ProfileTab from '@/components/ProfileTab'
@@ -42,6 +42,80 @@ function changePassword() {
     fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'Better456' } })
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
 }
+
+const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse'
+
+function stubGeolocation(latitude: number, longitude: number) {
+    Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: {
+            getCurrentPosition: (onSuccess: PositionCallback) =>
+                onSuccess({ coords: { latitude, longitude } } as GeolocationPosition),
+        },
+    })
+}
+
+describe('ProfileTab location from GPS', () => {
+    beforeEach(() => {
+        vi.stubGlobal('PointerEvent', class extends MouseEvent {})
+        const fetchThroughMsw = globalThis.fetch
+        vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) =>
+            fetchThroughMsw(input, { ...init, signal: undefined }))
+    })
+
+    afterEach(() => {
+        vi.unstubAllGlobals()
+        Reflect.deleteProperty(navigator, 'geolocation')
+    })
+
+    it('does save the neighborhood and city, not the street address, when the location comes from GPS', async () => {
+        serveMyTagsAndPhotos()
+        stubGeolocation(48.8584, 2.2945)
+        let releaseGeocoding = () => {}
+        const geocoding = new Promise<void>(resolve => { releaseGeocoding = resolve })
+        const sentBodies: unknown[] = []
+        server.use(
+            http.get(NOMINATIM_REVERSE, async () => {
+                await geocoding
+                return HttpResponse.json({
+                    display_name: 'Tour Eiffel, 5, Avenue Anatole France, Quartier du Gros-Caillou, Paris 7e Arrondissement, Paris, Île-de-France, France métropolitaine, 75007, France',
+                    address: { quarter: 'Quartier du Gros-Caillou', suburb: 'Paris 7e Arrondissement', city_district: 'Paris', city: 'Paris' },
+                })
+            }),
+            http.patch(`${API_BASE_URL}/users/me/profile`, async ({ request }) => {
+                sentBodies.push(await request.json())
+                return HttpResponse.json(PROFILE)
+            }),
+        )
+        const onSaved = renderProfileTab(vi.fn(), { ...PROFILE, location_consent: false })
+
+        fireEvent.click(screen.getByRole('switch', { name: 'Share your location' }))
+        const locating = await screen.findByText('Getting your location...')
+        releaseGeocoding()
+        await waitForElementToBeRemoved(locating)
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+        await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1))
+        expect(sentBodies).toEqual([expect.objectContaining({
+            location_label: 'Quartier du Gros-Caillou, Paris',
+            latitude: 48.8584,
+            longitude: 2.2945,
+            location_consent: true,
+        })])
+    })
+
+    it('does ask for the location by hand when GPS finds no neighborhood or city', async () => {
+        serveMyTagsAndPhotos()
+        stubGeolocation(0, -30)
+        server.use(http.get(NOMINATIM_REVERSE, () => HttpResponse.json({ display_name: 'Atlantic Ocean', address: {} })))
+        renderProfileTab(vi.fn(), { ...PROFILE, location_consent: false })
+
+        fireEvent.click(screen.getByRole('switch', { name: 'Share your location' }))
+
+        expect(await screen.findByText('Could not get your location. Please enter it manually.')).toBeInTheDocument()
+        expect(screen.getByLabelText('City or neighborhood')).toBeInTheDocument()
+    })
+})
 
 describe('ProfileTabs', () => {
     it('does keep unsaved profile edits and edit mode when the user switches to the account tab and back', async () => {

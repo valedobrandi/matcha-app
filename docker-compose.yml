@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_INITDB_ARGS: --auth-local=scram-sha-256 --auth-host=scram-sha-256
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -30,7 +30,7 @@ services:
       PASSWORD_RESET_URL_BASE: ${PASSWORD_RESET_URL_BASE:-http://localhost:5173/auth/reset-password}
       FT_REDIRECT_URI: ${VITE_FT_REDIRECT_URI:-http://localhost:5173/auth/callback/42}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./backend:/app/backend
       - user_uploads_data:/app/backend/uploads
@@ -44,7 +44,7 @@ services:
       dockerfile: frontend/Dockerfile
     container_name: matcha_frontend
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
       VITE_FT_CLIENT_ID: ${FT_CLIENT_ID:-ft_client_id}

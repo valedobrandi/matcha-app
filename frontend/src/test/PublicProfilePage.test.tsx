@@ -174,7 +174,7 @@ describe('PublicProfilePage blocked by me', () => {
         fireEvent.click(await screen.findByRole('button', { name: 'Unblock' }))
 
         expect(await screen.findByText(/Bob B/)).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: 'Block him' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Block' })).toBeInTheDocument()
         expect(screen.queryByText(/could not find target account/)).not.toBeInTheDocument()
         await waitFor(() => expect(requests.visit).toBe(1))
     })
@@ -183,7 +183,7 @@ describe('PublicProfilePage blocked by me', () => {
         serveBlock(false)
         renderPage()
 
-        fireEvent.click(await screen.findByRole('button', { name: 'Block him' }))
+        fireEvent.click(await screen.findByRole('button', { name: 'Block' }))
 
         expect(await screen.findByText('You blocked this user.')).toBeInTheDocument()
         expect(screen.getByRole('button', { name: 'Unblock' })).toBeInTheDocument()
@@ -219,9 +219,10 @@ describe('PublicProfilePage like', () => {
         const requests = serveRelationship(false)
         renderPage()
 
-        fireEvent.click(await screen.findByRole('button', { name: 'Like him' }))
+        fireEvent.click(await screen.findByRole('button', { name: 'Like' }))
 
-        expect(await screen.findByRole('button', { name: 'Liked by me' })).toBeInTheDocument()
+        expect(await screen.findByRole('button', { name: 'Unlike' })).toBeInTheDocument()
+        expect(screen.getByText('You like Bob')).toBeInTheDocument()
         expect(requests()).toBe(2)
     })
 
@@ -229,10 +230,38 @@ describe('PublicProfilePage like', () => {
         const requests = serveRelationship(true)
         renderPage()
 
-        fireEvent.click(await screen.findByRole('button', { name: 'Liked by me' }))
+        fireEvent.click(await screen.findByRole('button', { name: 'Unlike' }))
 
-        expect(await screen.findByRole('button', { name: 'Like him' })).toBeInTheDocument()
+        expect(await screen.findByRole('button', { name: 'Like' })).toBeInTheDocument()
+        expect(screen.queryByText('You like Bob')).not.toBeInTheDocument()
         expect(requests()).toBe(2)
+    })
+
+    it('does say the user likes the viewer and offer to like back when only the user liked', async () => {
+        server.use(
+            http.get(`${API_BASE_URL}/social/relationship/:id`, () =>
+                HttpResponse.json({ ...RELATIONSHIP, liked_by_me: false, liked_you: true, connected: false })),
+            http.get(`${API_BASE_URL}/users/:id`, () => HttpResponse.json(PROFILE)),
+            http.post(`${API_BASE_URL}/social/visits/:id`, () => HttpResponse.json({ ok: true })),
+        )
+        renderPage()
+
+        expect(await screen.findByText('Bob likes you')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Like back' })).toBeInTheDocument()
+    })
+
+    it('does say the users are connected and offer to disconnect when both liked', async () => {
+        server.use(
+            http.get(`${API_BASE_URL}/social/relationship/:id`, () =>
+                HttpResponse.json({ ...RELATIONSHIP, liked_by_me: true, liked_you: true, connected: true })),
+            http.get(`${API_BASE_URL}/users/:id`, () => HttpResponse.json({ ...PROFILE, gender: 'other' })),
+            http.post(`${API_BASE_URL}/social/visits/:id`, () => HttpResponse.json({ ok: true })),
+        )
+        renderPage()
+
+        expect(await screen.findByText('You and Bob are connected')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Disconnect' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Block' })).toBeInTheDocument()
     })
 })
 

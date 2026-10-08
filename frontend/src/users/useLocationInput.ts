@@ -2,6 +2,14 @@ import type { EditProfileValues } from "@/schemas/users"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { UseFormSetValue } from "react-hook-form"
 
+type NominatimAddress = Partial<Record<"neighbourhood" | "quarter" | "suburb" | "village" | "hamlet" | "city" | "town" | "municipality", string>>
+
+function neighborhoodLabel(address: NominatimAddress) {
+    const area = address.neighbourhood ?? address.quarter ?? address.suburb ?? address.village ?? address.hamlet
+    const city = address.city ?? address.town ?? address.village ?? address.municipality
+    return [...new Set([area, city].filter(Boolean))].join(", ")
+}
+
 function useLocationInput(setValue: UseFormSetValue<EditProfileValues>){
     const [sharePosition, setSharePosition] = useState<boolean>(false)
     const [locationError, setLocationError] = useState<string | null> (null)
@@ -31,7 +39,9 @@ function useLocationInput(setValue: UseFormSetValue<EditProfileValues>){
             if (!res.ok)
                 throw new Error(`Geocode failed: ${res.status}`)
             const data = await res.json()
-            const locationText = data.display_name??""
+            const locationText = neighborhoodLabel(data.address ?? {})
+            if (!locationText)
+                throw new Error("No neighborhood or city at this position")
             setValue("latitude", latitude)
             setValue("longitude", longitude)
             setValue("location_label", locationText)
