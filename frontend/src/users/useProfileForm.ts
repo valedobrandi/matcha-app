@@ -36,8 +36,8 @@ function useProfileForm(onSuccess?: ()=>void) {
 
     const update = useMutation({
         mutationFn: (data: ProfileValues) => usersApi.updateUserProfile(accessToken!, data),
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["me"] })
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ["me"] })
             onSuccess?.()
         },
     })

@@ -8,6 +8,9 @@ import { resolveErrorMessage } from '../../i18n/errors'
 import { AuthStatusCard } from '../../components/auth-status-card'
 import { Button } from '../../components/ui/button'
 import { Spinner } from '../../components/ui/spinner'
+import type { TokenResponse } from '../../types/auth'
+
+const verificationsByToken = new Map<string, Promise<TokenResponse>>()
 
 export function VerifyEmailPage() {
   const navigate = useNavigate()
@@ -24,9 +27,10 @@ export function VerifyEmailPage() {
     }
 
     let cancelled = false
+    const verification = verificationsByToken.get(token) ?? authApi.verifyEmail(token)
+    verificationsByToken.set(token, verification)
 
-    authApi
-      .verifyEmail(token)
+    verification
       .then(async (response) => {
         if (cancelled) return
         await loginWithToken(response.access_token)

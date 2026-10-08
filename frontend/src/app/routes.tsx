@@ -1,3 +1,4 @@
+import { lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '../auth/ProtectedRoute'
 import { ProfileCompleteRoute } from '../auth/ProfileCompleteRoute'
@@ -5,23 +6,24 @@ import { ProfileIncompleteRoute } from '../auth/ProfileIncompleteRoute'
 import { PublicOnlyRoute } from '../auth/PublicOnlyRoute'
 import { AuthLayout } from '../layouts/AuthLayout'
 import { RootLayout } from '../layouts/RootLayout'
-import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage'
-import { LoginPage } from '../pages/auth/LoginPage'
-import { RegisterPage } from '../pages/auth/RegisterPage'
-import { ResetPasswordPage } from '../pages/auth/ResetPasswordPage'
-import { FortyTwoCallbackPage } from '../pages/auth/FortyTwoCallbackPage'
-import { ResendVerificationPage } from '../pages/auth/ResendVerificationPage'
-import { VerifyEmailPage } from '../pages/auth/VerifyEmailPage'
-import { ProfileCompletePage } from '../pages/profile/ProfileCompletePage'
-import MyProfilePage from '@/pages/profile/MyProfilePage'
-import SuggestPage from '@/pages/discovery/SuggestPage'
-import Likes from '@/pages/social/LikesReceived'
-import Visitors from '@/pages/social/Visitors'
-import PublicProfilePage from '@/pages/profile/PublicProfilePage'
-import { BlockListPage } from '@/pages/social/BlockListPage'
-import { NotificationsPage } from '@/pages/notifications/NotificationsPage'
-import { ChatListPage } from '@/pages/chat/ChatListPage'
-import { ConversationPage } from '@/pages/chat/ConversationPage'
+
+const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage').then(page => ({ default: page.ForgotPasswordPage })))
+const LoginPage = lazy(() => import('../pages/auth/LoginPage').then(page => ({ default: page.LoginPage })))
+const RegisterPage = lazy(() => import('../pages/auth/RegisterPage').then(page => ({ default: page.RegisterPage })))
+const ResetPasswordPage = lazy(() => import('../pages/auth/ResetPasswordPage').then(page => ({ default: page.ResetPasswordPage })))
+const FortyTwoCallbackPage = lazy(() => import('../pages/auth/FortyTwoCallbackPage').then(page => ({ default: page.FortyTwoCallbackPage })))
+const ResendVerificationPage = lazy(() => import('../pages/auth/ResendVerificationPage').then(page => ({ default: page.ResendVerificationPage })))
+const VerifyEmailPage = lazy(() => import('../pages/auth/VerifyEmailPage').then(page => ({ default: page.VerifyEmailPage })))
+const ProfileCompletePage = lazy(() => import('../pages/profile/ProfileCompletePage').then(page => ({ default: page.ProfileCompletePage })))
+const MyProfilePage = lazy(() => import('@/pages/profile/MyProfilePage'))
+const SuggestPage = lazy(() => import('@/pages/discovery/SuggestPage'))
+const Likes = lazy(() => import('@/pages/social/LikesReceived'))
+const Visitors = lazy(() => import('@/pages/social/Visitors'))
+const PublicProfilePage = lazy(() => import('@/pages/profile/PublicProfilePage'))
+const BlockListPage = lazy(() => import('@/pages/social/BlockListPage').then(page => ({ default: page.BlockListPage })))
+const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage').then(page => ({ default: page.NotificationsPage })))
+const ChatListPage = lazy(() => import('@/pages/chat/ChatListPage').then(page => ({ default: page.ChatListPage })))
+const ConversationPage = lazy(() => import('@/pages/chat/ConversationPage').then(page => ({ default: page.ConversationPage })))
 
 export function AppRoutes() {
   return (

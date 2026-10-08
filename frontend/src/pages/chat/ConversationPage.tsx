@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
+import { memo, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
 import { Link, useParams } from "react-router-dom"
-import { isSameDay, isToday, isYesterday } from "date-fns"
+import { isSameDay } from "date-fns/isSameDay"
+import { isToday } from "date-fns/isToday"
+import { isYesterday } from "date-fns/isYesterday"
 import { focusManager } from "@tanstack/react-query"
 import { ArrowLeftIcon, MessageCircleIcon, SendHorizontalIcon } from "lucide-react"
 import { API_BASE_URL } from "@/api/client"
@@ -43,11 +45,13 @@ import type { MessageOut } from "@/types/chat"
 import { usePublicProfile } from "@/users/usePublicProfile"
 
 const MAX_MESSAGE_LENGTH = 2000
+const DAY_FORMAT = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" })
+const TIME_FORMAT = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" })
 
 function dayLabel(date: Date) {
     if (isToday(date)) return "Today"
     if (isYesterday(date)) return "Yesterday"
-    return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+    return DAY_FORMAT.format(date)
 }
 
 export function ConversationPage() {
@@ -115,6 +119,44 @@ function Conversation({ peerId }: { peerId: number }) {
     )
 }
 
+type MessageRowProps = {
+    message: MessageOut
+    isMine: boolean
+    opensHistory: boolean
+    nextCreatedAt: string | undefined
+}
+
+const MessageRow = memo(function MessageRow({ message, isMine, opensHistory, nextCreatedAt }: MessageRowProps) {
+    const time = new Date(message.created_at)
+    const nextTime = nextCreatedAt === undefined ? undefined : new Date(nextCreatedAt)
+    const closesDay = nextTime !== undefined && !isSameDay(time, nextTime)
+    return (
+        <MessageScrollerItem messageId={String(message.id)}>
+            {opensHistory && (
+                <Marker variant="separator" className="pb-6">
+                    <MarkerContent>{dayLabel(time)}</MarkerContent>
+                </Marker>
+            )}
+            <Message align={isMine ? "end" : "start"}>
+                <MessageContent>
+                    <span className="sr-only">{isMine ? "Sent" : "Received"}</span>
+                    <Bubble variant={isMine ? "default" : "muted"} align={isMine ? "end" : "start"}>
+                        <BubbleContent className="whitespace-pre-wrap">{message.body}</BubbleContent>
+                    </Bubble>
+                    <MessageFooter>
+                        <time dateTime={time.toISOString()}>{TIME_FORMAT.format(time)}</time>
+                    </MessageFooter>
+                </MessageContent>
+            </Message>
+            {closesDay && (
+                <Marker variant="separator" className="pt-6">
+                    <MarkerContent>{dayLabel(nextTime)}</MarkerContent>
+                </Marker>
+            )}
+        </MessageScrollerItem>
+    )
+})
+
 type MessageListProps = {
     peerId: number
     peerFirstName: string | null
@@ -158,41 +200,15 @@ function MessageList({ peerId, peerFirstName, messages, hasOlder, isLoadingOlder
         <MessageScroller className="flex-1">
             <MessageScrollerViewport>
                 <MessageScrollerContent className="gap-3 p-4">
-                    {messages.map((message, index) => {
-                        const isMine = message.from_user_id !== peerId
-                        const time = new Date(message.created_at)
-                        const next = messages[index + 1]
-                        const nextTime = next && new Date(next.created_at)
-                        const opensHistory = index === 0 && !hasOlder
-                        const closesDay = nextTime !== undefined && !isSameDay(time, nextTime)
-                        return (
-                            <MessageScrollerItem key={message.id} messageId={String(message.id)}>
-                                {opensHistory && (
-                                    <Marker variant="separator" className="pb-6">
-                                        <MarkerContent>{dayLabel(time)}</MarkerContent>
-                                    </Marker>
-                                )}
-                                <Message align={isMine ? "end" : "start"}>
-                                    <MessageContent>
-                                        <span className="sr-only">{isMine ? "Sent" : "Received"}</span>
-                                        <Bubble variant={isMine ? "default" : "muted"} align={isMine ? "end" : "start"}>
-                                            <BubbleContent className="whitespace-pre-wrap">{message.body}</BubbleContent>
-                                        </Bubble>
-                                        <MessageFooter>
-                                            <time dateTime={time.toISOString()}>
-                                                {time.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                                            </time>
-                                        </MessageFooter>
-                                    </MessageContent>
-                                </Message>
-                                {closesDay && (
-                                    <Marker variant="separator" className="pt-6">
-                                        <MarkerContent>{dayLabel(nextTime)}</MarkerContent>
-                                    </Marker>
-                                )}
-                            </MessageScrollerItem>
-                        )
-                    })}
+                    {messages.map((message, index) => (
+                        <MessageRow
+                            key={message.id}
+                            message={message}
+                            isMine={message.from_user_id !== peerId}
+                            opensHistory={index === 0 && !hasOlder}
+                            nextCreatedAt={messages[index + 1]?.created_at}
+                        />
+                    ))}
                 </MessageScrollerContent>
             </MessageScrollerViewport>
             {messages.length === 0 && (
