@@ -132,11 +132,10 @@ class AuthService:
             return
 
         token = str(uuid.uuid4())
-        expires_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)
         await self.repository.set_password_reset_token_and_enqueue(
             user_id=user.id,
             token=token,
-            expires_at=expires_at,
+            valid_for=datetime.timedelta(hours=1),
             email=user.email,
         )
 

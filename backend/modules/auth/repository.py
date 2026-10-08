@@ -136,18 +136,18 @@ class AuthRepository:
         self,
         user_id: int,
         token: str,
-        expires_at: datetime.datetime,
+        valid_for: datetime.timedelta,
         email: str,
     ) -> None:
         async with self.connection.transaction():
             await self.connection.execute(
                 """
                     UPDATE users 
-                    SET password_reset_token = $1, password_reset_expires_at = $2 
+                    SET password_reset_token = $1, password_reset_expires_at = NOW() + $2::interval
                     WHERE id = $3
                 """,
                 token,
-                expires_at,
+                valid_for,
                 user_id,
             )
 
