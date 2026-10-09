@@ -59,7 +59,7 @@ async def resend_verification(
     limiter: RateLimiter = Depends(limit_per_client("recovery", RECOVERY_PER_CLIENT)),
     service: AuthService = Depends(get_auth_service),
 ) -> ResendVerificationResponse:
-    limiter.hit(f"recovery:email:{payload.email.lower()}", RECOVERY_PER_EMAIL)
+    limiter.hit(f"verification-link:email:{payload.email.lower()}", RECOVERY_PER_EMAIL)
     await service.resend_verification_email(payload.email)
     return {
         "message": "If an unverified account exists for this email, a verification message will be sent."
@@ -137,7 +137,7 @@ async def forgot_password(
     limiter: RateLimiter = Depends(limit_per_client("recovery", RECOVERY_PER_CLIENT)),
     service: AuthService = Depends(get_auth_service),
 ) -> ForgotPasswordResponse:
-    limiter.hit(f"recovery:email:{payload.email.lower()}", RECOVERY_PER_EMAIL)
+    limiter.hit(f"reset-link:email:{payload.email.lower()}", RECOVERY_PER_EMAIL)
     await service.request_password_reset(payload.email)
     return {"message": "If an account exists for this email, a password reset link will be sent."}
 

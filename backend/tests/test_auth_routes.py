@@ -107,6 +107,9 @@ class AcceptingService:
     async def request_password_reset(self, email):
         return None
 
+    async def resend_verification_email(self, email):
+        return None
+
     async def register_user(self, payload):
         return None
 
@@ -179,6 +182,28 @@ async def test_should_answer_429_when_one_email_asks_for_too_many_reset_links(fr
         assert (await post("/auth/forgot-password", body)).status_code == 200
 
     assert (await post("/auth/forgot-password", body)).status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_should_answer_429_when_one_email_asks_for_too_many_verification_links(fresh_limiter):
+    app.dependency_overrides[get_auth_service] = AcceptingService
+    body = {"email": "alice@example.com"}
+    for _ in range(RECOVERY_PER_EMAIL.attempts):
+        assert (await post("/auth/resend-verification", body)).status_code == 200
+
+    assert (await post("/auth/resend-verification", body)).status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_should_send_a_reset_link_when_another_address_has_used_up_the_verification_links_of_the_email(fresh_limiter):
+    app.dependency_overrides[get_auth_service] = AcceptingService
+    body = {"email": "alice@example.com"}
+    for _ in range(RECOVERY_PER_EMAIL.attempts):
+        assert (await post("/auth/resend-verification", body, address="203.0.113.7")).status_code == 200
+
+    owner = await post("/auth/forgot-password", body, address="198.51.100.2")
+
+    assert owner.status_code == 200
 
 
 @pytest.mark.asyncio

@@ -28,7 +28,7 @@ security flaw 0 (`docs/fr.subject.md:271`).
   |----------|--------------------|----------------------|
   | `POST /auth/login` | 20 per minute | 10 failed attempts per 15 minutes per username and address |
   | `POST /auth/register` | 10 per 15 minutes | — |
-  | `POST /auth/forgot-password`, `POST /auth/resend-verification` | 10 per 15 minutes, shared | 3 per 15 minutes per email, shared |
+  | `POST /auth/forgot-password`, `POST /auth/resend-verification` | 10 per 15 minutes, shared | 3 per 15 minutes per email, for each endpoint |
   | `POST /auth/reset-password` | the same shared 10 per 15 minutes | — |
 
 - The per-client limit is a dependency resolved before the service, so a refused request never
@@ -40,7 +40,8 @@ security flaw 0 (`docs/fr.subject.md:271`).
 ## Status
 
 Decided on 2026-10-09 and implemented in the change that adds this record. Amended the same day
-after review 194b81b: login failures are counted per username and address, not per username.
+after review 194b81b: login failures are counted per username and address, not per username, and
+each recovery endpoint has its own per-email limit.
 
 ## Positions
 
@@ -63,6 +64,8 @@ does. Login failures are counted per username and address together: a key shared
 would let anyone who knows a username, shown on every profile, lock its owner out with ten wrong
 passwords every fifteen minutes. The cost is that a guessing attack spread over many addresses is
 bounded per address only; the password rules (no dictionary words, mixed case and digits) keep it
-impractical. Counting only failures keeps the key from locking out an owner who signs in often. If
-the API is ever scaled to several processes, the limiter moves to a shared store behind the same
-`check`/`hit` interface.
+impractical. Counting only failures keeps the key from locking out an owner who signs in often.
+Each recovery endpoint keeps its own per-email limit, so the requests that use up an email's reset
+budget each mail that address a working link: someone who knows the email can make the owner wait
+for a new link, never leave them without one. If the API is ever scaled to several processes, the
+limiter moves to a shared store behind the same `check`/`hit` interface.
