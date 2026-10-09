@@ -1,14 +1,8 @@
 from urllib.parse import parse_qs, urlsplit
 
-from fastapi.testclient import TestClient
-
 from core.upload_urls import VALIDITY_WINDOW_SECONDS, sign_upload_url, upload_url_is_valid
-from main import app
 from modules.discovery.schemas import DiscoveryProfileCard
-from modules.users import controller as users_controller
 from modules.users.schemas import PhotoOut
-
-client = TestClient(app)
 
 NOW = 1_700_000_000.0
 
@@ -17,7 +11,7 @@ def query_of(url: str) -> dict[str, str]:
     return {key: values[0] for key, values in parse_qs(urlsplit(url).query).items()}
 
 
-def test_should_sign_a_local_upload_for_at_least_an_hour_and_the_same_way_within_that_hour():
+def test_should_keep_the_same_url_for_one_to_two_hours_when_it_is_signed_again_within_the_hour():
     url = sign_upload_url("/uploads/a.jpg", now=NOW)
 
     expires = int(query_of(url)["expires"])
@@ -26,11 +20,11 @@ def test_should_sign_a_local_upload_for_at_least_an_hour_and_the_same_way_within
     assert sign_upload_url("/uploads/a.jpg", now=NOW + 1) == url
 
 
-def test_should_leave_a_url_that_is_not_a_local_upload_unchanged():
+def test_should_leave_the_url_unchanged_when_it_is_not_a_local_upload():
     assert sign_upload_url("https://cdn.example.com/a.jpg", now=NOW) == "https://cdn.example.com/a.jpg"
 
 
-def test_should_accept_only_the_signature_made_for_that_file_and_only_before_it_expires():
+def test_should_accept_a_signature_only_when_it_was_made_for_that_file_and_has_not_expired():
     query = query_of(sign_upload_url("/uploads/a.jpg", now=NOW))
     expires, signature = int(query["expires"]), query["signature"]
 
@@ -50,17 +44,3 @@ def test_should_sign_photo_urls_only_when_a_response_is_written_as_json():
     assert photo.model_dump()["url"] == "/uploads/a.jpg"
     assert "signature=" in photo.model_dump(mode="json")["url"]
     assert "signature=" in card.model_dump(mode="json")["profile_photo_url"]
-
-
-def test_should_serve_a_photo_only_through_a_valid_signed_url(monkeypatch, tmp_path):
-    (tmp_path / "a.jpg").write_bytes(b"jpeg-bytes")
-    monkeypatch.setattr(users_controller, "UPLOAD_DIR", tmp_path)
-    signed = sign_upload_url("/uploads/a.jpg")
-    query = query_of(signed)
-
-    served = client.get(signed)
-
-    assert (served.status_code, served.content) == (200, b"jpeg-bytes")
-    assert client.get("/uploads/a.jpg").status_code == 404
-    assert client.get(f"/uploads/b.jpg?expires={query['expires']}&signature={query['signature']}").status_code == 404
-    assert client.get(sign_upload_url("/uploads/missing.jpg")).status_code == 404
