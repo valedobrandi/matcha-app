@@ -9,6 +9,8 @@ from core.auth import SessionClaims, get_current_session, get_current_user_id
 from core.rate_limit import RateLimiter, get_rate_limiter
 from modules.auth.controller import (
     LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT,
+    LOGIN_PER_CLIENT,
+    RECOVERY_PER_CLIENT,
     RECOVERY_PER_EMAIL,
     REGISTER_PER_CLIENT,
     get_auth_service,
@@ -117,6 +119,9 @@ class AcceptingService:
     async def resend_verification_email(self, email):
         return None
 
+    async def reset_password(self, token, password):
+        return "token"
+
     async def register_user(self, payload):
         return None
 
@@ -223,6 +228,33 @@ async def test_should_send_a_reset_link_when_another_address_has_used_up_the_ver
     owner = await post("/auth/forgot-password", body, address="198.51.100.2")
 
     assert owner.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_should_answer_429_when_one_address_signs_in_more_often_than_its_limit_even_successfully(fresh_limiter):
+    app.dependency_overrides[get_auth_service] = AcceptingService
+    body = {"username": "alice", "password": "Right1234"}
+    for _ in range(LOGIN_PER_CLIENT.attempts):
+        assert (await post("/auth/login", body)).status_code == 200
+
+    assert (await post("/auth/login", body)).status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_should_answer_429_when_one_address_spends_its_recovery_budget_across_the_three_endpoints(fresh_limiter):
+    app.dependency_overrides[get_auth_service] = AcceptingService
+    for n in range(RECOVERY_PER_CLIENT.attempts):
+        path, body = [
+            ("/auth/forgot-password", {"email": f"user{n}@example.com"}),
+            ("/auth/resend-verification", {"email": f"user{n}@example.com"}),
+            ("/auth/reset-password", {"token": f"token{n}", "password": "Zq9Xv7Lm2Kp"}),
+        ][n % 3]
+        assert (await post(path, body)).status_code == 200
+
+    refused = await post("/auth/reset-password", {"token": "another", "password": "Zq9Xv7Lm2Kp"})
+
+    assert refused.status_code == 429
+    assert (await post("/auth/reset-password", {"token": "another", "password": "Zq9Xv7Lm2Kp"}, address="198.51.100.2")).status_code == 200
 
 
 @pytest.mark.asyncio
