@@ -99,6 +99,24 @@ describe('LocationForm with useLocationForm', () => {
         expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
     })
 
+    it('does cancel the lookup in flight when the location form unmounts', async () => {
+        const lookups: Request[] = []
+        server.use(http.get(NOMINATIM_SEARCH, async ({ request }) => {
+            lookups.push(request)
+            await delay('infinite')
+        }))
+        const Wrapper = authWrapper(makeAuthValue())
+        const { unmount } = render(<Wrapper><LocationStep onSuccess={vi.fn()} /></Wrapper>)
+        const city = screen.getByLabelText('City or neighborhood')
+        fireEvent.change(city, { target: { value: 'Lyon' } })
+        fireEvent.blur(city)
+        await waitFor(() => expect(lookups).toHaveLength(1))
+
+        unmount()
+
+        await waitFor(() => expect(lookups[0].signal.aborted).toBe(true))
+    })
+
     it('does clear the missing-location error once a typed location is found', async () => {
         server.use(http.get(NOMINATIM_SEARCH, () => HttpResponse.json([{ lat: '45.7578137', lon: '4.8320114' }])))
         renderLocationStep()

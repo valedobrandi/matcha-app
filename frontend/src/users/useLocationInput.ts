@@ -21,7 +21,7 @@ function useLocationInput(onLocationChange: (location: LocationValues) => void){
     const abortControlRef = useRef<AbortController | null>(null)
 
     useEffect(()=>{
-        abortControlRef.current?.abort()
+        return () => abortControlRef.current?.abort()
     }, [])
 
     const handleEnableAutoLocation = useCallback(async ()=>{
