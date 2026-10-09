@@ -187,7 +187,7 @@ async def test_should_log_and_keep_every_tab_when_the_envelope_is_not_json(caplo
 
 
 @pytest.mark.asyncio
-async def test_should_refuse_a_socket_beyond_the_cap_and_keep_pushing_to_the_others():
+async def test_should_refuse_a_new_socket_and_keep_pushing_to_the_others_when_the_user_holds_the_maximum():
     hub = ConnectionHub()
     tabs = [FakeWebSocket() for _ in range(MAX_SOCKETS_PER_USER)]
     assert all(hub.connect(1, tab, SESSION) for tab in tabs)
