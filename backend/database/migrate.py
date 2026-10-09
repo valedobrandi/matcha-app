@@ -41,6 +41,7 @@ EFFECTS: dict[str, tuple[str, str]] = {
     "0015_create_connections_view": ("view", "connections"),
     "0016_replace_chat_messages_pair_index": ("index", "idx_chat_messages_pair_id"),
     "0017_require_location_for_a_complete_profile": ("view_column", "profile_completeness.users.latitude"),
+    "0018_create_auth_sessions": ("table", "auth_session_revocations"),
 }
 
 

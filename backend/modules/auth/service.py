@@ -7,6 +7,7 @@ from integrations.fortytwo_client import FortyTwoClient, FortyTwoClientException
 from core.config import settings
 from modules.auth.schemas import CurrentUserResponse, LoginInput, UserRecord, UserRegisterInput
 from modules.auth.repository import AuthRepository
+from modules.auth.sessions_repository import SessionsRepository
 from modules.users.repository import UsersRepository
 
 from modules.auth.exceptions import (
@@ -18,14 +19,18 @@ from modules.auth.exceptions import (
     InvalidTokenException,
 )
 
+TOKEN_LIFETIME = datetime.timedelta(days=1)
+
 
 class AuthService:
     def __init__(
         self,
         repository: AuthRepository,
         auth_client: FortyTwoClient | None = None,
+        sessions: SessionsRepository | None = None,
     ):
         self.repository = repository
+        self.sessions = sessions or SessionsRepository(repository.connection)
         self.auth_client = auth_client or FortyTwoClient(
             settings.FT_CLIENT_ID, settings.FT_CLIENT_SECRET, settings.FT_REDIRECT_URI
         )
@@ -40,11 +45,13 @@ class AuthService:
         """
         return self._hash_password(plain)
 
-    def generate_jwt_token(self, user_id: int) -> str:
+    async def issue_token(self, user_id: int) -> str:
+        session_id = await self.sessions.open(user_id, TOKEN_LIFETIME)
         now = datetime.datetime.now(datetime.UTC)
         payload = {
             "sub": str(user_id),
-            "exp": int((now + datetime.timedelta(days=1)).timestamp()),
+            "sid": str(session_id),
+            "exp": int((now + TOKEN_LIFETIME).timestamp()),
             "iat": int(now.timestamp()),
         }
         return jwt.encode(
@@ -87,7 +94,7 @@ class AuthService:
         if not user.is_verified:
             raise AccountNotVerifiedException()
 
-        return self.generate_jwt_token(user.id)
+        return await self.issue_token(user.id)
 
     async def handle_fortytwo_callback(self, code: str) -> str:
         try:
@@ -114,7 +121,7 @@ class AuthService:
             if not user:
                 raise OAuthExchangeException()
 
-        return self.generate_jwt_token(user.id)
+        return await self.issue_token(user.id)
 
     async def verify_user_email(self, email_token: str) -> UserRecord:
         user = await self.repository.verify_user_email(email_token)
@@ -124,7 +131,7 @@ class AuthService:
 
     async def verify_user_email_and_issue_token(self, email_token: str) -> str:
         user = await self.verify_user_email(email_token)
-        return self.generate_jwt_token(user.id)
+        return await self.issue_token(user.id)
 
     async def request_password_reset(self, email: str) -> None:
         user = await self.repository.find_by_email(email)
@@ -145,7 +152,7 @@ class AuthService:
         user = await self.repository.reset_password_with_token(token, hashed_str)
         if not user:
             raise InvalidResetTokenException()
-        return self.generate_jwt_token(user.id)
+        return await self.issue_token(user.id)
 
     async def get_current_user(self, user_id: int) -> CurrentUserResponse:
         user = await self.repository.find_by_id(user_id)

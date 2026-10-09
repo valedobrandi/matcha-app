@@ -1,5 +1,9 @@
+import uuid
+
+import jwt
 import pytest
 
+from core.config import settings
 from modules.auth.exceptions import (
     AccountNotVerifiedException,
     InvalidCredentialsException,
@@ -26,17 +30,34 @@ class FakeRepository:
         return None
 
 
+SESSION_ID = uuid.UUID("00000000-0000-4000-8000-000000000001")
+
+
+class FakeSessions:
+    def __init__(self) -> None:
+        self.opened: list[int] = []
+
+    async def open(self, user_id, lifetime) -> uuid.UUID:
+        self.opened.append(user_id)
+        return SESSION_ID
+
+
 def test_hash_password_returns_bcrypt_hash() -> None:
     service = AuthService(FakeRepository())
     hashed = service._hash_password("Password1")
     assert hashed.startswith("$2")
 
 
-def test_generate_jwt_token_returns_string() -> None:
-    service = AuthService(FakeRepository())
-    token = service.generate_jwt_token(1)
-    assert isinstance(token, str)
-    assert len(token) > 0
+@pytest.mark.asyncio
+async def test_should_open_a_session_and_name_it_in_the_token_when_a_token_is_issued() -> None:
+    sessions = FakeSessions()
+    service = AuthService(FakeRepository(), sessions=sessions)
+
+    token = await service.issue_token(7)
+
+    claims = jwt.decode(token, settings.JWT_SECRET.get_secret_value(), algorithms=[settings.JWT_ALGORITHM])
+    assert sessions.opened == [7]
+    assert (claims["sub"], claims["sid"]) == ("7", str(SESSION_ID))
 
 
 @pytest.mark.asyncio

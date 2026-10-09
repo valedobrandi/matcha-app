@@ -1,5 +1,6 @@
 from datetime import datetime, UTC
 import json
+import uuid
 from fastapi.testclient import TestClient
 from main import app
 from starlette.websockets import WebSocketDisconnect
@@ -20,6 +21,7 @@ def make_token(user_id: int, lifetime_seconds: int = 36000) -> str:
     return jwt.encode(
         {
             "sub": str(user_id),
+            "sid": str(uuid.uuid4()),
             "exp": int(time.time()) + lifetime_seconds,
             "iat": int(now.timestamp()),
         },
@@ -36,6 +38,17 @@ def close_code(websocket) -> int:
     with pytest.raises(WebSocketDisconnect) as closed:
         websocket.receive_text()
     return closed.value.code
+
+
+def sessions_answer(active: bool):
+    async def session_is_active(identity) -> bool:
+        return active
+    return session_is_active
+
+
+@pytest.fixture(autouse=True)
+def active_sessions(monkeypatch):
+    monkeypatch.setattr(controller, "session_is_active", sessions_answer(True))
 
 
 @pytest.mark.parametrize("first_frame", [
@@ -68,6 +81,14 @@ def test_should_register_the_socket_and_answer_ready_when_the_token_is_valid():
         assert websocket.receive_text() == READY
         assert 41 in hub._connections
     assert 41 not in hub._connections
+
+
+def test_should_close_with_1008_and_drop_the_socket_when_the_session_has_ended(monkeypatch):
+    monkeypatch.setattr(controller, "session_is_active", sessions_answer(False))
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_text(auth_frame(make_token(43)))
+        assert close_code(websocket) == 1008
+    assert 43 not in hub._connections
 
 
 def test_should_answer_pong_when_client_sends_ping():

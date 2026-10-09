@@ -1,3 +1,4 @@
+import uuid
 from fastapi.testclient import TestClient
 from main import app
 import pytest
@@ -9,7 +10,7 @@ from modules.users.schemas import UserProfile, UserLocationInput, UserAccountInp
 from modules.users.service import UsersService
 from modules.users.controller import get_users_service
 from modules.users.exceptions import EmailAlreadyTakenException
-from core.auth import get_current_user_id
+from core.auth import get_current_session, get_current_user_id, read_session_token
 from core.presence import get_current_user_id_and_touch
 from modules.auth.controller import get_auth_service
 from modules.auth.schemas import CurrentUserResponse
@@ -22,6 +23,7 @@ def make_token(user_id: int, expired: bool = False) -> str:
     exp = time.time() + (-10 if expired else 36000)
     payload = {
         "sub": str(user_id),
+        "sid": str(uuid.uuid4()),
         "exp": exp,
         "iat": int(now.timestamp()),
     }
@@ -128,6 +130,7 @@ def override_service(fake_user):
 
     app.dependency_overrides[get_users_service] = lambda: fake_service
     app.dependency_overrides[get_current_user_id_and_touch] = get_current_user_id
+    app.dependency_overrides[get_current_session] = read_session_token
     yield fake_service
     app.dependency_overrides.clear()
 
@@ -259,6 +262,7 @@ class TestPatchAccount:
         fake_service = UsersService(fake_repo, FakeSocial())
         app.dependency_overrides[get_users_service] = lambda: fake_service
         app.dependency_overrides[get_current_user_id_and_touch] = get_current_user_id
+        app.dependency_overrides[get_current_session] = read_session_token
         try:
             token = make_token(user_id=1)
             response = client.patch(

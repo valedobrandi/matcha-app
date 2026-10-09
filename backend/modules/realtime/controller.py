@@ -3,7 +3,9 @@ import json
 import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from core.database import db_manager
 from core.ws_hub import SocketIdentity, hub, decode_socket_identity
+from modules.auth.sessions_repository import SessionsRepository
 
 realtime_router = APIRouter(tags=["realtime"])
 
@@ -27,6 +29,11 @@ def identity_from_auth_frame(text: str) -> SocketIdentity | None:
     return decode_socket_identity(token) if isinstance(token, str) else None
 
 
+async def session_is_active(identity: SocketIdentity) -> bool:
+    async with db_manager.pool.acquire() as connection:
+        return await SessionsRepository(connection).is_active(identity.session_id, identity.user_id)
+
+
 @realtime_router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket) -> None:
     await websocket.accept()
@@ -41,8 +48,11 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     if identity is None:
         await websocket.close(code=INVALID_TOKEN_CLOSE_CODE)
         return
-    hub.connect(identity.user_id, websocket)
+    hub.connect(identity.user_id, websocket, identity.session_id)
     try:
+        if not await session_is_active(identity):
+            await websocket.close(code=INVALID_TOKEN_CLOSE_CODE)
+            return
         await websocket.send_text(READY)
         while True:
             frame = await asyncio.wait_for(websocket.receive_text(), identity.expires_at - time.time())

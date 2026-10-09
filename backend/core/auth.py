@@ -1,17 +1,28 @@
+import uuid
+from typing import NamedTuple
+
+import asyncpg
 import jwt
-from fastapi import Header
+from fastapi import Depends, Header
 
 from core.config import settings
+from core.database import get_db_connection
 from core.exceptions import (
     ExpiredTokenException,
     InvalidTokenException,
     MissingTokenException,
 )
+from modules.auth.sessions_repository import SessionsRepository
 
 
-async def get_current_user_id(
+class SessionClaims(NamedTuple):
+    user_id: int
+    session_id: uuid.UUID
+
+
+async def read_session_token(
     authorization: str | None = Header(default=None),
-) -> int:
+) -> SessionClaims:
     if not authorization:
         raise MissingTokenException()
 
@@ -31,10 +42,26 @@ async def get_current_user_id(
         raise InvalidTokenException() from None
 
     sub = payload.get("sub")
-    if sub is None:
+    sid = payload.get("sid")
+    if sub is None or not isinstance(sid, str):
         raise InvalidTokenException()
 
     try:
-        return int(sub)
+        return SessionClaims(user_id=int(sub), session_id=uuid.UUID(sid))
     except (ValueError, TypeError):
         raise InvalidTokenException() from None
+
+
+async def get_current_session(
+    claims: SessionClaims = Depends(read_session_token),
+    connection: asyncpg.Connection = Depends(get_db_connection),
+) -> SessionClaims:
+    if not await SessionsRepository(connection).is_active(claims.session_id, claims.user_id):
+        raise InvalidTokenException()
+    return claims
+
+
+async def get_current_user_id(
+    session: SessionClaims = Depends(get_current_session),
+) -> int:
+    return session.user_id

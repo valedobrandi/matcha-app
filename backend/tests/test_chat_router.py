@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, UTC
 from fastapi.testclient import TestClient
 from main import app
@@ -5,7 +6,7 @@ import pytest
 import time
 import jwt
 from core.config import settings
-from core.auth import get_current_user_id
+from core.auth import get_current_session, get_current_user_id, read_session_token
 from core.presence import get_current_user_id_and_touch
 from modules.chat.controller import get_chat_service
 from modules.chat.schemas import ChatOkResponse, MessageOut, SendMessageInput
@@ -19,6 +20,7 @@ def make_token(user_id: int) -> str:
     return jwt.encode(
         {
             "sub": str(user_id),
+            "sid": str(uuid.uuid4()),
             "exp": time.time() + 36000,
             "iat": int(now.timestamp()),
         },
@@ -72,6 +74,7 @@ def override_chat():
     fake = FakeChatService()
     app.dependency_overrides[get_chat_service] = lambda: fake
     app.dependency_overrides[get_current_user_id_and_touch] = get_current_user_id
+    app.dependency_overrides[get_current_session] = read_session_token
     yield fake
     app.dependency_overrides.clear()
 

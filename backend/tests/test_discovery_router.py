@@ -1,3 +1,4 @@
+import uuid
 from fastapi.testclient import TestClient
 from main import app
 import pytest
@@ -5,7 +6,7 @@ import datetime
 import time
 import jwt
 from core.config import settings
-from core.auth import get_current_user_id
+from core.auth import get_current_session, get_current_user_id, read_session_token
 from core.presence import get_current_user_id_and_touch
 from modules.discovery.controller import get_discovery_service
 from modules.discovery.schemas import (
@@ -40,6 +41,7 @@ def make_token(user_id: int) -> str:
     now = datetime.datetime.now(datetime.UTC)
     payload = {
         "sub": str(user_id),
+        "sid": str(uuid.uuid4()),
         "exp": time.time() + 36000,
         "iat": int(now.timestamp()),
     }
@@ -99,6 +101,7 @@ def override_discovery():
     fake = FakeDiscoveryService()
     app.dependency_overrides[get_discovery_service] = lambda: fake
     app.dependency_overrides[get_current_user_id_and_touch] = get_current_user_id
+    app.dependency_overrides[get_current_session] = read_session_token
     yield fake
     app.dependency_overrides.clear()
 
@@ -174,6 +177,7 @@ class TestDiscoveryRouter:
             lambda: DiscoveryService(repo)
         )
         app.dependency_overrides[get_current_user_id_and_touch] = get_current_user_id
+        app.dependency_overrides[get_current_session] = read_session_token
         try:
             token = make_token(1)
             response = client.get(
@@ -196,6 +200,7 @@ class TestDiscoveryRouter:
             lambda: DiscoveryService(repo)
         )
         app.dependency_overrides[get_current_user_id_and_touch] = get_current_user_id
+        app.dependency_overrides[get_current_session] = read_session_token
         try:
             token = make_token(1)
             response = client.get(

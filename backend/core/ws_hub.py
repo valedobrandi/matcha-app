@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, NamedTuple, Optional, Set
+import uuid
+from typing import Any, Dict, NamedTuple, Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
 import jwt
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class SocketIdentity(NamedTuple):
     user_id: int
+    session_id: uuid.UUID
     expires_at: float
 
 
@@ -33,25 +35,29 @@ def decode_socket_identity(token: str) -> Optional[SocketIdentity]:
             token,
             settings.JWT_SECRET.get_secret_value(),
             algorithms=[settings.JWT_ALGORITHM],
-            options={"require": ["sub", "exp"]},
+            options={"require": ["sub", "exp", "sid"]},
         )
-        return SocketIdentity(user_id=int(payload["sub"]), expires_at=float(payload["exp"]))
-    except (jwt.PyJWTError, ValueError, TypeError):
+        return SocketIdentity(
+            user_id=int(payload["sub"]),
+            session_id=uuid.UUID(payload["sid"]),
+            expires_at=float(payload["exp"]),
+        )
+    except (jwt.PyJWTError, ValueError, TypeError, AttributeError):
         return None
 
 
 class ConnectionHub:
     def __init__(self) -> None:
-        self._connections: Dict[int, Set[WebSocket]] = {}
+        self._connections: Dict[int, Dict[WebSocket, uuid.UUID]] = {}
 
-    def connect(self, user_id: int, websocket: WebSocket) -> None:
-        self._connections.setdefault(user_id, set()).add(websocket)
+    def connect(self, user_id: int, websocket: WebSocket, session_id: uuid.UUID) -> None:
+        self._connections.setdefault(user_id, {})[websocket] = session_id
 
     def disconnect(self, user_id: int, websocket: WebSocket) -> None:
         sockets = self._connections.get(user_id)
         if sockets is None:
             return
-        sockets.discard(websocket)
+        sockets.pop(websocket, None)
         if not sockets:
             del self._connections[user_id]
 
