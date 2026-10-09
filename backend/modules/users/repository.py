@@ -21,6 +21,7 @@ from modules.users.exceptions import (
 from modules.notifications.outbox_repository import OutboxRepository
 from modules.users.image_type import detect_image_type
 from core.config import settings
+from core.upload_urls import UPLOADS_PATH
 import uuid
 from pathlib import Path
 from modules.notifications.outbox_repository import OutboxRepository
@@ -290,7 +291,7 @@ class UsersRepository:
         with open(file_path, "wb") as f:
             f.write(content)
 
-        url = f"/uploads/{file_name}"
+        url = f"{UPLOADS_PATH}{file_name}"
 
         query = """
                 INSERT INTO user_photos (user_id, url)
@@ -383,7 +384,7 @@ class UsersRepository:
         with open(file_path, "wb") as f:
             f.write(content)
 
-        url = f"/uploads/{file_name}"
+        url = f"{UPLOADS_PATH}{file_name}"
     
         query = """
                 UPDATE user_photos

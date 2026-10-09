@@ -4,7 +4,7 @@ import asyncpg
 from core.auth import SessionClaims, get_current_session
 from core.database import get_db_connection
 from core.presence import get_current_user_id_and_touch
-from core.upload_urls import VALIDITY_WINDOW_SECONDS, upload_url_is_valid
+from core.upload_urls import UPLOADS_PATH, VALIDITY_WINDOW_SECONDS, upload_url_is_valid
 from core.ws_hub import hub
 from modules.users.repository import UPLOAD_DIR, UsersRepository
 from modules.users.service import UsersService
@@ -25,10 +25,10 @@ from core.api_model import RowIdPath
 
 
 users_router = APIRouter(prefix="/users", tags=["users"])
-uploads_router = APIRouter(prefix="/uploads", include_in_schema=False)
+uploads_router = APIRouter(include_in_schema=False)
 
 
-@uploads_router.get("/{file_name}")
+@uploads_router.get(UPLOADS_PATH + "{file_name}")
 async def get_upload(file_name: str, expires: int | None = None, signature: str | None = None) -> Response:
     path = UPLOAD_DIR / file_name
     if (

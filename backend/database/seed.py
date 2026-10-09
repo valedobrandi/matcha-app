@@ -29,6 +29,7 @@ import bcrypt
 from faker import Faker
 
 from core.config import settings
+from core.upload_urls import UPLOADS_PATH
 from modules.users.repository import UPLOAD_DIR
 
 FACES_DIR = Path(__file__).resolve().parent.parent / "seed_assets" / "faces"
@@ -173,7 +174,7 @@ async def _seed_user_photos(conn, user_ids, faces) -> None:
             face = faces[(user_index * PHOTOS_PER_USER + position) % len(faces)]
             file_name = f"{uuid.uuid4()}{face.suffix.lower()}"
             shutil.copyfile(face, UPLOAD_DIR / file_name)
-            rows.append((user_id, f"/uploads/{file_name}", position == 0))
+            rows.append((user_id, f"{UPLOADS_PATH}{file_name}", position == 0))
     await conn.executemany(
         "INSERT INTO user_photos (user_id, url, is_profile_photo) VALUES ($1, $2, $3)",
         rows,
