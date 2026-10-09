@@ -58,7 +58,7 @@ class MailtrapClient:
         except MailtrapException:
             raise
         except Exception as e:
-            raise MailtrapException(f"Failed to send password reset email") from e
+            raise MailtrapException(f"Failed to send password reset email: {e!r}") from e
 
     def _send_verification_email_sync(self, to_email: str, token: str) -> None:
         verify_url = f"{self._verification_url}?token={token}"
@@ -84,7 +84,7 @@ class MailtrapClient:
         except MailtrapException:
             raise
         except Exception as e:
-            raise MailtrapException(f"Failed to send verification email.") from e
+            raise MailtrapException(f"Failed to send verification email: {e!r}") from e
 
 
 def build_mailtrap_client() -> MailtrapClient:

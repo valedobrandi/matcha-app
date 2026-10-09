@@ -48,11 +48,12 @@ async def process_outbox_batch(pool: asyncpg.Pool) -> None:
                     retry=retry
                 )
                 logger.warning(
-                    "email delivery failed for outbox id=%s type=%s attempt=%d retry=%s",
+                    "email delivery failed for outbox id=%s type=%s attempt=%d retry=%s error=%s",
                     message.id,
                     message.event_type,
                     message.attempts,
                     retry,
+                    exc,
                 )
 
 async def run_email_outbox_worker(pool: asyncpg.Pool) -> None:
