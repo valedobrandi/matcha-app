@@ -1,9 +1,7 @@
-import type { LocationValues } from "@/schemas/users"
+import { MAX_LOCATION_LABEL_LENGTH, type LocationValues } from "@/schemas/users"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 type NominatimAddress = Partial<Record<"neighbourhood" | "quarter" | "suburb" | "village" | "hamlet" | "city" | "town" | "municipality", string>>
-
-const MAX_LOCATION_LABEL_LENGTH = 100
 
 function neighborhoodLabel(address: NominatimAddress) {
     const area = address.neighbourhood ?? address.quarter ?? address.suburb ?? address.village ?? address.hamlet

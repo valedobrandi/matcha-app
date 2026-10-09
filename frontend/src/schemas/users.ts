@@ -8,10 +8,12 @@ export const profileSchema = z.object({
     bio: z.string().trim().min(1, "Bio is required").max(1000, "Bio must be at most 1000 characters"),
 })
 
+export const MAX_LOCATION_LABEL_LENGTH = 100
+
 const locationFields = {
     latitude: z.number().nullable(),
     longitude: z.number().nullable(),
-    location_label: z.string().trim().max(100, "Location must be at most 100 characters").nullable(),
+    location_label: z.string().trim().max(MAX_LOCATION_LABEL_LENGTH, `Location must be at most ${MAX_LOCATION_LABEL_LENGTH} characters`).nullable(),
     location_consent: z.boolean()
 }
 

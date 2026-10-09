@@ -1,4 +1,4 @@
-import type { LocationValues } from "@/schemas/users"
+import { MAX_LOCATION_LABEL_LENGTH, type LocationValues } from "@/schemas/users"
 import type { FieldErrors, UseFormRegister } from "react-hook-form"
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "./ui/field"
 import { Button } from "./ui/button"
@@ -45,7 +45,7 @@ function LocationForm({
                         {!sharePosition && (
                             <>
                                 <FieldLabel htmlFor="location_label">City or neighborhood</FieldLabel>
-                                <Input id="location_label" type="text" maxLength={100}
+                                <Input id="location_label" type="text" maxLength={MAX_LOCATION_LABEL_LENGTH}
                                     {...register("location_label", {
                                         onBlur: (e) => handleManuallyLocationInput(e.target.value)
                                     })} />
