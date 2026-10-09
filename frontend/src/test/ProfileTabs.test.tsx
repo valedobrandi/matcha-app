@@ -188,6 +188,23 @@ describe('ProfileTab', () => {
         expect(sentBodies).toEqual([expect.objectContaining({ age: 25, bio: 'hi', location_label: 'Paris' })])
     })
 
+    it('does not save the previous coordinates with a location typed after them', async () => {
+        serveMyTagsAndPhotos()
+        const sentBodies: unknown[] = []
+        server.use(http.patch(`${API_BASE_URL}/users/me/profile`, async ({ request }) => {
+            sentBodies.push(await request.json())
+            return HttpResponse.json(PROFILE)
+        }))
+        const onSaved = renderProfileTab(vi.fn(), { ...PROFILE, location_consent: false })
+
+        fireEvent.change(screen.getByLabelText('City or neighborhood'), { target: { value: 'Lyon' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+        expect(await screen.findByText('Please enter your location manually or enable location sharing.')).toBeInTheDocument()
+        expect(onSaved).not.toHaveBeenCalled()
+        expect(sentBodies).toEqual([])
+    })
+
     it('does name the manual location field when the location is not shared', () => {
         serveMyTagsAndPhotos()
 

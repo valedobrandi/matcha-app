@@ -58,6 +58,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
         locationError,
         isLocating,
         handleToggle,
+        handleLocationTextChange,
         handleManuallyLocationInput
     } = useLocationInput(location => {
         setValue("latitude", location.latitude)
@@ -213,6 +214,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
                                     <FieldLabel htmlFor="location_label">City or neighborhood</FieldLabel>
                                     <Input id="location_label" type="text" disabled={!editing}
                                     {...register("location_label", {
+                                        onChange: (e)=>handleLocationTextChange(e.target.value),
                                         onBlur: (e)=>handleManuallyLocationInput(e.target.value)
                                     })} />
                                 </>

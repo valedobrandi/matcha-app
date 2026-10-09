@@ -89,6 +89,7 @@ export function ProfileCompletePage() {
             locationLabel = {location.locationLabel}
             serverError = {location.serverError}
             handleToggle = {location.handleToggle}
+            handleLocationTextChange = {location.handleLocationTextChange}
             handleManuallyLocationInput = {location.handleManuallyLocationInput}
             onSubmit = {location.onSubmit}
           />

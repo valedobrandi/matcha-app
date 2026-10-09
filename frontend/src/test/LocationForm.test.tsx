@@ -42,6 +42,30 @@ describe('LocationForm with useLocationForm', () => {
         expect(sentLocations).toEqual([{ latitude: 45.7578137, longitude: 4.8320114, location_label: 'Lyon', location_consent: false }])
     })
 
+    it('does forget the found city and not go on when the typed location changes after the lookup', async () => {
+        const sentLocations: unknown[] = []
+        server.use(
+            http.get(NOMINATIM_SEARCH, () => HttpResponse.json([{ lat: '45.7578137', lon: '4.8320114' }])),
+            http.patch(`${API_BASE_URL}/users/me/location`, async ({ request }) => {
+                sentLocations.push(await request.json())
+                return HttpResponse.json(sampleProfile)
+            }),
+        )
+        const onSuccess = renderLocationStep()
+        const city = screen.getByLabelText('City or neighborhood')
+        fireEvent.change(city, { target: { value: 'Lyon' } })
+        fireEvent.blur(city)
+        await screen.findByText('Your location: Lyon')
+
+        fireEvent.change(city, { target: { value: 'Paris' } })
+
+        expect(screen.queryByText(/^Your location:/)).not.toBeInTheDocument()
+        fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+        expect(await screen.findByText('Please enter your location manually or enable location sharing.')).toBeInTheDocument()
+        expect(onSuccess).not.toHaveBeenCalled()
+        expect(sentLocations).toEqual([])
+    })
+
     it('does ask for the location and not go on when none is given', async () => {
         const onSuccess = renderLocationStep()
 

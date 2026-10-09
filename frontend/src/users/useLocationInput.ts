@@ -59,6 +59,10 @@ function useLocationInput(onLocationChange: (location: LocationValues) => void){
         }
     }, [onLocationChange])
 
+    const handleLocationTextChange = useCallback((text: string) => {
+        onLocationChange({ latitude: null, longitude: null, location_label: text, location_consent: false })
+    }, [onLocationChange])
+
     const handleManuallyLocationInput = useCallback(async(text: string)=> {
         if (!text.trim()) {
             onLocationChange({ latitude: null, longitude: null, location_label: text, location_consent: false })
@@ -111,6 +115,7 @@ function useLocationInput(onLocationChange: (location: LocationValues) => void){
         locationError,
         isLocating,
         handleToggle,
+        handleLocationTextChange,
         handleManuallyLocationInput
     }
 }

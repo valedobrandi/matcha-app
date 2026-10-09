@@ -14,6 +14,7 @@ type LocationFormProps = {
     locationLabel: string | null,
     serverError: string | null,
     handleToggle: (checked: boolean) => void,
+    handleLocationTextChange: (text: string) => void,
     handleManuallyLocationInput: (text: string) => void,
     onSubmit: React.SubmitEventHandler<HTMLFormElement>,
 }
@@ -27,6 +28,7 @@ function LocationForm({
     locationLabel,
     serverError,
     handleToggle,
+    handleLocationTextChange,
     handleManuallyLocationInput,
     onSubmit,
 }: LocationFormProps) {
@@ -47,6 +49,7 @@ function LocationForm({
                                 <FieldLabel htmlFor="location_label">City or neighborhood</FieldLabel>
                                 <Input id="location_label" type="text" maxLength={MAX_LOCATION_LABEL_LENGTH}
                                     {...register("location_label", {
+                                        onChange: (e) => handleLocationTextChange(e.target.value),
                                         onBlur: (e) => handleManuallyLocationInput(e.target.value)
                                     })} />
                             </>
