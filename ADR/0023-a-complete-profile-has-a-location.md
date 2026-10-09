@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Open |
+| **Status** | Decided |
 | **Group** | Backend, Frontend |
 | **Date** | 2026-10-08 |
 | **Supersedes** | the location-free completeness rule of migration 0014 |
@@ -35,8 +35,10 @@ whole profile.
 
 ## Status
 
-Open on 2026-10-08: the owner applied the recommendation after the hand-in location check. It
-becomes Decided when the pull request merges.
+Decided on 2026-10-08 and implemented in 23ed120: the owner applied the recommendation after the
+hand-in location check. A new user went from registration through the location step to the
+suggestions in Chrome and Firefox. The review of that commit tightened the location step: a typed
+change drops the coordinates found before it, and Next waits for the lookup (8f60307, 06f2495).
 
 ## Positions
 

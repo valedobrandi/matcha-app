@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Open |
+| **Status** | Decided |
 | **Group** | Backend |
 | **Date** | 2026-10-08 |
 | **Supersedes** | — |
@@ -31,8 +31,9 @@ filter, locates that person to about 100 m: the trilateration attack known from 
 
 ## Status
 
-Open on 2026-10-08: the owner applied the recommendation after the hand-in location check. It
-becomes Decided when the pull request merges.
+Decided on 2026-10-08 and implemented in #58: the owner applied the recommendation after the
+hand-in location check. The users service tests store GPS and edited coordinates at two decimals,
+and the discovery distance integration test answers whole kilometres.
 
 ## Positions
 
