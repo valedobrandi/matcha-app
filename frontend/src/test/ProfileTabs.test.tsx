@@ -225,6 +225,20 @@ describe('ProfileTab', () => {
         await waitFor(() => expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled())
     })
 
+    it('does clear the missing-location error once the typed location is found', async () => {
+        serveMyTagsAndPhotos()
+        server.use(http.get(NOMINATIM_SEARCH, () => HttpResponse.json([{ lat: '45.7578137', lon: '4.8320114' }])))
+        renderProfileTab(vi.fn(), { ...PROFILE, location_consent: false })
+        const city = screen.getByLabelText('City or neighborhood')
+        fireEvent.change(city, { target: { value: 'Lyon' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+        const missingLocation = await screen.findByText('Please enter your location manually or enable location sharing.')
+
+        fireEvent.blur(city)
+
+        await waitForElementToBeRemoved(missingLocation)
+    })
+
     it('does name the manual location field when the location is not shared', () => {
         serveMyTagsAndPhotos()
 

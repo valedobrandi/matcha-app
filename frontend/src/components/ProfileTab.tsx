@@ -63,7 +63,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
     } = useLocationInput(location => {
         setValue("latitude", location.latitude)
         setValue("longitude", location.longitude)
-        setValue("location_label", location.location_label)
+        setValue("location_label", location.location_label, { shouldValidate: location.latitude !== null })
         setValue("location_consent", location.location_consent)
     })
 

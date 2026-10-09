@@ -85,6 +85,20 @@ describe('LocationForm with useLocationForm', () => {
         expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
     })
 
+    it('does clear the missing-location error once a typed location is found', async () => {
+        server.use(http.get(NOMINATIM_SEARCH, () => HttpResponse.json([{ lat: '45.7578137', lon: '4.8320114' }])))
+        renderLocationStep()
+        fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+        await screen.findByText('Please enter your location manually or enable location sharing.')
+        const city = screen.getByLabelText('City or neighborhood')
+
+        fireEvent.change(city, { target: { value: 'Lyon' } })
+        fireEvent.blur(city)
+
+        expect(await screen.findByText('Your location: Lyon')).toBeInTheDocument()
+        expect(screen.queryByText('Please enter your location manually or enable location sharing.')).not.toBeInTheDocument()
+    })
+
     it('does ask for the location and not go on when none is given', async () => {
         const onSuccess = renderLocationStep()
 

@@ -26,7 +26,7 @@ function useLocationForm(onSuccess: () => void) {
     const location = useLocationInput(found => {
         setValue("latitude", found.latitude)
         setValue("longitude", found.longitude)
-        setValue("location_label", found.location_label)
+        setValue("location_label", found.location_label, { shouldValidate: found.latitude !== null })
         setValue("location_consent", found.location_consent)
     })
 
