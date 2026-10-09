@@ -25,7 +25,7 @@ from core.rate_limit import Limit, RateLimiter, get_rate_limiter
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 LOGIN_PER_CLIENT = Limit(attempts=20, per_seconds=60)
-LOGIN_FAILURES_PER_ACCOUNT = Limit(attempts=10, per_seconds=15 * 60)
+LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT = Limit(attempts=10, per_seconds=15 * 60)
 REGISTER_PER_CLIENT = Limit(attempts=10, per_seconds=15 * 60)
 RECOVERY_PER_CLIENT = Limit(attempts=10, per_seconds=15 * 60)
 RECOVERY_PER_EMAIL = Limit(attempts=3, per_seconds=15 * 60)
@@ -84,11 +84,13 @@ async def register(
 @auth_router.post("/login", response_model=TokenResponse)
 async def login(
     payload: LoginInput,
+    request: Request,
     limiter: RateLimiter = Depends(limit_per_client("login", LOGIN_PER_CLIENT)),
     service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
-    account = f"login:account:{payload.username}"
-    limiter.check(account, LOGIN_FAILURES_PER_ACCOUNT)
+    client = request.client.host if request.client else "unknown"
+    account = f"login:account:{payload.username}:client:{client}"
+    limiter.check(account, LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT)
     try:
         token = await service.login_user(payload)
     except InvalidCredentialsException:

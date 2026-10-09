@@ -7,7 +7,7 @@ from main import app
 from core.auth import SessionClaims, get_current_session, get_current_user_id
 from core.rate_limit import RateLimiter, get_rate_limiter
 from modules.auth.controller import (
-    LOGIN_FAILURES_PER_ACCOUNT,
+    LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT,
     RECOVERY_PER_EMAIL,
     REGISTER_PER_CLIENT,
     get_auth_service,
@@ -93,6 +93,13 @@ class RefusingService:
         raise InvalidCredentialsException()
 
 
+class OwnerPasswordService:
+    async def login_user(self, payload):
+        if payload.password != "Right1234":
+            raise InvalidCredentialsException()
+        return "token"
+
+
 class AcceptingService:
     async def login_user(self, payload):
         return "token"
@@ -112,8 +119,8 @@ def fresh_limiter():
     app.dependency_overrides.clear()
 
 
-async def post(path: str, body: dict):
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+async def post(path: str, body: dict, address: str = "127.0.0.1"):
+    async with AsyncClient(transport=ASGITransport(app=app, client=(address, 123)), base_url="http://test") as client:
         return await client.post(path, json=body)
 
 
@@ -121,7 +128,7 @@ async def post(path: str, body: dict):
 async def test_should_answer_429_with_retry_after_when_an_account_has_too_many_failed_logins(fresh_limiter):
     app.dependency_overrides[get_auth_service] = RefusingService
     body = {"username": "alice", "password": "Wrong1234"}
-    for _ in range(LOGIN_FAILURES_PER_ACCOUNT.attempts):
+    for _ in range(LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT.attempts):
         assert (await post("/auth/login", body)).status_code == 401
 
     refused = await post("/auth/login", body)
@@ -131,9 +138,22 @@ async def test_should_answer_429_with_retry_after_when_an_account_has_too_many_f
 
 
 @pytest.mark.asyncio
+async def test_should_let_the_owner_sign_in_when_another_address_has_used_up_the_failures_of_the_account(fresh_limiter):
+    app.dependency_overrides[get_auth_service] = OwnerPasswordService
+    wrong = {"username": "alice", "password": "Wrong1234"}
+    for _ in range(LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT.attempts):
+        assert (await post("/auth/login", wrong, address="203.0.113.7")).status_code == 401
+
+    owner = await post("/auth/login", {"username": "alice", "password": "Right1234"}, address="198.51.100.2")
+
+    assert owner.status_code == 200
+    assert (await post("/auth/login", wrong, address="203.0.113.7")).status_code == 429
+
+
+@pytest.mark.asyncio
 async def test_should_keep_counting_failures_apart_when_two_usernames_differ_only_in_case(fresh_limiter):
     app.dependency_overrides[get_auth_service] = RefusingService
-    for _ in range(LOGIN_FAILURES_PER_ACCOUNT.attempts):
+    for _ in range(LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT.attempts):
         assert (await post("/auth/login", {"username": "alice", "password": "Wrong1234"})).status_code == 401
 
     response = await post("/auth/login", {"username": "Alice", "password": "Wrong1234"})
@@ -146,7 +166,7 @@ async def test_should_not_count_logins_against_the_account_when_they_succeed(fre
     app.dependency_overrides[get_auth_service] = AcceptingService
     body = {"username": "alice", "password": "Right1234"}
 
-    responses = [await post("/auth/login", body) for _ in range(LOGIN_FAILURES_PER_ACCOUNT.attempts + 2)]
+    responses = [await post("/auth/login", body) for _ in range(LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT.attempts + 2)]
 
     assert {response.status_code for response in responses} == {200}
 
