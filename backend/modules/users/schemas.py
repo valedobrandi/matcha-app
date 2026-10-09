@@ -1,4 +1,5 @@
 from core.api_model import ApiModel, UtcDatetime
+from core.upload_urls import UploadUrl
 from pydantic import BaseModel, EmailStr, Field, StringConstraints, model_validator, field_validator
 from typing import Annotated, List, Literal, Optional
 from modules.auth.schemas import EmailInput, PasswordInput, PersonName, validate_password_strength
@@ -49,7 +50,7 @@ class UserAccountInput(BaseModel):
 
 class PhotoOut(ApiModel):
     id: int
-    url: str
+    url: UploadUrl
     is_profile_photo: bool
 
 class EditProfileInput(UserProfileInput):

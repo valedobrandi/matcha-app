@@ -43,3 +43,4 @@ Status vocabulary: `Open` · `Pending` · `Decided` · `Approved` · `Superseded
 | [0023](0023-a-complete-profile-has-a-location.md) | A complete profile has a location, asked for during onboarding | Decided | Backend, Frontend | 2026-10-08 |
 | [0024](0024-every-token-is-a-handle-on-a-server-side-session.md) | Every access token is a handle on a server-side session | Decided | Backend, Frontend | 2026-10-09 |
 | [0025](0025-sign-in-and-account-recovery-are-rate-limited.md) | Sign-in, registration and account recovery are rate limited | Decided | Backend, Frontend | 2026-10-09 |
+| [0026](0026-photos-are-served-through-short-lived-signed-urls.md) | Photos are served through short-lived signed URLs | Decided | Backend | 2026-10-09 |

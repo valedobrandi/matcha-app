@@ -1,4 +1,5 @@
 from core.api_model import INT4_MAX, ApiModel, RowId
+from core.upload_urls import UploadUrl
 from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
 
@@ -15,7 +16,7 @@ class DiscoveryProfileCard(ApiModel):
     common_tags_count: int = 0
     location_label: Optional[str] = None
     liked_by_me: bool
-    profile_photo_url: Optional[str] = None
+    profile_photo_url: Optional[UploadUrl] = None
 
 
 class SuggestQueryParams(BaseModel):

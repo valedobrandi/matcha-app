@@ -122,7 +122,7 @@ class TestDiscoveryRouter:
         assert isinstance(body, list)
         assert body[0]["id"] == 2
         assert "fame_rating" in body[0]
-        assert body[0]["profile_photo_url"] == "/uploads/bob.jpg"
+        assert body[0]["profile_photo_url"].startswith("/uploads/bob.jpg?expires=")
         assert "distance_km" in body[0]
         assert "common_tags_count" in body[0]
 

@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from modules.auth.handlers import register_auth_exception_handlers
 from modules.users.handlers import register_users_exception_handlers
 from modules.tags.handlers import register_tags_exception_handlers
@@ -13,7 +12,7 @@ from core.error_codes import ErrorResponse, ValidationErrorResponse
 from core.log_redaction import RedactCredentialsFilter
 from core.rate_limit import register_rate_limit_exception_handler
 from modules.auth.controller import auth_router
-from modules.users.controller import users_router
+from modules.users.controller import uploads_router, users_router
 from modules.tags.controller import tags_router
 from modules.social.controller import social_router
 from modules.discovery.controller import discovery_router
@@ -40,7 +39,6 @@ app = FastAPI(
         422: {"model": ValidationErrorResponse, "description": "Validation Error"},
     },
 )
-app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 register_auth_exception_handlers(app)
 register_users_exception_handlers(app)
@@ -60,6 +58,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(users_router)
+app.include_router(uploads_router)
 app.include_router(tags_router)
 app.include_router(social_router)
 app.include_router(discovery_router)

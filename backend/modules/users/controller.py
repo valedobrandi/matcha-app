@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, UploadFile, File, status
+from fastapi import APIRouter, Depends, Response, UploadFile, File, status
+from fastapi.responses import FileResponse
 import asyncpg
 from core.auth import SessionClaims, get_current_session
 from core.database import get_db_connection
 from core.presence import get_current_user_id_and_touch
-from modules.users.repository import UsersRepository
+from core.upload_urls import VALIDITY_WINDOW_SECONDS, upload_url_is_valid
+from modules.users.repository import UPLOAD_DIR, UsersRepository
 from modules.users.service import UsersService
 from modules.users.schemas import (
     UserProfile,
@@ -22,6 +24,21 @@ from core.api_model import RowIdPath
 
 
 users_router = APIRouter(prefix="/users", tags=["users"])
+uploads_router = APIRouter(prefix="/uploads", include_in_schema=False)
+
+
+@uploads_router.get("/{file_name}")
+async def get_upload(file_name: str, expires: int | None = None, signature: str | None = None) -> Response:
+    path = UPLOAD_DIR / file_name
+    if (
+        expires is None
+        or signature is None
+        or not upload_url_is_valid(file_name, expires, signature)
+        or path.resolve().parent != UPLOAD_DIR.resolve()
+        or not path.is_file()
+    ):
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+    return FileResponse(path, headers={"Cache-Control": f"private, max-age={VALIDITY_WINDOW_SECONDS}"})
 
 def get_users_service(
         db: asyncpg.Connection = Depends(get_db_connection)
