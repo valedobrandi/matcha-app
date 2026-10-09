@@ -143,6 +143,19 @@ describe('ProfileTab location from GPS', () => {
         expect(await screen.findByText('Could not get your location. Please enter it manually.')).toBeInTheDocument()
         expect(screen.getByLabelText('City or neighborhood')).toBeInTheDocument()
     })
+
+    it('does ask for the location by hand when even the city from GPS exceeds 100 characters', async () => {
+        serveMyTagsAndPhotos()
+        stubGeolocation(48.8584, 2.2945)
+        server.use(http.get(NOMINATIM_REVERSE, () =>
+            HttpResponse.json({ address: { quarter: 'Gros-Caillou', city: 'C'.repeat(101) } })))
+        renderProfileTab(vi.fn(), { ...PROFILE, location_consent: false })
+
+        fireEvent.click(screen.getByRole('switch', { name: 'Share your location' }))
+
+        expect(await screen.findByText('Could not get your location. Please enter it manually.')).toBeInTheDocument()
+        expect(screen.getByLabelText('City or neighborhood')).toHaveValue('Paris')
+    })
 })
 
 describe('ProfileTabs', () => {
