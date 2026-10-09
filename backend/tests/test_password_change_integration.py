@@ -1,6 +1,7 @@
 """Runs the password change and the sessions it ends on a real Postgres (`pytest -m integration`)."""
 import pytest
 
+from core.ws_hub import ConnectionHub
 from modules.auth.repository import AuthRepository
 from modules.auth.service import TOKEN_LIFETIME, AuthService
 from modules.auth.sessions_repository import SessionsRepository
@@ -13,7 +14,7 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 
 async def test_should_keep_the_current_session_and_end_the_others_when_the_password_changes(connection, token):
-    password_hash = AuthService(AuthRepository(connection)).hash_password("OldPass123!")
+    password_hash = AuthService(AuthRepository(connection), ConnectionHub()).hash_password("OldPass123!")
     user_id = await connection.fetchval(
         """
         INSERT INTO users (email, username, first_name, last_name, password_hash, is_verified)
@@ -25,7 +26,7 @@ async def test_should_keep_the_current_session_and_end_the_others_when_the_passw
     sessions = SessionsRepository(connection)
     current = await sessions.open(user_id, TOKEN_LIFETIME)
     other_device = await sessions.open(user_id, TOKEN_LIFETIME)
-    service = UsersService(UsersRepository(connection), SocialRepository(connection))
+    service = UsersService(UsersRepository(connection), SocialRepository(connection), ConnectionHub())
 
     await service.change_password(
         PasswordChangeInput(current_password="OldPass123!", new_password="Xk9#mQvzTr4!!", confirm_password="Xk9#mQvzTr4!!"),

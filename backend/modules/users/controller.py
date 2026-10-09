@@ -5,6 +5,7 @@ from core.auth import SessionClaims, get_current_session
 from core.database import get_db_connection
 from core.presence import get_current_user_id_and_touch
 from core.upload_urls import VALIDITY_WINDOW_SECONDS, upload_url_is_valid
+from core.ws_hub import hub
 from modules.users.repository import UPLOAD_DIR, UsersRepository
 from modules.users.service import UsersService
 from modules.users.schemas import (
@@ -43,7 +44,7 @@ async def get_upload(file_name: str, expires: int | None = None, signature: str 
 def get_users_service(
         db: asyncpg.Connection = Depends(get_db_connection)
 ) -> UsersService:
-    return UsersService(UsersRepository(db), SocialRepository(db))
+    return UsersService(UsersRepository(db), SocialRepository(db), hub)
 
 @users_router.get(
     "/me", response_model=UserProfile

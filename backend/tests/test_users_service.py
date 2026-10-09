@@ -20,6 +20,7 @@ from modules.auth.exceptions import (
     InvalidCredentialsException,
     NoPasswordSetException,
 )
+from core.ws_hub import ConnectionHub
 from modules.auth.repository import AuthRepository
 from types import SimpleNamespace
 from pydantic import ValidationError
@@ -73,7 +74,7 @@ async def test_change_password_wrong_current_password(monkeypatch):
         return fake_auth_user
 
     monkeypatch.setattr(AuthRepository, "find_by_id", fake_user_by_id)
-    service = UsersService(repository=SimpleNamespace(connection=None), social_repo=FakeSocial())
+    service = UsersService(repository=SimpleNamespace(connection=None), social_repo=FakeSocial(), hub=ConnectionHub())
 
     passwords = PasswordChangeInput(
         current_password="WrongPassword123!",
@@ -93,7 +94,7 @@ async def test_change_password_no_password_set(monkeypatch):
         return fake_auth_user
 
     monkeypatch.setattr(AuthRepository, "find_by_id", fake_user_by_id)
-    service = UsersService(repository=SimpleNamespace(connection=None), social_repo=FakeSocial())
+    service = UsersService(repository=SimpleNamespace(connection=None), social_repo=FakeSocial(), hub=ConnectionHub())
 
     passwords = PasswordChangeInput(
         current_password="emptySoAnything!",
@@ -124,7 +125,7 @@ async def test_change_password_success(monkeypatch):
             self.change_password_called = (hashed_password, current_user_id)
 
     fake_repo = FakeUserRepo()
-    service = UsersService(fake_repo, FakeSocial())
+    service = UsersService(fake_repo, FakeSocial(), ConnectionHub())
 
     passwords = PasswordChangeInput(
         current_password="OldPwd123!",
@@ -232,7 +233,7 @@ def _complete_user(**overrides) -> UserProfile:
 async def test_get_profile_when_user_found():
     user = _complete_user()
     repo = FakeRepository(user, tags=[{"id": 1}], photos=[{"id": 1}])
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
 
     res = await service.get_profile(1)
     assert res.id == user.id
@@ -246,7 +247,7 @@ async def test_get_profile_when_user_found():
 async def test_get_profile_is_incomplete_when_the_repository_says_incomplete() -> None:
     user = _complete_user()
     repo = FakeRepository(user, completed=False)
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
 
     res = await service.get_profile(1)
     assert res.is_profile_completed is False
@@ -255,7 +256,7 @@ async def test_get_profile_is_incomplete_when_the_repository_says_incomplete() -
 @pytest.mark.asyncio
 async def test_get_profile_when_user_not_found():
     repo = FakeRepository(None)
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
 
     with pytest.raises(UserNotFoundException):
         await service.get_profile(12)
@@ -264,7 +265,7 @@ async def test_get_profile_when_user_not_found():
 @pytest.mark.asyncio
 async def test_should_store_a_typed_location_when_it_comes_without_gps_consent():
     repo = FakeRepository(_complete_user(), tags=[1], photos=[1])
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
 
     res = await service.update_location(
         1,
@@ -278,7 +279,7 @@ async def test_should_store_a_typed_location_when_it_comes_without_gps_consent()
 async def test_update_location_succeeds_when_consent_true():
     user = _complete_user()
     repo = FakeRepository(user, tags=[1], photos=[1])
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
     payload = UserLocationInput(
         latitude=48.85,
         longitude=2.35,
@@ -296,7 +297,7 @@ async def test_update_location_succeeds_when_consent_true():
 @pytest.mark.asyncio
 async def test_should_store_gps_coordinates_at_neighborhood_precision_when_the_location_is_shared():
     repo = FakeRepository(_complete_user(), tags=[1], photos=[1])
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
 
     await service.update_location(
         1,
@@ -310,7 +311,7 @@ async def test_should_store_gps_coordinates_at_neighborhood_precision_when_the_l
 @pytest.mark.asyncio
 async def test_should_store_coordinates_at_neighborhood_precision_when_the_profile_is_edited():
     repo = FakeRepository(_complete_user(), tags=[1], photos=[1])
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
 
     await service.edit_profile(
         1,
@@ -328,7 +329,7 @@ async def test_should_store_coordinates_at_neighborhood_precision_when_the_profi
 async def test_update_account_should_keep_verified_when_email_unchanged():
     user = _complete_user(email="aaa@gmail.com", is_verified=True)
     repo = FakeRepository(user)
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
     payload = UserAccountInput(
         username="aaa",
         first_name="New",
@@ -345,7 +346,7 @@ async def test_update_account_should_keep_verified_when_email_unchanged():
 async def test_update_account_should_require_reverification_when_email_changes():
     user = _complete_user(email="aaa@gmail.com", is_verified=True)
     repo = FakeRepository(user)
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
     payload = UserAccountInput(
         username="aaa",
         first_name="Ann",
@@ -363,7 +364,7 @@ async def test_update_account_propagates_email_taken():
     user = _complete_user()
     repo = FakeRepository(user)
     repo.raise_on_account = EmailAlreadyTakenException("taken@example.com")
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
     with pytest.raises(EmailAlreadyTakenException):
         await service.update_account(
             1,
@@ -379,7 +380,7 @@ async def test_update_account_propagates_email_taken():
 @pytest.mark.asyncio
 async def test_update_account_should_raise_when_user_missing():
     repo = FakeRepository(None)
-    service = UsersService(repo, FakeSocial())
+    service = UsersService(repo, FakeSocial(), ConnectionHub())
     with pytest.raises(UserNotFoundException):
         await service.update_account(
             1,
@@ -436,6 +437,7 @@ async def test_get_public_profile_should_return_projection_without_email():
     service = UsersService(
         FakeRepository(target, tags=tags, photos=photos),
         social_repo=FakeSocial(likes_received=7, visitors=11),
+        hub=ConnectionHub(),
     )
     result = await service.get_public_profile(viewer_id=1, target_id=2)
     assert isinstance(result, PublicProfile)
@@ -455,14 +457,14 @@ async def test_get_public_profile_should_raise_target_not_found_when_blocked():
 
     target = _complete_user(id=2)
 
-    service = UsersService(FakeRepository(target), social_repo=FakeSocial(blocked=True))
+    service = UsersService(FakeRepository(target), social_repo=FakeSocial(blocked=True), hub=ConnectionHub())
     with pytest.raises(TargetUserNotFoundException):
         await service.get_public_profile(viewer_id=1, target_id=2)
 
 
 @pytest.mark.asyncio
 async def test_get_public_profile_should_raise_when_missing():
-    service = UsersService(FakeRepository(None), social_repo=FakeSocial())
+    service = UsersService(FakeRepository(None), social_repo=FakeSocial(), hub=ConnectionHub())
     with pytest.raises(TargetUserNotFoundException):
         await service.get_public_profile(viewer_id=1, target_id=99)
 

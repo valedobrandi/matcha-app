@@ -55,7 +55,7 @@ class FakeHub:
 
 
 def test_hash_password_returns_bcrypt_hash() -> None:
-    service = AuthService(FakeRepository())
+    service = AuthService(FakeRepository(), FakeHub())
     hashed = service._hash_password("Password1")
     assert hashed.startswith("$2")
 
@@ -63,7 +63,7 @@ def test_hash_password_returns_bcrypt_hash() -> None:
 @pytest.mark.asyncio
 async def test_should_open_a_session_and_name_it_in_the_token_when_a_token_is_issued() -> None:
     sessions = FakeSessions()
-    service = AuthService(FakeRepository(), sessions=sessions)
+    service = AuthService(FakeRepository(), FakeHub(), sessions=sessions)
 
     token = await service.issue_token(7)
 
@@ -75,7 +75,7 @@ async def test_should_open_a_session_and_name_it_in_the_token_when_a_token_is_is
 @pytest.mark.asyncio
 async def test_should_revoke_the_session_and_close_its_sockets_when_the_user_logs_out() -> None:
     sessions, hub = FakeSessions(), FakeHub()
-    service = AuthService(FakeRepository(), sessions=sessions, hub=hub)
+    service = AuthService(FakeRepository(), hub, sessions=sessions)
 
     await service.logout(SESSION_ID, 7)
 
@@ -85,7 +85,7 @@ async def test_should_revoke_the_session_and_close_its_sockets_when_the_user_log
 
 @pytest.mark.asyncio
 async def test_login_user_raises_when_unverified() -> None:
-    service = AuthService(FakeRepository())
+    service = AuthService(FakeRepository(), FakeHub())
     user = UserRecord(
         id=1,
         email="a@b.com",
@@ -95,14 +95,14 @@ async def test_login_user_raises_when_unverified() -> None:
         password_hash=service._hash_password("Password1"),
         is_verified=False,
     )
-    service = AuthService(FakeRepository(user))
+    service = AuthService(FakeRepository(user), FakeHub())
     with pytest.raises(AccountNotVerifiedException):
         await service.login_user(LoginInput(username="alice", password="Password1"))
 
 
 @pytest.mark.asyncio
 async def test_should_reject_the_credentials_without_telling_the_account_is_unverified_when_the_password_is_wrong() -> None:
-    service = AuthService(FakeRepository())
+    service = AuthService(FakeRepository(), FakeHub())
     user = UserRecord(
         id=1,
         email="a@b.com",
@@ -112,14 +112,14 @@ async def test_should_reject_the_credentials_without_telling_the_account_is_unve
         password_hash=service._hash_password("Password1"),
         is_verified=False,
     )
-    service = AuthService(FakeRepository(user))
+    service = AuthService(FakeRepository(user), FakeHub())
     with pytest.raises(InvalidCredentialsException):
         await service.login_user(LoginInput(username="alice", password="Wrong1"))
 
 
 @pytest.mark.asyncio
 async def test_get_current_user_raises_when_user_missing() -> None:
-    service = AuthService(FakeRepository())
+    service = AuthService(FakeRepository(), FakeHub())
     with pytest.raises(InvalidTokenException):
         await service.get_current_user(999)
 
@@ -135,7 +135,7 @@ async def test_get_current_user_returns_session_contract(monkeypatch) -> None:
         password_hash="hashed",
         is_verified=True,
     )
-    service = AuthService(FakeRepository(user))
+    service = AuthService(FakeRepository(user), FakeHub())
 
     async def fake_is_profile_completed(self, user_id: int) -> bool:
         return True

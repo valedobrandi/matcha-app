@@ -6,6 +6,7 @@ import pytest
 import uuid
 
 from core.config import settings
+from core.ws_hub import ConnectionHub
 from modules.auth.repository import AuthRepository
 from modules.auth.service import TOKEN_LIFETIME, AuthService
 from modules.auth.sessions_repository import SessionsRepository
@@ -14,7 +15,7 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 
 async def add_user_with_password(connection, token) -> str:
-    service = AuthService(AuthRepository(connection))
+    service = AuthService(AuthRepository(connection), ConnectionHub())
     email = f"{token}@example.com"
     await connection.execute(
         """
@@ -28,7 +29,7 @@ async def add_user_with_password(connection, token) -> str:
 
 async def test_should_reset_the_password_when_the_requested_token_is_used(connection, token):
     email = await add_user_with_password(connection, token)
-    service = AuthService(AuthRepository(connection))
+    service = AuthService(AuthRepository(connection), ConnectionHub())
 
     await service.request_password_reset(email)
     reset_token = await connection.fetchval(
@@ -43,7 +44,7 @@ async def test_should_end_every_older_session_and_open_a_new_one_when_the_passwo
     user_id = await connection.fetchval("SELECT id FROM users WHERE email = $1", email)
     sessions = SessionsRepository(connection)
     older = await sessions.open(user_id, TOKEN_LIFETIME)
-    service = AuthService(AuthRepository(connection))
+    service = AuthService(AuthRepository(connection), ConnectionHub())
     await service.request_password_reset(email)
     reset_token = await connection.fetchval("SELECT password_reset_token FROM users WHERE email = $1", email)
 
@@ -59,7 +60,7 @@ async def test_should_keep_the_reset_token_valid_for_one_hour_when_a_reset_is_re
 ):
     email = await add_user_with_password(connection, token)
 
-    await AuthService(AuthRepository(connection)).request_password_reset(email)
+    await AuthService(AuthRepository(connection), ConnectionHub()).request_password_reset(email)
     valid_for = await connection.fetchval(
         "SELECT password_reset_expires_at - NOW() FROM users WHERE email = $1", email
     )

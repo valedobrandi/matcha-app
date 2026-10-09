@@ -5,7 +5,7 @@ import bcrypt
 import httpx
 from integrations.fortytwo_client import FortyTwoClient, FortyTwoClientException
 from core.config import settings
-from core.ws_hub import ConnectionHub, hub as connection_hub
+from core.ws_hub import ConnectionHub
 from modules.auth.schemas import CurrentUserResponse, LoginInput, UserRecord, UserRegisterInput
 from modules.auth.repository import AuthRepository
 from modules.auth.sessions_repository import SessionsRepository
@@ -27,13 +27,13 @@ class AuthService:
     def __init__(
         self,
         repository: AuthRepository,
+        hub: ConnectionHub,
         auth_client: FortyTwoClient | None = None,
         sessions: SessionsRepository | None = None,
-        hub: ConnectionHub | None = None,
     ):
         self.repository = repository
+        self.hub = hub
         self.sessions = sessions or SessionsRepository(repository.connection)
-        self.hub = hub or connection_hub
         self.auth_client = auth_client or FortyTwoClient(
             settings.FT_CLIENT_ID, settings.FT_CLIENT_SECRET, settings.FT_REDIRECT_URI
         )

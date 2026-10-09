@@ -6,6 +6,7 @@ import datetime
 import time
 import jwt
 from core.config import settings
+from core.ws_hub import ConnectionHub
 from modules.users.schemas import UserProfile, UserLocationInput, UserAccountInput
 from modules.users.service import UsersService
 from modules.users.controller import get_users_service
@@ -126,7 +127,7 @@ def fake_user():
 @pytest.fixture
 def override_service(fake_user):
     fake_repo = FakeRepository({1: fake_user})
-    fake_service = UsersService(fake_repo, FakeSocial())
+    fake_service = UsersService(fake_repo, FakeSocial(), ConnectionHub())
 
     app.dependency_overrides[get_users_service] = lambda: fake_service
     app.dependency_overrides[get_current_user_id_and_touch] = get_current_user_id
@@ -259,7 +260,7 @@ class TestPatchAccount:
     def test_account_update_email_taken(self, fake_user):
         fake_repo = FakeRepository({1: fake_user})
         fake_repo.raise_on_account = EmailAlreadyTakenException("taken@example.com")
-        fake_service = UsersService(fake_repo, FakeSocial())
+        fake_service = UsersService(fake_repo, FakeSocial(), ConnectionHub())
         app.dependency_overrides[get_users_service] = lambda: fake_service
         app.dependency_overrides[get_current_user_id_and_touch] = get_current_user_id
         app.dependency_overrides[get_current_session] = read_session_token

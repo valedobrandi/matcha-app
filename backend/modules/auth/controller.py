@@ -18,6 +18,7 @@ from modules.auth.exceptions import InvalidCredentialsException
 from modules.auth.service import AuthService
 from modules.auth.repository import AuthRepository
 from core.database import get_db_connection
+from core.ws_hub import hub
 from core.auth import SessionClaims, get_current_session, get_current_user_id
 from core.rate_limit import Limit, RateLimiter, get_rate_limiter
 
@@ -34,7 +35,7 @@ def get_auth_service(
     db: asyncpg.Connection = Depends(get_db_connection),
 ) -> AuthService:
     repository = AuthRepository(db)
-    return AuthService(repository)
+    return AuthService(repository, hub)
 
 
 def limit_per_client(action: str, limit: Limit):

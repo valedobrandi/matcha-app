@@ -24,6 +24,7 @@ from modules.tags.schemas import TagInput, TagOut
 from modules.tags.exceptions import TagContentProfanity
 from modules.tags.service import profanity
 from core.presence import ONLINE_WINDOW_SECONDS
+from core.ws_hub import ConnectionHub
 from typing import List, Optional, Protocol, TypeVar
 from fastapi import UploadFile
 import bcrypt
@@ -51,9 +52,11 @@ class UsersService:
             self,
             repository: UsersRepository,
             social_repo: ProfileSocialReads,
+            hub: ConnectionHub,
     ):
         self.repository = repository
         self.social_repo = social_repo
+        self.hub = hub
 
     async def get_profile(
             self,
@@ -240,7 +243,7 @@ class UsersService:
         if not bcrypt.checkpw(passwords.current_password.encode("utf-8"), user.password_hash.encode("utf-8")):
             raise InvalidCredentialsException()
 
-        auth = AuthService(AuthRepository(self.repository.connection))
+        auth = AuthService(AuthRepository(self.repository.connection), self.hub)
         hashed_password = auth.hash_password(passwords.new_password)
         async with self.repository.connection.transaction():
             await self.repository.change_password(hashed_password, current_user_id)
