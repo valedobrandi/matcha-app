@@ -90,10 +90,10 @@ function PhotosForm({
                     </ul>
                 )}
                 <Field>
-                    <FieldLabel htmlFor="user_photos"></FieldLabel>
+                    <FieldLabel htmlFor="replacement_photo"></FieldLabel>
                     <Input
                         ref={fileInputRef}
-                        id="user_photos"
+                        id="replacement_photo"
                         type="file"
                         accept="image/*"
                         className="hidden"
@@ -111,6 +111,7 @@ function PhotosForm({
                             <div key={p.id} style={{position: "relative"}}>
                             <img
                                 src={`${API_BASE_URL}${p.url}`}
+                                alt={p.is_profile_photo ? "Your profile photo" : "Your photo"}
                                 onClick={()=>handleModify(p.id)}
                                 className="w-34 h-34 md:w-54 md:h-54 object-cover rounded cursor-pointer"
                                 />
