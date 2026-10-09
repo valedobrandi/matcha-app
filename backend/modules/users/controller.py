@@ -29,12 +29,10 @@ uploads_router = APIRouter(include_in_schema=False)
 
 
 @uploads_router.get(UPLOADS_PATH + "{file_name}")
-async def get_upload(file_name: str, expires: int | None = None, signature: str | None = None) -> Response:
+async def get_upload(file_name: str, expires: str = "", signature: str = "") -> Response:
     path = UPLOAD_DIR / file_name
     if (
-        expires is None
-        or signature is None
-        or not upload_url_is_valid(file_name, expires, signature)
+        not upload_url_is_valid(file_name, expires, signature)
         or path.resolve().parent != UPLOAD_DIR.resolve()
         or not path.is_file()
     ):

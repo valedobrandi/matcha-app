@@ -26,12 +26,12 @@ def test_should_leave_the_url_unchanged_when_it_is_not_a_local_upload():
 
 def test_should_accept_a_signature_only_when_it_was_made_for_that_file_and_has_not_expired():
     query = query_of(sign_upload_url("/uploads/a.jpg", now=NOW))
-    expires, signature = int(query["expires"]), query["signature"]
+    expires, signature = query["expires"], query["signature"]
 
     assert upload_url_is_valid("a.jpg", expires, signature, now=NOW) is True
     assert upload_url_is_valid("b.jpg", expires, signature, now=NOW) is False
-    assert upload_url_is_valid("a.jpg", expires + VALIDITY_WINDOW_SECONDS, signature, now=NOW) is False
-    assert upload_url_is_valid("a.jpg", expires, signature, now=expires) is False
+    assert upload_url_is_valid("a.jpg", str(int(expires) + VALIDITY_WINDOW_SECONDS), signature, now=NOW) is False
+    assert upload_url_is_valid("a.jpg", expires, signature, now=int(expires)) is False
 
 
 def test_should_sign_photo_urls_only_when_a_response_is_written_as_json():

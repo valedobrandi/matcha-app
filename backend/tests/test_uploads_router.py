@@ -1,5 +1,6 @@
 from urllib.parse import parse_qs, urlsplit
 
+import pytest
 from fastapi.testclient import TestClient
 
 from core.upload_urls import sign_upload_url
@@ -29,5 +30,12 @@ def test_should_serve_the_photo_only_when_its_url_carries_a_valid_signature(monk
 
 def test_should_answer_an_empty_404_when_the_signature_is_not_ascii():
     response = client.get("/uploads/a.jpg?expires=9999999999&signature=%C3%A9")
+
+    assert (response.status_code, response.content) == (404, b"")
+
+
+@pytest.mark.parametrize("expires", ["abc", "1.5", "9" * 5000])
+def test_should_answer_an_empty_404_when_the_expiry_is_not_a_whole_number(expires):
+    response = client.get(f"/uploads/a.jpg?expires={expires}&signature=x")
 
     assert (response.status_code, response.content) == (404, b"")
