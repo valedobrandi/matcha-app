@@ -87,7 +87,7 @@ async def login(
     limiter: RateLimiter = Depends(limit_per_client("login", LOGIN_PER_CLIENT)),
     service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
-    account = f"login:account:{payload.username.lower()}"
+    account = f"login:account:{payload.username}"
     limiter.check(account, LOGIN_FAILURES_PER_ACCOUNT)
     try:
         token = await service.login_user(payload)

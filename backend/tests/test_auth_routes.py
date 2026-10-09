@@ -131,6 +131,17 @@ async def test_should_answer_429_with_retry_after_when_an_account_has_too_many_f
 
 
 @pytest.mark.asyncio
+async def test_should_keep_counting_failures_apart_when_two_usernames_differ_only_in_case(fresh_limiter):
+    app.dependency_overrides[get_auth_service] = RefusingService
+    for _ in range(LOGIN_FAILURES_PER_ACCOUNT.attempts):
+        assert (await post("/auth/login", {"username": "alice", "password": "Wrong1234"})).status_code == 401
+
+    response = await post("/auth/login", {"username": "Alice", "password": "Wrong1234"})
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_should_not_count_logins_against_the_account_when_they_succeed(fresh_limiter):
     app.dependency_overrides[get_auth_service] = AcceptingService
     body = {"username": "alice", "password": "Right1234"}
