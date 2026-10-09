@@ -58,9 +58,6 @@ function stubGeolocation(latitude: number, longitude: number) {
 describe('ProfileTab location from GPS', () => {
     beforeEach(() => {
         vi.stubGlobal('PointerEvent', class extends MouseEvent {})
-        const fetchThroughMsw = globalThis.fetch
-        vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) =>
-            fetchThroughMsw(input, { ...init, signal: undefined }))
     })
 
     afterEach(() => {
