@@ -21,7 +21,10 @@ every push to that user.
 ## Decision
 
 - The hub accepts at most `MAX_SOCKETS_PER_USER = 10` open sockets per user
-  (`backend/core/ws_hub.py`). `connect` refuses the eleventh before any database work.
+  (`backend/core/ws_hub.py`). The endpoint refuses the eleventh before any database work
+  (`has_room`). A socket takes a slot only once its session has been checked, and `connect` checks
+  the cap again at that point, so parallel handshakes cannot pass it and a token whose session has
+  ended cannot hold the user's slots.
 - The endpoint closes a refused socket with `1013` ("Try Again Later").
 - The client needs no change: it treats every close code except `1008` as transient and reconnects
   with its backoff (at most 5 s), so a tab over the cap gets its socket as soon as another tab

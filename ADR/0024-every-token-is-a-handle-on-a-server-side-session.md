@@ -27,7 +27,8 @@ scores any security flaw 0 (`docs/fr.subject.md:271`).
   carries its id as `sid`.
 - **Checking:** HTTP auth decodes the token, then checks that its session is open, not revoked and
   not expired; otherwise `401 INVALID_TOKEN`, which the frontend already treats as a logout. The
-  socket runs the same check after it registers, so a revocation landing during the handshake
+  socket runs the same check before it joins the hub, so an ended session never receives an event
+  or takes a slot, and again once it has joined, so a revocation landing during the handshake
   still closes it.
 - **Ending:**
   - `POST /auth/logout` ends the caller's session;
@@ -63,5 +64,6 @@ every client, for more moving parts than A.
 
 A gives each event the scope it should have: logout ends one session, a credential change ends the
 others, a reset ends all. Recording revocations instead of updating rows keeps an audit trail and
-never destroys data, and checking after the socket registers leaves no window for an ended session
-to keep receiving events.
+never destroys data. Checking the socket's session before it joins the hub keeps an ended session
+from receiving events, and checking again once it has joined leaves no window for a revocation
+landing in between.

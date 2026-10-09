@@ -48,6 +48,12 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     if identity is None:
         await websocket.close(code=INVALID_TOKEN_CLOSE_CODE)
         return
+    if not hub.has_room(identity.user_id):
+        await websocket.close(code=TOO_MANY_SOCKETS_CLOSE_CODE)
+        return
+    if not await session_is_active(identity):
+        await websocket.close(code=INVALID_TOKEN_CLOSE_CODE)
+        return
     if not hub.connect(identity.user_id, websocket, identity.session_id):
         await websocket.close(code=TOO_MANY_SOCKETS_CLOSE_CODE)
         return

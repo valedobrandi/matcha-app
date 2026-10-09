@@ -92,6 +92,53 @@ def test_should_close_with_1008_and_drop_the_socket_when_the_session_has_ended(m
     assert 43 not in hub._connections
 
 
+def test_should_neither_push_to_nor_count_the_socket_when_its_session_has_ended(monkeypatch):
+    sockets_while_checked = []
+
+    async def ended_session(identity) -> bool:
+        sockets_while_checked.append(len(hub._connections.get(identity.user_id, {})))
+        await hub.push(identity.user_id, {"type": "notification", "payload": None})
+        return False
+
+    monkeypatch.setattr(controller, "session_is_active", ended_session)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_text(auth_frame(make_token(45)))
+        assert close_code(websocket) == 1008
+    assert sockets_while_checked == [0]
+    assert 45 not in hub._connections
+
+
+def test_should_close_with_1008_when_the_session_ends_while_the_socket_joins_the_hub(monkeypatch):
+    answers = iter([True, False])
+
+    async def session_ends_meanwhile(identity) -> bool:
+        return next(answers)
+
+    monkeypatch.setattr(controller, "session_is_active", session_ends_meanwhile)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_text(auth_frame(make_token(46)))
+        assert close_code(websocket) == 1008
+    assert 46 not in hub._connections
+
+
+def test_should_close_with_1013_when_the_last_slot_is_taken_while_the_session_is_checked(monkeypatch):
+    monkeypatch.setattr(ws_hub, "MAX_SOCKETS_PER_USER", 1)
+    other_tab = object()
+
+    async def slot_taken_meanwhile(identity) -> bool:
+        hub.connect(identity.user_id, other_tab, identity.session_id)
+        return True
+
+    monkeypatch.setattr(controller, "session_is_active", slot_taken_meanwhile)
+    try:
+        with client.websocket_connect("/ws") as websocket:
+            websocket.send_text(auth_frame(make_token(47)))
+            assert close_code(websocket) == 1013
+        assert list(hub._connections[47]) == [other_tab]
+    finally:
+        hub.disconnect(47, other_tab)
+
+
 def test_should_close_with_1013_when_the_user_already_has_as_many_sockets_as_allowed(monkeypatch):
     monkeypatch.setattr(ws_hub, "MAX_SOCKETS_PER_USER", 1)
     with client.websocket_connect("/ws") as first:

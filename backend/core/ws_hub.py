@@ -53,11 +53,13 @@ class ConnectionHub:
     def __init__(self) -> None:
         self._connections: Dict[int, Dict[WebSocket, uuid.UUID]] = {}
 
+    def has_room(self, user_id: int) -> bool:
+        return len(self._connections.get(user_id, ())) < MAX_SOCKETS_PER_USER
+
     def connect(self, user_id: int, websocket: WebSocket, session_id: uuid.UUID) -> bool:
-        sockets = self._connections.setdefault(user_id, {})
-        if len(sockets) >= MAX_SOCKETS_PER_USER:
+        if not self.has_room(user_id):
             return False
-        sockets[websocket] = session_id
+        self._connections.setdefault(user_id, {})[websocket] = session_id
         return True
 
     def disconnect(self, user_id: int, websocket: WebSocket) -> None:
