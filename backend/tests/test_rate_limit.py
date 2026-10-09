@@ -51,3 +51,14 @@ def test_should_not_count_an_attempt_when_it_is_only_checked():
         limiter.check("key", THREE_PER_MINUTE)
 
     limiter.hit("key", THREE_PER_MINUTE)
+
+
+def test_should_allow_an_attempt_again_when_an_earlier_one_is_released():
+    limiter = RateLimiter(Clock())
+    attempts = [limiter.hit("key", THREE_PER_MINUTE) for _ in range(3)]
+
+    limiter.release("key", attempts[1])
+
+    limiter.hit("key", THREE_PER_MINUTE)
+    with pytest.raises(TooManyRequestsException):
+        limiter.hit("key", THREE_PER_MINUTE)

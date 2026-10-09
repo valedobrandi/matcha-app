@@ -39,11 +39,11 @@ class RateLimiter:
         if len(attempts) >= limit.attempts:
             raise TooManyRequestsException(retry_after=max(1, math.ceil(attempts[0] + limit.per_seconds - now)))
 
-    def hit(self, key: str, limit: Limit) -> None:
+    def hit(self, key: str, limit: Limit) -> float:
         self.check(key, limit)
-        self.record(key)
+        return self.record(key)
 
-    def record(self, key: str) -> None:
+    def record(self, key: str) -> float:
         now = self._clock()
         if len(self._attempts) > self._sweep_above:
             self._attempts = {
@@ -53,6 +53,12 @@ class RateLimiter:
             }
             self._sweep_above = max(SWEEP_ABOVE_KEYS, 2 * len(self._attempts))
         self._attempts.setdefault(key, deque()).append(now)
+        return now
+
+    def release(self, key: str, at: float) -> None:
+        attempts = self._attempts.get(key)
+        if attempts is not None and at in attempts:
+            attempts.remove(at)
 
 
 rate_limiter = RateLimiter()

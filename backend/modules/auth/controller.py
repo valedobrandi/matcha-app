@@ -14,7 +14,6 @@ from modules.auth.schemas import (
     ResendVerificationInput,
     ResendVerificationResponse,
 )
-from modules.auth.exceptions import InvalidCredentialsException
 from modules.auth.service import AuthService
 from modules.auth.repository import AuthRepository
 from core.database import get_db_connection
@@ -90,12 +89,9 @@ async def login(
 ) -> TokenResponse:
     client = request.client.host if request.client else "unknown"
     account = f"login:account:{payload.username}:client:{client}"
-    limiter.check(account, LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT)
-    try:
-        token = await service.login_user(payload)
-    except InvalidCredentialsException:
-        limiter.record(account)
-        raise
+    attempt = limiter.hit(account, LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT)
+    token = await service.login_user(payload)
+    limiter.release(account, attempt)
     return {"access_token": token, "token_type": "bearer"}
 
 

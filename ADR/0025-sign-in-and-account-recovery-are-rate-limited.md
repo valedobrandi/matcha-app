@@ -32,8 +32,9 @@ security flaw 0 (`docs/fr.subject.md:271`).
   | `POST /auth/reset-password` | the same shared 10 per 15 minutes | — |
 
 - The per-client limit is a dependency resolved before the service, so a refused request never
-  takes a database connection. Only failed logins count against an account, so signing in often
-  never locks a user out.
+  takes a database connection. A login attempt counts against its username and address as soon as
+  it arrives and is taken back once it signs in, so parallel attempts see each other and signing in
+  often never locks a user out.
 - **Frontend:** the code has its own message, "Too many attempts. Please wait a few minutes and try
   again."
 
@@ -64,8 +65,7 @@ does. Login failures are counted per username and address together: a key shared
 would let anyone who knows a username, shown on every profile, lock its owner out with ten wrong
 passwords every fifteen minutes. The cost is that a guessing attack spread over many addresses is
 bounded per address only; the password rules (no dictionary words, mixed case and digits) keep it
-impractical. Counting only failures keeps the key from locking out an owner who signs in often.
-Each recovery endpoint keeps its own per-email limit, so the requests that use up an email's reset
-budget each mail that address a working link: someone who knows the email can make the owner wait
-for a new link, never leave them without one. If the API is ever scaled to several processes, the
-limiter moves to a shared store behind the same `check`/`hit` interface.
+impractical. Each recovery endpoint keeps its own per-email limit, so the requests that use up an
+email's reset budget each mail that address a working link: someone who knows the email can make
+the owner wait for a new link, never leave them without one. If the API is ever scaled to several
+processes, the limiter moves to a shared store behind the same `check`/`hit` interface.

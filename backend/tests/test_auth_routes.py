@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 
 import pytest
@@ -93,6 +94,12 @@ class RefusingService:
         raise InvalidCredentialsException()
 
 
+class SlowRefusingService:
+    async def login_user(self, payload):
+        await asyncio.sleep(0.05)
+        raise InvalidCredentialsException()
+
+
 class OwnerPasswordService:
     async def login_user(self, payload):
         if payload.password != "Right1234":
@@ -138,6 +145,18 @@ async def test_should_answer_429_with_retry_after_when_an_account_has_too_many_f
 
     assert (refused.status_code, refused.json()["code"]) == (429, "TOO_MANY_REQUESTS")
     assert int(refused.headers["Retry-After"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_should_refuse_the_failed_logins_beyond_the_limit_when_they_arrive_together(fresh_limiter):
+    app.dependency_overrides[get_auth_service] = SlowRefusingService
+    body = {"username": "alice", "password": "Wrong1234"}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        responses = await asyncio.gather(*(client.post("/auth/login", json=body) for _ in range(15)))
+
+    statuses = sorted(response.status_code for response in responses)
+
+    assert statuses == [401] * LOGIN_FAILURES_PER_ACCOUNT_AND_CLIENT.attempts + [429] * 5
 
 
 @pytest.mark.asyncio
