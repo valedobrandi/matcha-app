@@ -15,6 +15,7 @@ class TagsRepository:
         return [model.model_validate(dict(row)) for row in rows]
 
     async def search_tags(self, search: str) -> List[TagOut]:
-        query = "SELECT id, name FROM tags WHERE name ILIKE $1 LIMIT 10"
-        return await self._fetch(TagOut, query, f"%{search}%")
+        escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        query = "SELECT id, name FROM tags WHERE name ILIKE $1 ESCAPE '\\' LIMIT 10"
+        return await self._fetch(TagOut, query, f"%{escaped}%")
 
