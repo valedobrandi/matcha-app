@@ -3,7 +3,7 @@ import logging
 import uuid
 import pytest
 from fastapi import WebSocketDisconnect
-from core.ws_hub import ConnectionHub, SocketIdentity, decode_socket_identity
+from core.ws_hub import MAX_SOCKETS_PER_USER, ConnectionHub, SocketIdentity, decode_socket_identity
 from core.config import settings
 import jwt
 import datetime
@@ -184,6 +184,20 @@ async def test_should_log_and_keep_every_tab_when_the_envelope_is_not_json(caplo
     assert [record.levelname for record in caplog.records] == ["ERROR"]
     assert first_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
     assert second_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
+
+
+@pytest.mark.asyncio
+async def test_should_refuse_a_socket_beyond_the_cap_and_keep_pushing_to_the_others():
+    hub = ConnectionHub()
+    tabs = [FakeWebSocket() for _ in range(MAX_SOCKETS_PER_USER)]
+    assert all(hub.connect(1, tab, SESSION) for tab in tabs)
+    extra = FakeWebSocket()
+
+    assert hub.connect(1, extra, SESSION) is False
+    await hub.push(1, {"type": "notification", "payload": {"id": 1}})
+
+    assert extra.sent == []
+    assert all(tab.sent == [{"type": "notification", "payload": {"id": 1}}] for tab in tabs)
 
 
 @pytest.mark.asyncio

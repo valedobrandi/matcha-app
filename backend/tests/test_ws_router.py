@@ -7,6 +7,7 @@ from starlette.websockets import WebSocketDisconnect
 import pytest
 import time
 import jwt
+from core import ws_hub
 from core.config import settings
 from core.ws_hub import hub
 from modules.realtime import controller
@@ -89,6 +90,17 @@ def test_should_close_with_1008_and_drop_the_socket_when_the_session_has_ended(m
         websocket.send_text(auth_frame(make_token(43)))
         assert close_code(websocket) == 1008
     assert 43 not in hub._connections
+
+
+def test_should_close_with_1013_when_the_user_already_has_as_many_sockets_as_allowed(monkeypatch):
+    monkeypatch.setattr(ws_hub, "MAX_SOCKETS_PER_USER", 1)
+    with client.websocket_connect("/ws") as first:
+        first.send_text(auth_frame(make_token(44)))
+        assert first.receive_text() == READY
+        with client.websocket_connect("/ws") as second:
+            second.send_text(auth_frame(make_token(44)))
+            assert close_code(second) == 1013
+        assert len(hub._connections[44]) == 1
 
 
 def test_should_answer_pong_when_client_sends_ping():

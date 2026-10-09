@@ -290,6 +290,23 @@ describe('RealtimeProvider', () => {
         expect(connections).toBe(1)
     })
 
+    it('does keep reconnecting without logging out when the server refuses an extra socket with 1013', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        let connections = 0
+        server.use(onConnection(({ client }) => {
+            connections += 1
+            setTimeout(() => client.close(1013, 'too many sockets'))
+        }))
+        const authValue = makeAuthValue()
+
+        renderProvider(authValue)
+        await waitFor(() => expect(connections).toBe(1))
+        await vi.advanceTimersByTimeAsync(20_000)
+
+        expect(connections).toBeGreaterThan(1)
+        expect(authValue.logout).not.toHaveBeenCalled()
+    })
+
     it('does replace a socket that stops answering pings within 9 s without waiting for it to close', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true })
         let created = 0

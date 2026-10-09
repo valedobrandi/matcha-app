@@ -20,6 +20,7 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 SESSION_ENDED_CLOSE_CODE = 1008
+MAX_SOCKETS_PER_USER = 10
 
 
 class SocketIdentity(NamedTuple):
@@ -52,8 +53,12 @@ class ConnectionHub:
     def __init__(self) -> None:
         self._connections: Dict[int, Dict[WebSocket, uuid.UUID]] = {}
 
-    def connect(self, user_id: int, websocket: WebSocket, session_id: uuid.UUID) -> None:
-        self._connections.setdefault(user_id, {})[websocket] = session_id
+    def connect(self, user_id: int, websocket: WebSocket, session_id: uuid.UUID) -> bool:
+        sockets = self._connections.setdefault(user_id, {})
+        if len(sockets) >= MAX_SOCKETS_PER_USER:
+            return False
+        sockets[websocket] = session_id
+        return True
 
     def disconnect(self, user_id: int, websocket: WebSocket) -> None:
         sockets = self._connections.get(user_id)

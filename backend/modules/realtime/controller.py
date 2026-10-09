@@ -14,6 +14,7 @@ PONG = '{"type":"pong","payload":null}'
 READY = '{"type":"ready","payload":null}'
 AUTH_TIMEOUT_SECONDS = 5.0
 INVALID_TOKEN_CLOSE_CODE = 1008
+TOO_MANY_SOCKETS_CLOSE_CODE = 1013
 AUTH_TIMEOUT_CLOSE_CODE = 4408
 
 
@@ -48,7 +49,9 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     if identity is None:
         await websocket.close(code=INVALID_TOKEN_CLOSE_CODE)
         return
-    hub.connect(identity.user_id, websocket, identity.session_id)
+    if not hub.connect(identity.user_id, websocket, identity.session_id):
+        await websocket.close(code=TOO_MANY_SOCKETS_CLOSE_CODE)
+        return
     try:
         if not await session_is_active(identity):
             await websocket.close(code=INVALID_TOKEN_CLOSE_CODE)
