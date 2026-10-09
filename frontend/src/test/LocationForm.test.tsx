@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { http, HttpResponse } from 'msw'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { delay, http, HttpResponse } from 'msw'
+import { fireEvent, render, screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react'
 import { API_BASE_URL } from '@/api/client'
 import LocationForm from '@/components/location-form'
 import useLocationForm from '@/users/useLocationForm'
@@ -82,6 +82,20 @@ describe('LocationForm with useLocationForm', () => {
         expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
         releaseGeocoding()
         expect(await screen.findByText('Your location: Lyon')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
+    })
+
+    it('does drop the lookup of the previous text when the typed location changes', async () => {
+        server.use(http.get(NOMINATIM_SEARCH, () => delay('infinite')))
+        renderLocationStep()
+        const city = screen.getByLabelText('City or neighborhood')
+        fireEvent.change(city, { target: { value: 'Lyon' } })
+        fireEvent.blur(city)
+        const locating = screen.getByText('Getting your location...')
+
+        fireEvent.change(city, { target: { value: 'Paris' } })
+
+        await waitForElementToBeRemoved(locating)
         expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
     })
 

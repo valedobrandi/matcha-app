@@ -60,6 +60,7 @@ function useLocationInput(onLocationChange: (location: LocationValues) => void){
     }, [onLocationChange])
 
     const handleLocationTextChange = useCallback((text: string) => {
+        abortControlRef.current?.abort()
         onLocationChange({ latitude: null, longitude: null, location_label: text, location_consent: false })
     }, [onLocationChange])
 
