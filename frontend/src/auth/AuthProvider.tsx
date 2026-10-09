@@ -44,6 +44,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     queryClient.removeQueries({ queryKey: ['auth-me'] })
   }, [queryClient])
 
+  const signOut = useCallback(() => {
+    const token = accessToken
+    logout()
+    if (token !== null) void authApi.logout(token).catch(() => undefined)
+  }, [accessToken, logout])
+
   useEffect(() => {
     setOnUnauthorized(logout)
     return () => setOnUnauthorized(null)
@@ -66,9 +72,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       login,
       loginWithToken,
       logout,
+      signOut,
       refreshUser,
     }),
-    [accessToken, user, isLoading, login, loginWithToken, logout, refreshUser],
+    [accessToken, user, isLoading, login, loginWithToken, logout, signOut, refreshUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

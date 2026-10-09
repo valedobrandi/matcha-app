@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Collection, Dict, NamedTuple, Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
 import jwt
@@ -18,6 +18,8 @@ import jwt
 from core.config import settings
 
 logger = logging.getLogger(__name__)
+
+SESSION_ENDED_CLOSE_CODE = 1008
 
 
 class SocketIdentity(NamedTuple):
@@ -60,6 +62,16 @@ class ConnectionHub:
         sockets.pop(websocket, None)
         if not sockets:
             del self._connections[user_id]
+
+    async def end_sessions(self, user_id: int, session_ids: Collection[uuid.UUID]) -> None:
+        for websocket, session_id in tuple(self._connections.get(user_id, {}).items()):
+            if session_id not in session_ids:
+                continue
+            self.disconnect(user_id, websocket)
+            try:
+                await websocket.close(code=SESSION_ENDED_CLOSE_CODE)
+            except Exception:
+                logger.debug("Socket of user %s was already closed", user_id)
 
     async def push(self, user_id: int, envelope: dict[str, Any]) -> None:
         # Serialized once, outside the per-socket try: an envelope that is not JSON is logged and

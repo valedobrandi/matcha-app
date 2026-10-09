@@ -9,6 +9,7 @@ from modules.auth.schemas import (
     UserRegisterInput,
     TokenResponse,
     LoginInput,
+    LogoutResponse,
     RegisterResponse,
     ResendVerificationInput,
     ResendVerificationResponse,
@@ -16,7 +17,7 @@ from modules.auth.schemas import (
 from modules.auth.service import AuthService
 from modules.auth.repository import AuthRepository
 from core.database import get_db_connection
-from core.auth import get_current_user_id
+from core.auth import SessionClaims, get_current_session, get_current_user_id
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -61,6 +62,15 @@ async def login(
 ) -> TokenResponse:
     token = await service.login_user(payload)
     return {"access_token": token, "token_type": "bearer"}
+
+
+@auth_router.post("/logout", response_model=LogoutResponse)
+async def logout(
+    session: SessionClaims = Depends(get_current_session),
+    service: AuthService = Depends(get_auth_service),
+) -> LogoutResponse:
+    await service.logout(session.session_id, session.user_id)
+    return {"message": "Signed out."}
 
 
 @auth_router.post("/callback/42", response_model=TokenResponse)

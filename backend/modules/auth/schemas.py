@@ -96,6 +96,9 @@ class ResendVerificationInput(BaseModel):
 class ResendVerificationResponse(ApiModel):
     message: str
 
+class LogoutResponse(ApiModel):
+    message: str
+
 class CurrentUserResponse(ApiModel):
     id: int
     username: str

@@ -2,6 +2,7 @@ import { apiGet, apiPost } from "./client";
 import type {
     ForgotPasswordInput,
     LoginInput,
+    LogoutResponse,
     MessageResponse,
     RegisterInput,
     ResetPasswordInput,
@@ -16,6 +17,10 @@ export function register(payload: RegisterInput): Promise<MessageResponse> {
 
 export function login(payload: LoginInput): Promise<TokenResponse> {
     return apiPost<TokenResponse>('/auth/login', payload)
+}
+
+export function logout(token: string): Promise<LogoutResponse> {
+    return apiPost<LogoutResponse>('/auth/logout', {}, { token })
 }
 
 export function verifyEmail(token: string): Promise<TokenResponse> {

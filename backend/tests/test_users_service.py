@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from datetime import datetime, UTC
 from modules.users.schemas import (
@@ -45,6 +47,23 @@ class FakeUserAuth:
         self.password_hash = password_hash
         self.is_verified = is_verified
 
+
+SESSION_ID = uuid.UUID("00000000-0000-4000-8000-000000000001")
+
+
+class FakeConnection:
+    def transaction(self):
+        return self
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc_info):
+        return False
+
+    async def fetch(self, query, *args):
+        return []
+
 @pytest.mark.asyncio
 async def test_change_password_wrong_current_password(monkeypatch):
     oldPwd = bcrypt.hashpw(b"OldPwd123!", bcrypt.gensalt()).decode("utf-8")
@@ -63,7 +82,7 @@ async def test_change_password_wrong_current_password(monkeypatch):
     )
 
     with pytest.raises(InvalidCredentialsException):
-        await service.change_password(passwords, 1)
+        await service.change_password(passwords, 1, SESSION_ID)
 
 
 @pytest.mark.asyncio
@@ -83,7 +102,7 @@ async def test_change_password_no_password_set(monkeypatch):
     )
 
     with pytest.raises(NoPasswordSetException):
-        await service.change_password(passwords, 1)
+        await service.change_password(passwords, 1, SESSION_ID)
 
 
 @pytest.mark.asyncio
@@ -98,7 +117,7 @@ async def test_change_password_success(monkeypatch):
 
     class FakeUserRepo:
         def __init__(self):
-            self.connection = None
+            self.connection = FakeConnection()
             self.change_password_called = None
 
         async def change_password(self, hashed_password, current_user_id):
@@ -113,7 +132,7 @@ async def test_change_password_success(monkeypatch):
         confirm_password="Xk9#mQvzTr4!!",
     )
 
-    res = await service.change_password(passwords, 1)
+    res = await service.change_password(passwords, 1, SESSION_ID)
 
     assert res is None
 

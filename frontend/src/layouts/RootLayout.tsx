@@ -15,7 +15,7 @@ import { RealtimeProvider } from '@/realtime/RealtimeProvider'
 import { NotificationBell } from '@/components/NotificationBell'
 
 export function RootLayout() {
-  const { logout } = useAuth()
+  const { signOut } = useAuth()
 
   return (
     <RealtimeProvider>
@@ -34,7 +34,7 @@ export function RootLayout() {
             <SearchForm />
             <div className="ml-auto flex items-center gap-1">
               <NotificationBell />
-              <Button variant="ghost" size="sm" type="button" onClick={logout}>
+              <Button variant="ghost" size="sm" type="button" onClick={signOut}>
                 Logout
               </Button>
             </div>

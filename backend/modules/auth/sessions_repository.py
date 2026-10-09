@@ -37,3 +37,29 @@ class SessionsRepository:
             session_id,
             user_id,
         )
+
+    async def revoke(self, session_id: uuid.UUID) -> None:
+        await self.connection.execute(
+            """
+            INSERT INTO auth_session_revocations (session_id)
+            VALUES ($1)
+            ON CONFLICT (session_id) DO NOTHING
+            """,
+            session_id,
+        )
+
+    async def revoke_all(self, user_id: int, keep: uuid.UUID | None = None) -> list[uuid.UUID]:
+        rows = await self.connection.fetch(
+            """
+            INSERT INTO auth_session_revocations (session_id)
+            SELECT s.id FROM auth_sessions s
+            WHERE s.user_id = $1
+                AND s.expires_at > NOW()
+                AND s.id IS DISTINCT FROM $2
+            ON CONFLICT (session_id) DO NOTHING
+            RETURNING session_id
+            """,
+            user_id,
+            keep,
+        )
+        return [row["session_id"] for row in rows]

@@ -13,6 +13,7 @@ import time
 class FakeWebSocket:
     def __init__(self):
         self.texts = []
+        self.close_code = None
 
     @property
     def sent(self):
@@ -20,6 +21,9 @@ class FakeWebSocket:
 
     async def send_text(self, data):
         self.texts.append(data)
+
+    async def close(self, code=1000):
+        self.close_code = code
 
 
 class ClosedWebSocket(FakeWebSocket):
@@ -180,6 +184,22 @@ async def test_should_log_and_keep_every_tab_when_the_envelope_is_not_json(caplo
     assert [record.levelname for record in caplog.records] == ["ERROR"]
     assert first_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
     assert second_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
+
+
+@pytest.mark.asyncio
+async def test_should_close_and_drop_only_the_sockets_of_ended_sessions():
+    hub = ConnectionHub()
+    ended_session = uuid.UUID("00000000-0000-4000-8000-000000000002")
+    kept_tab, ended_tab = FakeWebSocket(), FakeWebSocket()
+    hub.connect(1, kept_tab, SESSION)
+    hub.connect(1, ended_tab, ended_session)
+
+    await hub.end_sessions(1, [ended_session])
+    await hub.push(1, {"type": "notification", "payload": {"id": 1}})
+
+    assert (kept_tab.close_code, ended_tab.close_code) == (None, 1008)
+    assert kept_tab.sent == [{"type": "notification", "payload": {"id": 1}}]
+    assert ended_tab.sent == []
 
 
 @pytest.mark.asyncio

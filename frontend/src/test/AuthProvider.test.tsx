@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { server } from './server'
 import { API_BASE_URL } from '../api/client'
 import { AuthProvider } from '../auth/AuthProvider'
@@ -16,13 +16,14 @@ const ME = {
 }
 
 function Probe() {
-  const { user, isLoading, isAuthenticated, logout, refreshUser } = useAuth()
+  const { user, isLoading, isAuthenticated, logout, signOut, refreshUser } = useAuth()
   return (
     <>
       <p data-testid="state">
         {isLoading ? 'loading' : user ? `user:${user.username}` : isAuthenticated ? 'token-only' : 'anonymous'}
       </p>
       <button onClick={logout}>logout</button>
+      <button onClick={signOut}>sign out</button>
       <button onClick={() => void refreshUser()}>refresh</button>
     </>
   )
@@ -85,6 +86,26 @@ describe('AuthProvider', () => {
 
     expect(await screen.findByText('anonymous')).toBeInTheDocument()
     expect(getAccessToken()).toBeNull()
+  })
+
+  it('does end the session on the server and forget the token when the user signs out', async () => {
+    setAccessToken('stored-token')
+    const endedWith: (string | null)[] = []
+    server.use(
+      http.get(ME_URL, () => HttpResponse.json(ME)),
+      http.post(`${API_BASE_URL}/auth/logout`, ({ request }) => {
+        endedWith.push(request.headers.get('Authorization'))
+        return HttpResponse.json({ message: 'Signed out.' })
+      }),
+    )
+    renderProvider()
+    await screen.findByText('user:alice')
+
+    fireEvent.click(screen.getByRole('button', { name: 'sign out' }))
+
+    expect(await screen.findByText('anonymous')).toBeInTheDocument()
+    expect(getAccessToken()).toBeNull()
+    await waitFor(() => expect(endedWith).toEqual(['Bearer stored-token']))
   })
 
   it('does show the new profile state when the user is refreshed', async () => {

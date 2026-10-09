@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timezone
 from modules.users.repository import UsersRepository
 from modules.users.schemas import (
@@ -225,6 +226,7 @@ class UsersService:
         self,
         passwords: PasswordChangeInput,
         current_user_id: int,
+        current_session_id: uuid.UUID,
 ) -> None:
         from modules.auth.service import AuthService
         from modules.auth.repository import AuthRepository
@@ -238,5 +240,8 @@ class UsersService:
         if not bcrypt.checkpw(passwords.current_password.encode("utf-8"), user.password_hash.encode("utf-8")):
             raise InvalidCredentialsException()
 
-        hashed_password = AuthService(AuthRepository(self.repository.connection)).hash_password(passwords.new_password)
-        await self.repository.change_password(hashed_password, current_user_id)
+        auth = AuthService(AuthRepository(self.repository.connection))
+        hashed_password = auth.hash_password(passwords.new_password)
+        async with self.repository.connection.transaction():
+            await self.repository.change_password(hashed_password, current_user_id)
+            await auth.end_sessions(current_user_id, keep=current_session_id)

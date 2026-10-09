@@ -18,6 +18,7 @@ export function makeAuthValue(
     login: vi.fn(async () => {}),
     loginWithToken: vi.fn(async () => {}),
     logout: vi.fn(),
+    signOut: vi.fn(),
     refreshUser: vi.fn(async () => {}),
     ...overrides,
   }

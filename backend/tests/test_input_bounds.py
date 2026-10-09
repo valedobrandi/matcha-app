@@ -1,7 +1,9 @@
+import uuid
+
 import pytest
 from fastapi.testclient import TestClient
 
-from core.auth import get_current_user_id
+from core.auth import SessionClaims, get_current_session, get_current_user_id
 from core.database import get_db_connection
 from core.presence import get_current_user_id_and_touch
 from main import app
@@ -30,6 +32,7 @@ def requests_never_reach_the_database():
     app.dependency_overrides[get_db_connection] = lambda: None
     app.dependency_overrides[get_current_user_id] = lambda: 1
     app.dependency_overrides[get_current_user_id_and_touch] = lambda: 1
+    app.dependency_overrides[get_current_session] = lambda: SessionClaims(user_id=1, session_id=uuid.uuid4())
     yield
     app.dependency_overrides.clear()
 

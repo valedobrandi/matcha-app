@@ -5,6 +5,7 @@ import bcrypt
 import httpx
 from integrations.fortytwo_client import FortyTwoClient, FortyTwoClientException
 from core.config import settings
+from core.ws_hub import ConnectionHub, hub as connection_hub
 from modules.auth.schemas import CurrentUserResponse, LoginInput, UserRecord, UserRegisterInput
 from modules.auth.repository import AuthRepository
 from modules.auth.sessions_repository import SessionsRepository
@@ -28,9 +29,11 @@ class AuthService:
         repository: AuthRepository,
         auth_client: FortyTwoClient | None = None,
         sessions: SessionsRepository | None = None,
+        hub: ConnectionHub | None = None,
     ):
         self.repository = repository
         self.sessions = sessions or SessionsRepository(repository.connection)
+        self.hub = hub or connection_hub
         self.auth_client = auth_client or FortyTwoClient(
             settings.FT_CLIENT_ID, settings.FT_CLIENT_SECRET, settings.FT_REDIRECT_URI
         )
@@ -149,10 +152,20 @@ class AuthService:
     async def reset_password(self, token: str, new_password: str) -> str:
         hashed_str = self._hash_password(new_password)
 
-        user = await self.repository.reset_password_with_token(token, hashed_str)
-        if not user:
-            raise InvalidResetTokenException()
-        return await self.issue_token(user.id)
+        async with self.repository.connection.transaction():
+            user = await self.repository.reset_password_with_token(token, hashed_str)
+            if not user:
+                raise InvalidResetTokenException()
+            await self.end_sessions(user.id)
+            return await self.issue_token(user.id)
+
+    async def logout(self, session_id: uuid.UUID, user_id: int) -> None:
+        await self.sessions.revoke(session_id)
+        await self.hub.end_sessions(user_id, [session_id])
+
+    async def end_sessions(self, user_id: int, keep: uuid.UUID | None = None) -> None:
+        ended = await self.sessions.revoke_all(user_id, keep)
+        await self.hub.end_sessions(user_id, ended)
 
     async def get_current_user(self, user_id: int) -> CurrentUserResponse:
         user = await self.repository.find_by_id(user_id)

@@ -10,6 +10,7 @@ type AuthContextValue = {
   login: (payload: LoginInput) => Promise<void>
   loginWithToken: (token: string) => Promise<void>
   logout: () => void
+  signOut: () => void
   refreshUser: () => Promise<void>
 }
 

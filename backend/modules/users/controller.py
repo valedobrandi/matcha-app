@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, UploadFile, File, status
 import asyncpg
+from core.auth import SessionClaims, get_current_session
 from core.database import get_db_connection
 from core.presence import get_current_user_id_and_touch
 from modules.users.repository import UsersRepository
@@ -156,9 +157,10 @@ async def patch_me(
 async def change_password(
     payload: PasswordChangeInput,
     current_user_id: int = Depends(get_current_user_id_and_touch),
+    session: SessionClaims = Depends(get_current_session),
     service: UsersService = Depends(get_users_service),
 ) -> dict[str, str]:
-    await service.change_password(payload, current_user_id)
+    await service.change_password(payload, current_user_id, session.session_id)
     return {"message": "Password changed successfully."}
 
 @users_router.get(

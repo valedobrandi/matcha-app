@@ -36,10 +36,22 @@ SESSION_ID = uuid.UUID("00000000-0000-4000-8000-000000000001")
 class FakeSessions:
     def __init__(self) -> None:
         self.opened: list[int] = []
+        self.revoked: list[uuid.UUID] = []
 
     async def open(self, user_id, lifetime) -> uuid.UUID:
         self.opened.append(user_id)
         return SESSION_ID
+
+    async def revoke(self, session_id) -> None:
+        self.revoked.append(session_id)
+
+
+class FakeHub:
+    def __init__(self) -> None:
+        self.ended: list[tuple[int, list[uuid.UUID]]] = []
+
+    async def end_sessions(self, user_id, session_ids) -> None:
+        self.ended.append((user_id, list(session_ids)))
 
 
 def test_hash_password_returns_bcrypt_hash() -> None:
@@ -58,6 +70,17 @@ async def test_should_open_a_session_and_name_it_in_the_token_when_a_token_is_is
     claims = jwt.decode(token, settings.JWT_SECRET.get_secret_value(), algorithms=[settings.JWT_ALGORITHM])
     assert sessions.opened == [7]
     assert (claims["sub"], claims["sid"]) == ("7", str(SESSION_ID))
+
+
+@pytest.mark.asyncio
+async def test_should_revoke_the_session_and_close_its_sockets_when_the_user_logs_out() -> None:
+    sessions, hub = FakeSessions(), FakeHub()
+    service = AuthService(FakeRepository(), sessions=sessions, hub=hub)
+
+    await service.logout(SESSION_ID, 7)
+
+    assert sessions.revoked == [SESSION_ID]
+    assert hub.ended == [(7, [SESSION_ID])]
 
 
 @pytest.mark.asyncio
