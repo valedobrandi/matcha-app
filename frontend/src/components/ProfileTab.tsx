@@ -116,7 +116,7 @@ function ProfileTab({profile, onSaved} : {profile : UserProfile, onSaved: ()=>vo
             </div>
             {editing && (
                 <div>
-                    <Button onClick={handleSubmit(data => profileUpdate.mutate(data))}>Save</Button>
+                    <Button onClick={handleSubmit(data => profileUpdate.mutate(data))} disabled={isLocating}>Save</Button>
                     <Button variant="outline" onClick={handleCancel}>Cancel</Button>
                 </div>
             )}

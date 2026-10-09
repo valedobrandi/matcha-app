@@ -66,6 +66,25 @@ describe('LocationForm with useLocationForm', () => {
         expect(sentLocations).toEqual([])
     })
 
+    it('does keep Next disabled while the typed location is looked up', async () => {
+        let releaseGeocoding = () => {}
+        const geocoding = new Promise<void>(resolve => { releaseGeocoding = resolve })
+        server.use(http.get(NOMINATIM_SEARCH, async () => {
+            await geocoding
+            return HttpResponse.json([{ lat: '45.7578137', lon: '4.8320114' }])
+        }))
+        renderLocationStep()
+        const city = screen.getByLabelText('City or neighborhood')
+
+        fireEvent.change(city, { target: { value: 'Lyon' } })
+        fireEvent.blur(city)
+
+        expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+        releaseGeocoding()
+        expect(await screen.findByText('Your location: Lyon')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
+    })
+
     it('does ask for the location and not go on when none is given', async () => {
         const onSuccess = renderLocationStep()
 

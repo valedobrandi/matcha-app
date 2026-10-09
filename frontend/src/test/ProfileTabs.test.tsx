@@ -44,6 +44,7 @@ function changePassword() {
 }
 
 const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse'
+const NOMINATIM_SEARCH = 'https://nominatim.openstreetmap.org/search'
 
 function stubGeolocation(latitude: number, longitude: number) {
     Object.defineProperty(navigator, 'geolocation', {
@@ -203,6 +204,25 @@ describe('ProfileTab', () => {
         expect(await screen.findByText('Please enter your location manually or enable location sharing.')).toBeInTheDocument()
         expect(onSaved).not.toHaveBeenCalled()
         expect(sentBodies).toEqual([])
+    })
+
+    it('does keep Save disabled while the typed location is looked up', async () => {
+        serveMyTagsAndPhotos()
+        let releaseGeocoding = () => {}
+        const geocoding = new Promise<void>(resolve => { releaseGeocoding = resolve })
+        server.use(http.get(NOMINATIM_SEARCH, async () => {
+            await geocoding
+            return HttpResponse.json([{ lat: '45.7578137', lon: '4.8320114' }])
+        }))
+        renderProfileTab(vi.fn(), { ...PROFILE, location_consent: false })
+        const city = screen.getByLabelText('City or neighborhood')
+
+        fireEvent.change(city, { target: { value: 'Lyon' } })
+        fireEvent.blur(city)
+
+        expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+        releaseGeocoding()
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled())
     })
 
     it('does name the manual location field when the location is not shared', () => {

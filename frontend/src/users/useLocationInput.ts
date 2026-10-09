@@ -73,6 +73,7 @@ function useLocationInput(onLocationChange: (location: LocationValues) => void){
         abortControlRef.current = control
 
         setLocationError(null)
+        setIsLocating(true)
         try {
             const res = await fetch(
                 `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&limit=1`,
@@ -96,6 +97,9 @@ function useLocationInput(onLocationChange: (location: LocationValues) => void){
         } catch (err) {
             if ((err as Error).name !== "AbortError")
                 setLocationError("Could not resolve this address.")
+        } finally {
+            if (abortControlRef.current === control)
+                setIsLocating(false)
         }
 
     }, [onLocationChange])
