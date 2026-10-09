@@ -4,7 +4,7 @@ import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from core.database import db_manager
-from core.ws_hub import SocketIdentity, hub, decode_socket_identity
+from core.ws_hub import INVALID_TOKEN_CLOSE_CODE, SocketIdentity, hub, decode_socket_identity
 from modules.auth.sessions_repository import SessionsRepository
 
 realtime_router = APIRouter(tags=["realtime"])
@@ -13,7 +13,6 @@ PING = '{"type":"ping","payload":null}'
 PONG = '{"type":"pong","payload":null}'
 READY = '{"type":"ready","payload":null}'
 AUTH_TIMEOUT_SECONDS = 5.0
-INVALID_TOKEN_CLOSE_CODE = 1008
 TOO_MANY_SOCKETS_CLOSE_CODE = 1013
 AUTH_TIMEOUT_CLOSE_CODE = 4408
 

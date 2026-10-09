@@ -19,7 +19,7 @@ from core.config import settings
 
 logger = logging.getLogger(__name__)
 
-SESSION_ENDED_CLOSE_CODE = 1008
+INVALID_TOKEN_CLOSE_CODE = 1008
 MAX_SOCKETS_PER_USER = 10
 
 
@@ -74,7 +74,7 @@ class ConnectionHub:
                 continue
             self.disconnect(user_id, websocket)
             try:
-                await websocket.close(code=SESSION_ENDED_CLOSE_CODE)
+                await websocket.close(code=INVALID_TOKEN_CLOSE_CODE)
             except Exception:
                 logger.debug("Socket of user %s was already closed", user_id)
 
