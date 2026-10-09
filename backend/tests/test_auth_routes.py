@@ -5,7 +5,14 @@ from httpx import ASGITransport, AsyncClient
 
 from main import app
 from core.auth import SessionClaims, get_current_session, get_current_user_id
-from modules.auth.controller import get_auth_service
+from core.rate_limit import RateLimiter, get_rate_limiter
+from modules.auth.controller import (
+    LOGIN_FAILURES_PER_ACCOUNT,
+    RECOVERY_PER_EMAIL,
+    REGISTER_PER_CLIENT,
+    get_auth_service,
+)
+from modules.auth.exceptions import InvalidCredentialsException
 from modules.auth.schemas import CurrentUserResponse
 
 
@@ -79,3 +86,87 @@ async def test_get_me_returns_profile_completed_from_auth_contract() -> None:
 
     assert response.status_code == 200
     assert response.json()["profile_completed"] is True
+
+
+class RefusingService:
+    async def login_user(self, payload):
+        raise InvalidCredentialsException()
+
+
+class AcceptingService:
+    async def login_user(self, payload):
+        return "token"
+
+    async def request_password_reset(self, email):
+        return None
+
+    async def register_user(self, payload):
+        return None
+
+
+@pytest.fixture
+def fresh_limiter():
+    limiter = RateLimiter()
+    app.dependency_overrides[get_rate_limiter] = lambda: limiter
+    yield limiter
+    app.dependency_overrides.clear()
+
+
+async def post(path: str, body: dict):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        return await client.post(path, json=body)
+
+
+@pytest.mark.asyncio
+async def test_should_answer_429_with_retry_after_when_an_account_has_too_many_failed_logins(fresh_limiter):
+    app.dependency_overrides[get_auth_service] = RefusingService
+    body = {"username": "alice", "password": "Wrong1234"}
+    for _ in range(LOGIN_FAILURES_PER_ACCOUNT.attempts):
+        assert (await post("/auth/login", body)).status_code == 401
+
+    refused = await post("/auth/login", body)
+
+    assert (refused.status_code, refused.json()["code"]) == (429, "TOO_MANY_REQUESTS")
+    assert int(refused.headers["Retry-After"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_should_not_count_logins_against_the_account_when_they_succeed(fresh_limiter):
+    app.dependency_overrides[get_auth_service] = AcceptingService
+    body = {"username": "alice", "password": "Right1234"}
+
+    responses = [await post("/auth/login", body) for _ in range(LOGIN_FAILURES_PER_ACCOUNT.attempts + 2)]
+
+    assert {response.status_code for response in responses} == {200}
+
+
+@pytest.mark.asyncio
+async def test_should_answer_429_when_one_email_asks_for_too_many_reset_links(fresh_limiter):
+    app.dependency_overrides[get_auth_service] = AcceptingService
+    body = {"email": "alice@example.com"}
+    for _ in range(RECOVERY_PER_EMAIL.attempts):
+        assert (await post("/auth/forgot-password", body)).status_code == 200
+
+    assert (await post("/auth/forgot-password", body)).status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_should_refuse_before_building_the_service_when_one_client_registers_too_often(fresh_limiter):
+    built = []
+
+    def counting_service():
+        built.append(True)
+        return AcceptingService()
+
+    app.dependency_overrides[get_auth_service] = counting_service
+
+    def register_body(n: int) -> dict:
+        return {"email": f"u{n}@example.com", "username": f"u{n}", "first_name": "A", "last_name": "B", "password": "Zq9Xv7Lm2Kp"}
+
+    for n in range(REGISTER_PER_CLIENT.attempts):
+        assert (await post("/auth/register", register_body(n))).status_code == 201
+
+    refused = await post("/auth/register", register_body(99))
+
+    assert refused.status_code == 429
+    assert len(built) == REGISTER_PER_CLIENT.attempts
