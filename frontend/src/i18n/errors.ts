@@ -21,6 +21,7 @@ const ERROR_MESSAGES: Partial<Record<ErrorCode, string>> = {
   CHAT_USER_NOT_FOUND: 'We could not find this user, please try it later',
   CHAT_NOT_CONNECTED: 'You can chat only with people you are connected with.',
   NOTIFICATION_NOT_FOUND: 'We could not find this notification.',
+  TOO_MANY_REQUESTS: 'Too many attempts. Please wait a few minutes and try again.',
 }
 
 const REGISTER_FIELDS = ['email', 'username', 'first_name', 'last_name', 'password'] as const

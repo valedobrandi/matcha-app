@@ -1,5 +1,6 @@
 from core.error_codes import ErrorCode
 from core.exceptions import AuthException
+from core.rate_limit import TooManyRequestsException
 from main import app
 from modules.chat.exceptions import ChatException
 from modules.discovery.exceptions import DiscoveryException
@@ -15,6 +16,7 @@ BASES = (
     NotificationsException,
     SocialException,
     TagsException,
+    TooManyRequestsException,
     UsersException,
 )
 

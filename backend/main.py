@@ -11,6 +11,7 @@ from modules.chat.handlers import register_chat_exception_handlers
 from core.database import db_lifespan
 from core.error_codes import ErrorResponse, ValidationErrorResponse
 from core.log_redaction import RedactCredentialsFilter
+from core.rate_limit import register_rate_limit_exception_handler
 from modules.auth.controller import auth_router
 from modules.users.controller import users_router
 from modules.tags.controller import tags_router
@@ -48,6 +49,7 @@ register_social_exception_handlers(app)
 register_discovery_exception_handlers(app)
 register_notifications_exception_handlers(app)
 register_chat_exception_handlers(app)
+register_rate_limit_exception_handler(app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,

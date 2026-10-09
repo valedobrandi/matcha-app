@@ -62,6 +62,18 @@ describe('LoginPage', () => {
         expect(screen.getByRole('link', { name: 'Resend verification email' })).toBeInTheDocument()
     })
 
+    it('does ask the user to wait when the server refuses too many attempts', async () => {
+        server.use(http.post(LOGIN_URL, () => HttpResponse.json(
+            { detail: 'Too many attempts. Please wait and try again.', code: 'TOO_MANY_REQUESTS', field: null },
+            { status: 429, headers: { 'Retry-After': '60' } },
+        )))
+
+        renderLogin()
+        submitCredentials()
+
+        expect(await screen.findByText('Too many attempts. Please wait a few minutes and try again.')).toBeInTheDocument()
+    })
+
     it('does say the login failed when the server cannot be reached', async () => {
         server.use(http.post(LOGIN_URL, () => HttpResponse.error()))
 

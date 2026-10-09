@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, Request
 import asyncpg
 from modules.auth.schemas import (
     CurrentUserResponse,
@@ -14,12 +14,20 @@ from modules.auth.schemas import (
     ResendVerificationInput,
     ResendVerificationResponse,
 )
+from modules.auth.exceptions import InvalidCredentialsException
 from modules.auth.service import AuthService
 from modules.auth.repository import AuthRepository
 from core.database import get_db_connection
 from core.auth import SessionClaims, get_current_session, get_current_user_id
+from core.rate_limit import Limit, RateLimiter, get_rate_limiter
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
+
+LOGIN_PER_CLIENT = Limit(attempts=20, per_seconds=60)
+LOGIN_FAILURES_PER_ACCOUNT = Limit(attempts=10, per_seconds=15 * 60)
+REGISTER_PER_CLIENT = Limit(attempts=10, per_seconds=15 * 60)
+RECOVERY_PER_CLIENT = Limit(attempts=10, per_seconds=15 * 60)
+RECOVERY_PER_EMAIL = Limit(attempts=3, per_seconds=15 * 60)
 
 
 def get_auth_service(
@@ -29,6 +37,17 @@ def get_auth_service(
     return AuthService(repository)
 
 
+def limit_per_client(action: str, limit: Limit):
+    def limited_client(
+        request: Request,
+        limiter: RateLimiter = Depends(get_rate_limiter),
+    ) -> RateLimiter:
+        client = request.client.host if request.client else "unknown"
+        limiter.hit(f"{action}:client:{client}", limit)
+        return limiter
+    return limited_client
+
+
 @auth_router.post(
     "/resend-verification",
     status_code=status.HTTP_200_OK,
@@ -36,8 +55,10 @@ def get_auth_service(
 )
 async def resend_verification(
     payload: ResendVerificationInput,
+    limiter: RateLimiter = Depends(limit_per_client("recovery", RECOVERY_PER_CLIENT)),
     service: AuthService = Depends(get_auth_service),
 ) -> ResendVerificationResponse:
+    limiter.hit(f"recovery:email:{payload.email.lower()}", RECOVERY_PER_EMAIL)
     await service.resend_verification_email(payload.email)
     return {
         "message": "If an unverified account exists for this email, a verification message will be sent."
@@ -45,7 +66,10 @@ async def resend_verification(
 
 
 @auth_router.post(
-    "/register", status_code=status.HTTP_201_CREATED, response_model=RegisterResponse
+    "/register",
+    status_code=status.HTTP_201_CREATED,
+    response_model=RegisterResponse,
+    dependencies=[Depends(limit_per_client("register", REGISTER_PER_CLIENT))],
 )
 async def register(
     payload: UserRegisterInput, service: AuthService = Depends(get_auth_service)
@@ -58,9 +82,17 @@ async def register(
 
 @auth_router.post("/login", response_model=TokenResponse)
 async def login(
-    payload: LoginInput, service: AuthService = Depends(get_auth_service)
+    payload: LoginInput,
+    limiter: RateLimiter = Depends(limit_per_client("login", LOGIN_PER_CLIENT)),
+    service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
-    token = await service.login_user(payload)
+    account = f"login:account:{payload.username.lower()}"
+    limiter.check(account, LOGIN_FAILURES_PER_ACCOUNT)
+    try:
+        token = await service.login_user(payload)
+    except InvalidCredentialsException:
+        limiter.record(account)
+        raise
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -99,13 +131,19 @@ async def verify_email(
 )
 async def forgot_password(
     payload: ForgotPasswordInput,
+    limiter: RateLimiter = Depends(limit_per_client("recovery", RECOVERY_PER_CLIENT)),
     service: AuthService = Depends(get_auth_service),
 ) -> ForgotPasswordResponse:
+    limiter.hit(f"recovery:email:{payload.email.lower()}", RECOVERY_PER_EMAIL)
     await service.request_password_reset(payload.email)
     return {"message": "If an account exists for this email, a password reset link will be sent."}
 
 
-@auth_router.post("/reset-password", response_model=ResetPasswordResponse)
+@auth_router.post(
+    "/reset-password",
+    response_model=ResetPasswordResponse,
+    dependencies=[Depends(limit_per_client("recovery", RECOVERY_PER_CLIENT))],
+)
 async def reset_password(
     payload: ResetPasswordInput,
     service: AuthService = Depends(get_auth_service),
