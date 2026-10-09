@@ -51,6 +51,19 @@ describe('RegisterPage', () => {
         expect(screen.getByLabelText('Username')).toHaveAttribute('aria-invalid', 'true')
     })
 
+    it('does mark the password field with the reason when the server refuses the password', async () => {
+        server.use(http.post(REGISTER_URL, () => HttpResponse.json(
+            { detail: [{ loc: ['body', 'password'], msg: 'Value error, Password must not contain common English words', type: 'value_error' }] },
+            { status: 422 },
+        )))
+
+        renderRegister()
+        submitAccount()
+
+        expect(await screen.findByText('Password must not contain common English words')).toBeInTheDocument()
+        expect(screen.getByLabelText('Password')).toHaveAttribute('aria-invalid', 'true')
+    })
+
     it('does say the registration failed when the server cannot be reached', async () => {
         server.use(http.post(REGISTER_URL, () => HttpResponse.error()))
 

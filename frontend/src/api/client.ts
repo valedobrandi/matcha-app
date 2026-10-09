@@ -1,6 +1,7 @@
 import type { components } from '@/types/api'
 
 export type ErrorCode = components['schemas']['ErrorCode']
+type ValidationIssue = components['schemas']['ValidationIssue']
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 export const WS_URL = `${API_BASE_URL.replace(/^http/, 'ws')}/ws`
@@ -36,16 +37,24 @@ type ParsedError = {
 
 async function parseError(response: Response): Promise<ParsedError> {
   try {
-    const body = (await response.json()) as { 
-      detail?: string 
+    const body = (await response.json()) as {
+      detail?: string | ValidationIssue[]
       code?: ErrorCode
-      field?: string 
+      field?: string
     }
     if (typeof body.detail === 'string') {
       return {
         detail: body.detail,
         code: body.code,
         field: body.field,
+      }
+    }
+    const issue = Array.isArray(body.detail) ? body.detail[0] : undefined
+    if (issue) {
+      const field = issue.loc.at(-1)
+      return {
+        detail: issue.msg.replace(/^Value error, /, ''),
+        field: typeof field === 'string' ? field : undefined,
       }
     }
   } catch {
