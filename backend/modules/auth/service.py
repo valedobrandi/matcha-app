@@ -156,16 +156,14 @@ class AuthService:
             user = await self.repository.reset_password_with_token(token, hashed_str)
             if not user:
                 raise InvalidResetTokenException()
-            await self.end_sessions(user.id)
-            return await self.issue_token(user.id)
+            ended = await self.sessions.revoke_all(user.id)
+            access_token = await self.issue_token(user.id)
+        await self.hub.end_sessions(user.id, ended)
+        return access_token
 
     async def logout(self, session_id: uuid.UUID, user_id: int) -> None:
         await self.sessions.revoke(session_id)
         await self.hub.end_sessions(user_id, [session_id])
-
-    async def end_sessions(self, user_id: int, keep: uuid.UUID | None = None) -> None:
-        ended = await self.sessions.revoke_all(user_id, keep)
-        await self.hub.end_sessions(user_id, ended)
 
     async def get_current_user(self, user_id: int) -> CurrentUserResponse:
         user = await self.repository.find_by_id(user_id)

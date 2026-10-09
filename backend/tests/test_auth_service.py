@@ -14,10 +14,25 @@ from modules.auth.service import AuthService
 from modules.users.repository import UsersRepository
 
 
+class FakeConnection:
+    def __init__(self, events: list[str]) -> None:
+        self.events = events
+
+    def transaction(self):
+        return self
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, *exc_info):
+        self.events.append("commit" if exc_type is None else "rollback")
+        return False
+
+
 class FakeRepository:
-    def __init__(self, user: UserRecord | None = None) -> None:
+    def __init__(self, user: UserRecord | None = None, connection: FakeConnection | None = None) -> None:
         self.user = user
-        self.connection = object()
+        self.connection = connection or object()
 
     async def find_by_username(self, username: str) -> UserRecord | None:
         if self.user and self.user.username == username:
@@ -29,14 +44,23 @@ class FakeRepository:
             return self.user
         return None
 
+    async def reset_password_with_token(self, token: str, password_hash: str) -> UserRecord | None:
+        return self.user
+
 
 SESSION_ID = uuid.UUID("00000000-0000-4000-8000-000000000001")
+OTHER_SESSION_ID = uuid.UUID("00000000-0000-4000-8000-000000000002")
+RESET_USER = UserRecord(
+    id=1, email="a@b.com", username="alice", first_name="A", last_name="B", password_hash="hashed", is_verified=True,
+)
 
 
 class FakeSessions:
-    def __init__(self) -> None:
+    def __init__(self, ended: list[uuid.UUID] | None = None) -> None:
         self.opened: list[int] = []
         self.revoked: list[uuid.UUID] = []
+        self.revoked_all: list[tuple[int, uuid.UUID | None]] = []
+        self.ended = ended or []
 
     async def open(self, user_id, lifetime) -> uuid.UUID:
         self.opened.append(user_id)
@@ -45,13 +69,24 @@ class FakeSessions:
     async def revoke(self, session_id) -> None:
         self.revoked.append(session_id)
 
+    async def revoke_all(self, user_id, keep=None) -> list[uuid.UUID]:
+        self.revoked_all.append((user_id, keep))
+        return self.ended
+
+
+class SessionsThatCannotOpen(FakeSessions):
+    async def open(self, user_id, lifetime) -> uuid.UUID:
+        raise ConnectionError("the database went away")
+
 
 class FakeHub:
-    def __init__(self) -> None:
+    def __init__(self, events: list[str] | None = None) -> None:
         self.ended: list[tuple[int, list[uuid.UUID]]] = []
+        self.events = events if events is not None else []
 
     async def end_sessions(self, user_id, session_ids) -> None:
         self.ended.append((user_id, list(session_ids)))
+        self.events.append("end_sessions")
 
 
 def test_hash_password_returns_bcrypt_hash() -> None:
@@ -81,6 +116,35 @@ async def test_should_revoke_the_session_and_close_its_sockets_when_the_user_log
 
     assert sessions.revoked == [SESSION_ID]
     assert hub.ended == [(7, [SESSION_ID])]
+
+
+@pytest.mark.asyncio
+async def test_should_end_every_session_and_close_their_sockets_after_the_commit_when_the_password_is_reset() -> None:
+    events: list[str] = []
+    sessions, hub = FakeSessions(ended=[OTHER_SESSION_ID]), FakeHub(events)
+    service = AuthService(FakeRepository(RESET_USER, FakeConnection(events)), hub, sessions=sessions)
+
+    token = await service.reset_password("reset-token", "Xk9#mQvzTr4!!")
+
+    claims = jwt.decode(token, settings.JWT_SECRET.get_secret_value(), algorithms=[settings.JWT_ALGORITHM])
+    assert sessions.revoked_all == [(1, None)]
+    assert hub.ended == [(1, [OTHER_SESSION_ID])]
+    assert events == ["commit", "end_sessions"]
+    assert claims["sid"] == str(SESSION_ID)
+
+
+@pytest.mark.asyncio
+async def test_should_leave_every_socket_open_when_the_reset_fails_before_it_commits() -> None:
+    events: list[str] = []
+    hub = FakeHub(events)
+    sessions = SessionsThatCannotOpen(ended=[OTHER_SESSION_ID])
+    service = AuthService(FakeRepository(RESET_USER, FakeConnection(events)), hub, sessions=sessions)
+
+    with pytest.raises(ConnectionError):
+        await service.reset_password("reset-token", "Xk9#mQvzTr4!!")
+
+    assert hub.ended == []
+    assert events == ["rollback"]
 
 
 @pytest.mark.asyncio

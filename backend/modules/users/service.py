@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from modules.users.repository import UsersRepository
+from modules.auth.sessions_repository import SessionsRepository
 from modules.users.schemas import (
     UserProfile,
     PublicProfile,
@@ -247,4 +248,5 @@ class UsersService:
         hashed_password = auth.hash_password(passwords.new_password)
         async with self.repository.connection.transaction():
             await self.repository.change_password(hashed_password, current_user_id)
-            await auth.end_sessions(current_user_id, keep=current_session_id)
+            ended = await SessionsRepository(self.repository.connection).revoke_all(current_user_id, keep=current_session_id)
+        await self.hub.end_sessions(current_user_id, ended)

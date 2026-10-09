@@ -22,6 +22,7 @@ from modules.auth.exceptions import (
 )
 from core.ws_hub import ConnectionHub
 from modules.auth.repository import AuthRepository
+from modules.auth.sessions_repository import SessionsRepository
 from types import SimpleNamespace
 from pydantic import ValidationError
 
@@ -53,13 +54,17 @@ SESSION_ID = uuid.UUID("00000000-0000-4000-8000-000000000001")
 
 
 class FakeConnection:
+    def __init__(self, events: list[str] | None = None):
+        self.events = events if events is not None else []
+
     def transaction(self):
         return self
 
     async def __aenter__(self):
         return self
 
-    async def __aexit__(self, *exc_info):
+    async def __aexit__(self, exc_type, *exc_info):
+        self.events.append("commit" if exc_type is None else "rollback")
         return False
 
     async def fetch(self, query, *args):
@@ -143,6 +148,51 @@ async def test_change_password_success(monkeypatch):
 
     assert hashed_password != "Xk9#mQvzTr4!!"
     assert bcrypt.checkpw(b"Xk9#mQvzTr4!!", hashed_password.encode("utf-8"))
+
+
+class FakeHub:
+    def __init__(self, events: list[str]):
+        self.events = events
+        self.ended = []
+
+    async def end_sessions(self, user_id, session_ids):
+        self.ended.append((user_id, list(session_ids)))
+        self.events.append("end_sessions")
+
+
+@pytest.mark.asyncio
+async def test_should_end_the_other_sessions_and_close_their_sockets_after_the_commit_when_the_password_changes(monkeypatch):
+    other_session_id = uuid.UUID("00000000-0000-4000-8000-000000000002")
+    old_hash = bcrypt.hashpw(b"OldPwd123!", bcrypt.gensalt()).decode("utf-8")
+    revoked = []
+
+    async def fake_user_by_id(self, user_id):
+        return FakeUserAuth(password_hash=old_hash, is_verified=True)
+
+    async def fake_revoke_all(self, user_id, keep=None):
+        revoked.append((user_id, keep))
+        return [other_session_id]
+
+    async def change_password(hashed_password, current_user_id):
+        return None
+
+    monkeypatch.setattr(AuthRepository, "find_by_id", fake_user_by_id)
+    monkeypatch.setattr(SessionsRepository, "revoke_all", fake_revoke_all)
+    events = []
+    hub = FakeHub(events)
+    repository = SimpleNamespace(connection=FakeConnection(events), change_password=change_password)
+    service = UsersService(repository, FakeSocial(), hub)
+    passwords = PasswordChangeInput(
+        current_password="OldPwd123!",
+        new_password="Xk9#mQvzTr4!!",
+        confirm_password="Xk9#mQvzTr4!!",
+    )
+
+    await service.change_password(passwords, 1, SESSION_ID)
+
+    assert revoked == [(1, SESSION_ID)]
+    assert hub.ended == [(1, [other_session_id])]
+    assert events == ["commit", "end_sessions"]
 
 class FakeRepository:
     def __init__(self, user, tags=None, photos=None, completed=True):

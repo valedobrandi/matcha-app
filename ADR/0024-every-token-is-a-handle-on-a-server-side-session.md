@@ -34,7 +34,8 @@ scores any security flaw 0 (`docs/fr.subject.md:271`).
   - `POST /auth/logout` ends the caller's session;
   - a password change ends every other session of the user and keeps the current one;
   - a password reset ends every session and opens a new one for the reset response.
-  The ended sessions' sockets close with `1008`, so those tabs log out at once.
+  Once the change commits, the ended sessions' sockets close with `1008`, so those tabs log out
+  at once, and a change that rolls back leaves every socket open.
 - **Frontend:** `signOut` (the Logout button) forgets the token, then tells the server. `logout`
   stays local only: it runs when the server has already ended the session (a 401, a socket closed
   with `1008`), where calling the server again would only add a failed request to the console.
