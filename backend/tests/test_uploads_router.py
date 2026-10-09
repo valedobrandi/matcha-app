@@ -25,3 +25,9 @@ def test_should_serve_the_photo_only_when_its_url_carries_a_valid_signature(monk
     assert client.get("/uploads/a.jpg").status_code == 404
     assert client.get(f"/uploads/b.jpg?expires={query['expires']}&signature={query['signature']}").status_code == 404
     assert client.get(sign_upload_url("/uploads/missing.jpg")).status_code == 404
+
+
+def test_should_answer_an_empty_404_when_the_signature_is_not_ascii():
+    response = client.get("/uploads/a.jpg?expires=9999999999&signature=%C3%A9")
+
+    assert (response.status_code, response.content) == (404, b"")

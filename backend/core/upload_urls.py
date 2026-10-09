@@ -29,7 +29,7 @@ def sign_upload_url(url: str, now: float | None = None) -> str:
 
 def upload_url_is_valid(file_name: str, expires: int, signature: str, now: float | None = None) -> bool:
     current = time.time() if now is None else now
-    return expires > current and hmac.compare_digest(signature, _signature(file_name, expires))
+    return expires > current and hmac.compare_digest(signature.encode(), _signature(file_name, expires).encode())
 
 
 UploadUrl = Annotated[str, PlainSerializer(sign_upload_url, return_type=str, when_used="json")]
